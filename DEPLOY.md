@@ -197,14 +197,15 @@ sudo systemctl restart fail2ban
 
 ```bash
 sudo mkdir -p /var/www/gamehub
-sudo chown deploy:deploy /var/www/gamehub
+sudo chown deploy:www-data /var/www/gamehub
+sudo chmod 770 /var/www/gamehub
 ```
 
 ### 5.2 Clone the Repository
 
 ```bash
 cd /var/www/gamehub
-git clone git@github.com:mdhender/gamehub.git .
+git clone https://github.com:mdhender/gamehub.git .
 ```
 
 ### 5.3 Install Dependencies & Build
@@ -269,15 +270,16 @@ php artisan event:cache
 
 ### 5.8 Set Permissions
 
+The parent directory (`/var/www/gamehub`) is locked down to `deploy:www-data` with `770` (step 5.1), so no outside users can access any files within. Set all contents to `deploy:www-data` ownership — file modes stay at their git defaults (644/755). Only the runtime-writable directories need group-write access:
+
 ```bash
 sudo chown -R deploy:www-data /var/www/gamehub
-sudo chmod -R 750 /var/www/gamehub
-sudo chmod -R 770 /var/www/gamehub/storage
-sudo chmod -R 770 /var/www/gamehub/bootstrap/cache
-sudo chmod    660 /var/www/gamehub/database/database.sqlite
-sudo chown deploy:www-data /var/www/gamehub/database/database.sqlite
-sudo chown deploy:www-data /var/www/gamehub/database
+find /var/www/gamehub/storage -type d -exec chmod 770 {} \;
+find /var/www/gamehub/storage -type f -exec chmod 660 {} \;
+find /var/www/gamehub/bootstrap/cache -type d -exec chmod 770 {} \;
+find /var/www/gamehub/bootstrap/cache -type f -exec chmod 660 {} \;
 sudo chmod 770 /var/www/gamehub/database
+sudo chmod 660 /var/www/gamehub/database/database.sqlite
 ```
 
 ---
@@ -378,7 +380,39 @@ sudo systemctl status certbot.timer
 
 ---
 
-## 9. Queue Worker (systemd)
+## 9. Mailgun Configuration
+
+The application uses Mailgun for transactional email. Ensure the required packages are installed (these should already be in `composer.json`):
+
+```bash
+composer require symfony/mailgun-mailer symfony/http-client
+```
+
+Add the following to your production `.env`:
+
+```dotenv
+MAIL_MAILER=mailgun
+MAIL_FROM_ADDRESS="noreply@yourdomain.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+MAILGUN_DOMAIN=yourdomain.com
+MAILGUN_SECRET=your-mailgun-api-key
+MAILGUN_ENDPOINT=api.mailgun.net
+```
+
+> **EU region:** If your Mailgun account is in the EU, set `MAILGUN_ENDPOINT=api.eu.mailgun.net`.
+
+Rebuild the config cache for the changes to take effect:
+
+```bash
+php artisan config:cache
+```
+
+Verify mail is working by triggering a password reset or other notification from the application and checking the Mailgun dashboard for delivery logs.
+
+---
+
+## 10. Queue Worker (systemd)
 
 The app uses `QUEUE_CONNECTION=database`. Create `/etc/systemd/system/gamehub-queue.service`:
 
@@ -409,9 +443,9 @@ sudo systemctl start gamehub-queue
 
 ---
 
-## 10. Automated Deployments
+## 11. Automated Deployments
 
-Create a deploy script at `/var/www/gamehub/deploy.sh`:
+Create a deploy script at `/opt/gamehub/deploy.sh`:
 
 ```bash
 #!/bin/bash
@@ -419,8 +453,9 @@ set -e
 
 cd /var/www/gamehub
 
-# Pull latest changes
-git pull origin main
+# Pull latest changes (reset ensures a clean state even if files were modified on the server)
+git fetch origin main
+git reset --hard origin/main
 
 # Install PHP dependencies
 composer install --no-dev --optimize-autoloader --no-interaction
@@ -460,7 +495,7 @@ deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload php8.4-fpm
 
 ---
 
-## 11. Additional Hardening
+## 12. Additional Hardening
 
 ### Automatic Security Updates
 
@@ -503,7 +538,7 @@ memory_limit = 256M
 
 ---
 
-## 12. Health Check
+## 13. Health Check
 
 Verify the application is running:
 
