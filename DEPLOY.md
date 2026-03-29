@@ -205,7 +205,7 @@ sudo chmod 770 /var/www/gamehub
 
 ```bash
 cd /var/www/gamehub
-git clone https://github.com:mdhender/gamehub.git .
+git clone https://github.com/mdhender/gamehub.git .
 ```
 
 ### 5.3 Install Dependencies & Build
