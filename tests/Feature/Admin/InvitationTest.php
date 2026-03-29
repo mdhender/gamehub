@@ -157,4 +157,64 @@ class InvitationTest extends TestCase
             )
         );
     }
+
+    #[Test]
+    public function admin_can_delete_invitation(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $invitation = Invitation::factory()->create();
+
+        $response = $this->actingAs($admin)->delete("/admin/invitations/{$invitation->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('invitations', ['id' => $invitation->id]);
+    }
+
+    #[Test]
+    public function non_admin_cannot_delete_invitation(): void
+    {
+        $user = User::factory()->create();
+        $invitation = Invitation::factory()->create();
+
+        $this->actingAs($user)->delete("/admin/invitations/{$invitation->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('invitations', ['id' => $invitation->id]);
+    }
+
+    #[Test]
+    public function admin_can_resend_invitation(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->admin()->create();
+        $invitation = Invitation::factory()->create([
+            'email' => 'resend@example.com',
+        ]);
+        $originalToken = $invitation->token;
+
+        $response = $this->actingAs($admin)->post("/admin/invitations/{$invitation->id}/resend");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $invitation->refresh();
+        $this->assertNotEquals($originalToken, $invitation->token);
+        $this->assertTrue($invitation->expires_at->isFuture());
+
+        Mail::assertSent(InvitationMail::class, function (InvitationMail $mail) {
+            return $mail->hasTo('resend@example.com');
+        });
+    }
+
+    #[Test]
+    public function non_admin_cannot_resend_invitation(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create();
+        $invitation = Invitation::factory()->create();
+
+        $this->actingAs($user)->post("/admin/invitations/{$invitation->id}/resend")->assertForbidden();
+
+        Mail::assertNothingSent();
+    }
 }

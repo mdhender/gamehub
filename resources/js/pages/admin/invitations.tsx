@@ -1,11 +1,22 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import InvitationController, {
+    destroy,
+    resend,
     store,
 } from '@/actions/App/Http/Controllers/Admin/InvitationController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -35,6 +46,9 @@ export default function AdminInvitations({
 }: {
     invitations: Invitation[];
 }) {
+    const [deletingInvitation, setDeletingInvitation] =
+        useState<Invitation | null>(null);
+
     return (
         <>
             <Head title="Invitations" />
@@ -88,13 +102,16 @@ export default function AdminInvitations({
                                 <th className="px-4 py-3 text-left font-medium">
                                     Expires
                                 </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
                             {invitations.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={4}
+                                        colSpan={5}
                                         className="px-4 py-8 text-center text-muted-foreground"
                                     >
                                         No invitations sent yet.
@@ -122,12 +139,76 @@ export default function AdminInvitations({
                                             invitation.expires_at,
                                         ).toLocaleDateString()}
                                     </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {!invitation.registered_at && (
+                                                <Link
+                                                    href={
+                                                        resend(invitation.id)
+                                                            .url
+                                                    }
+                                                    method="post"
+                                                    as="button"
+                                                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                                                >
+                                                    Resend
+                                                </Link>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() =>
+                                                    setDeletingInvitation(
+                                                        invitation,
+                                                    )
+                                                }
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <Dialog
+                open={deletingInvitation !== null}
+                onOpenChange={(open) => {
+                    if (!open) setDeletingInvitation(null);
+                }}
+            >
+                <DialogContent>
+                    <DialogTitle>Delete invitation</DialogTitle>
+                    <DialogDescription>
+                        Are you sure you want to delete the invitation for{' '}
+                        <strong>{deletingInvitation?.email}</strong>? This action
+                        cannot be undone.
+                    </DialogDescription>
+                    <DialogFooter className="gap-2">
+                        <DialogClose asChild>
+                            <Button variant="secondary">Cancel</Button>
+                        </DialogClose>
+                        {deletingInvitation && (
+                            <Link
+                                href={
+                                    destroy(deletingInvitation.id).url
+                                }
+                                method="delete"
+                                as="button"
+                                preserveScroll
+                                onSuccess={() => setDeletingInvitation(null)}
+                                className="inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-destructive/90"
+                            >
+                                Delete
+                            </Link>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

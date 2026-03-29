@@ -34,4 +34,23 @@ class InvitationController extends Controller
 
         return back()->with('success', 'Invitation sent to '.$invitation->email);
     }
+
+    public function destroy(Invitation $invitation): RedirectResponse
+    {
+        $invitation->delete();
+
+        return back()->with('success', 'Invitation deleted.');
+    }
+
+    public function resend(Invitation $invitation): RedirectResponse
+    {
+        $invitation->update([
+            'token' => Str::random(64),
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        Mail::to($invitation->email)->send(new InvitationMail($invitation));
+
+        return back()->with('success', 'Invitation resent to '.$invitation->email);
+    }
 }
