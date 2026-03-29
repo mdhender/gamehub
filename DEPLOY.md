@@ -460,6 +460,9 @@ git reset --hard origin/main
 # Install PHP dependencies
 composer install --no-dev --optimize-autoloader --no-interaction
 
+# Clear stale caches so Wayfinder sees new routes during build
+php artisan optimize:clear
+
 # Install JS dependencies and build
 bun install
 bun run build
