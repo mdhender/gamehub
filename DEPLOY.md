@@ -61,6 +61,7 @@ sudo apt update && sudo apt upgrade -y
 ```bash
 sudo apt install -y software-properties-common
 sudo add-apt-repository -y ppa:ondrej/php
+sudo add-apt-repository -y ppa:ondrej/nginx
 sudo apt update
 
 sudo apt install -y \
@@ -109,6 +110,7 @@ sudo apt install -y nodejs
 Install Bun:
 
 ```bash
+sudo apt install unzip
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
 ```
