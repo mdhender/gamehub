@@ -25,6 +25,8 @@ class CreateNewUser implements CreatesNewUsers
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
             'invitation_token' => ['required', 'string'],
+        ], [
+            'invitation_token.required' => __('This registration page is invite-only. Please check your email for an invitation link.'),
         ])->validate();
 
         $invitation = Invitation::query()
