@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
-export default function Register() {
+export default function Register({ invitationToken }: { invitationToken: string }) {
     return (
         <>
             <Head title="Register" />
@@ -21,7 +21,11 @@ export default function Register() {
             >
                 {({ processing, errors }) => (
                     <>
+                        <input type="hidden" name="invitation_token" value={invitationToken} />
                         <div className="grid gap-6">
+                            {errors.invitation_token && (
+                                <InputError message={errors.invitation_token} />
+                            )}
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input

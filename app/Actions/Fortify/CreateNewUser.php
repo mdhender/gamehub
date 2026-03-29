@@ -4,8 +4,10 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -22,12 +24,29 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+            'invitation_token' => ['required', 'string'],
         ])->validate();
 
-        return User::create([
+        $invitation = Invitation::query()
+            ->valid()
+            ->where('email', $input['email'])
+            ->where('token', $input['invitation_token'])
+            ->first();
+
+        if (! $invitation) {
+            throw ValidationException::withMessages([
+                'invitation_token' => __('The invitation is invalid, expired, or does not match this email address.'),
+            ]);
+        }
+
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
         ]);
+
+        $invitation->markAsRegistered();
+
+        return $user;
     }
 }

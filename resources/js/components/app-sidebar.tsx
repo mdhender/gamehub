@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, MailPlus, Users } from 'lucide-react';
+import InvitationController from '@/actions/App/Http/Controllers/Admin/InvitationController';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -30,6 +31,11 @@ const adminNavItems: NavItem[] = [
         title: 'Users',
         href: UserController.index.url(),
         icon: Users,
+    },
+    {
+        title: 'Invitations',
+        href: InvitationController.index.url(),
+        icon: MailPlus,
     },
 ];
 
