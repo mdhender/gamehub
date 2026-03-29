@@ -246,7 +246,17 @@ touch database/database.sqlite
 php artisan migrate --force
 ```
 
-### 5.6 Optimize for Production
+### 5.6 Create the Admin User (First Deploy Only)
+
+Run the dedicated command to create your admin account on first deploy:
+
+```bash
+php artisan app:create-admin-user "Your Name" "admin@example.com" "your-secure-password"
+```
+
+If you omit the arguments, the command will prompt you interactively. **Change the password** after your first login via the application's profile settings.
+
+### 5.7 Optimize for Production
 
 ```bash
 php artisan config:cache
@@ -255,7 +265,7 @@ php artisan view:cache
 php artisan event:cache
 ```
 
-### 5.7 Set Permissions
+### 5.8 Set Permissions
 
 ```bash
 sudo chown -R deploy:www-data /var/www/gamehub
