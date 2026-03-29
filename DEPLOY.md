@@ -454,7 +454,7 @@ set -e
 cd /var/www/gamehub
 
 # Pull latest changes (reset ensures a clean state even if files were modified on the server)
-git fetch origin main
+git fetch origin
 git reset --hard origin/main
 
 # Install PHP dependencies
