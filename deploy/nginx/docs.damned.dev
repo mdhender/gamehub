@@ -4,6 +4,8 @@ server {
     server_name docs.damned.dev;
 
     root /var/www/docs.damned.dev;
+    access_log /var/log/nginx/docs.damned.dev.access.log;
+    error_log /var/log/nginx/docs.damned.dev.error.log crit;
     index index.html;
 
     location / {
