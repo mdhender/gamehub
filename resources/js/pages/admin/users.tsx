@@ -1,5 +1,5 @@
-import { Head } from '@inertiajs/react';
-import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import { Head, Link } from '@inertiajs/react';
+import UserController, { show } from '@/actions/App/Http/Controllers/Admin/UserController';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
@@ -33,7 +33,14 @@ export default function AdminUsers({ users }: { users: User[] }) {
                         <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
                             {users.map((user) => (
                                 <tr key={user.id} className="hover:bg-muted/30">
-                                    <td className="px-4 py-3">{user.name}</td>
+                                    <td className="px-4 py-3">
+                                        <Link
+                                            href={show.url(user)}
+                                            className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current dark:decoration-neutral-500"
+                                        >
+                                            {user.name}
+                                        </Link>
+                                    </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {user.email}
                                     </td>
