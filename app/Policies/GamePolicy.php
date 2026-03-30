@@ -13,7 +13,10 @@ class GamePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->games()->wherePivot('role', GameRole::Gm->value)->exists();
+        return $user->isAdmin() || $user->games()
+            ->wherePivot('role', GameRole::Gm->value)
+            ->wherePivot('is_active', true)
+            ->exists();
     }
 
     /**
@@ -21,7 +24,10 @@ class GamePolicy
      */
     public function view(User $user, Game $game): bool
     {
-        return $user->isAdmin() || $game->users()->where('user_id', $user->id)->exists();
+        return $user->isAdmin() || $game->users()
+            ->where('users.id', $user->id)
+            ->wherePivot('is_active', true)
+            ->exists();
     }
 
     /**

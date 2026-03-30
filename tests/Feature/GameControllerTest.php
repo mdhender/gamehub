@@ -60,6 +60,26 @@ class GameControllerTest extends TestCase
     }
 
     #[Test]
+    public function inactive_gm_cannot_view_games_index(): void
+    {
+        $gm = User::factory()->create();
+        $game = Game::factory()->create();
+        $game->users()->attach($gm, ['role' => GameRole::Gm->value, 'is_active' => false]);
+
+        $this->actingAs($gm)->get('/games')->assertForbidden();
+    }
+
+    #[Test]
+    public function inactive_member_cannot_view_game(): void
+    {
+        $member = User::factory()->create();
+        $game = Game::factory()->create();
+        $game->users()->attach($member, ['role' => GameRole::Player->value, 'is_active' => false]);
+
+        $this->actingAs($member)->get("/games/{$game->id}")->assertForbidden();
+    }
+
+    #[Test]
     public function guest_cannot_view_games_index(): void
     {
         $this->get('/games')->assertRedirect('/login');
