@@ -26,6 +26,7 @@ class CreateAdminUser extends Command implements PromptsForMissingInput
         $user = new User([
             'name' => $this->argument('name'),
             'email' => $email,
+            // Hash::make is redundant here — the User model's "hashed" cast prevents double-hashing via Hash::isHashed().
             'password' => Hash::make($this->argument('password')),
         ]);
         $user->is_admin = true;
