@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\GameRole;
+use App\Http\Requests\StoreGameRequest;
+use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -61,29 +63,20 @@ class GameController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreGameRequest $request): RedirectResponse
     {
         Gate::authorize('create', Game::class);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-        ]);
-
-        Game::create($validated);
+        Game::create($request->validated());
 
         return back()->with('success', 'Game created.');
     }
 
-    public function update(Request $request, Game $game): RedirectResponse
+    public function update(UpdateGameRequest $request, Game $game): RedirectResponse
     {
         Gate::authorize('update', $game);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'is_active' => ['required', 'boolean'],
-        ]);
-
-        $game->update($validated);
+        $game->update($request->validated());
 
         return back()->with('success', 'Game updated.');
     }
