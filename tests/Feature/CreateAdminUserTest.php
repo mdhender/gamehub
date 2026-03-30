@@ -3,14 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CreateAdminUserTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
 
-    public function test_it_creates_an_admin_user()
+    #[Test]
+    public function it_creates_an_admin_user()
     {
         $this->artisan('app:create-admin-user', [
             'name' => 'Admin User',
@@ -22,11 +24,12 @@ class CreateAdminUserTest extends TestCase
         $user = User::where('email', 'admin@example.com')->first();
 
         $this->assertNotNull($user);
-        $this->assertEquals('Admin User', $user->name);
+        $this->assertSame('Admin User', $user->name);
         $this->assertTrue($user->is_admin);
     }
 
-    public function test_it_fails_if_email_already_exists()
+    #[Test]
+    public function it_fails_if_email_already_exists()
     {
         User::factory()->create(['email' => 'admin@example.com']);
 
@@ -38,7 +41,8 @@ class CreateAdminUserTest extends TestCase
             ->assertFailed();
     }
 
-    public function test_password_is_hashed()
+    #[Test]
+    public function password_is_hashed()
     {
         $this->artisan('app:create-admin-user', [
             'name' => 'Admin User',

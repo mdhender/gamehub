@@ -40,15 +40,15 @@ Findings from a full codebase review. Tackle in chunks as time permits.
 
 All of these test files use `RefreshDatabase` instead of the faster `LazilyRefreshDatabase`:
 
-- [ ] `tests/Feature/CreateAdminUserTest.php` — also uses `test_*` naming instead of `#[Test]` attributes, and `assertEquals` instead of `assertSame`
-- [ ] `tests/Feature/ExampleTest.php`
-- [ ] `tests/Unit/ExampleTest.php`
-- [ ] `tests/Feature/Settings/ProfileUpdateTest.php`
-- [ ] `tests/Feature/Settings/SecurityTest.php`
-- [ ] `tests/Feature/Auth/AuthenticationTest.php`
-- [ ] `tests/Feature/Auth/EmailVerificationTest.php`
-- [ ] `tests/Feature/Auth/PasswordConfirmationTest.php`
-- [ ] `tests/Feature/Auth/PasswordResetTest.php`
-- [ ] `tests/Feature/Auth/RegistrationTest.php`
-- [ ] `tests/Feature/Auth/TwoFactorChallengeTest.php`
-- [ ] `tests/Feature/Auth/VerificationNotificationTest.php`
+- [x] `tests/Feature/CreateAdminUserTest.php` — also uses `test_*` naming instead of `#[Test]` attributes, and `assertEquals` instead of `assertSame`
+- [x] `tests/Feature/ExampleTest.php`
+- [x] `tests/Unit/ExampleTest.php`
+- [x] `tests/Feature/Settings/ProfileUpdateTest.php`
+- [x] `tests/Feature/Settings/SecurityTest.php`
+- [x] `tests/Feature/Auth/AuthenticationTest.php`
+- [x] `tests/Feature/Auth/EmailVerificationTest.php`
+- [x] `tests/Feature/Auth/PasswordConfirmationTest.php`
+- [x] `tests/Feature/Auth/PasswordResetTest.php`
+- [x] `tests/Feature/Auth/RegistrationTest.php`
+- [x] `tests/Feature/Auth/TwoFactorChallengeTest.php`
+- [x] `tests/Feature/Auth/VerificationNotificationTest.php`
