@@ -30,26 +30,20 @@ class UserShowTest extends TestCase
     }
 
     #[Test]
-    public function user_can_view_their_own_detail(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->get("/admin/users/{$user->id}");
-
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('admin/users/show')
-            ->where('user.id', $user->id)
-        );
-    }
-
-    #[Test]
-    public function user_cannot_view_another_users_detail(): void
+    public function non_admin_cannot_view_user_detail(): void
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
 
         $this->actingAs($user)->get("/admin/users/{$otherUser->id}")->assertForbidden();
+    }
+
+    #[Test]
+    public function non_admin_cannot_view_their_own_detail_via_admin_route(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get("/admin/users/{$user->id}")->assertForbidden();
     }
 
     #[Test]
