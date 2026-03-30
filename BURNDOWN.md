@@ -27,7 +27,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
 
 ## Low Severity
 
-- [ ] **Duplicated GM-check logic** — `GamePolicy::viewAny()` manually queries pivot instead of calling `$user->isGm()`.
+- [x] **Duplicated GM-check logic** — `GamePolicy::viewAny()` manually queries pivot instead of calling `$user->isGm()`.
   - `app/Policies/GamePolicy.php` L15–19
 - [ ] **Inline validation** — `GameMemberController::store()` uses inline validation. Extract to a `StoreGameMemberRequest` Form Request.
   - `app/Http/Controllers/GameMemberController.php` L19–27

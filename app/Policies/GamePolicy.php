@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\GameRole;
 use App\Models\Game;
 use App\Models\User;
 
@@ -13,10 +12,7 @@ class GamePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->games()
-            ->wherePivot('role', GameRole::Gm->value)
-            ->wherePivot('is_active', true)
-            ->exists();
+        return $user->isAdmin() || $user->isGm();
     }
 
     /**
