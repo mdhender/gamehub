@@ -13,8 +13,9 @@ Findings from a full codebase review. Tackle in chunks as time permits.
 
 ## Medium Severity
 
-- [ ] **Phantom cast** — `User` model casts `'is_gm' => 'boolean'` but no `is_gm` column exists in the database. Remove it.
+- [x] **Phantom cast** — `User` model casts `'is_gm' => 'boolean'` but no `is_gm` column exists in the database. Remove it.
   - `app/Models/User.php` L33
+  - Cast is intentionally retained: the N+1 fix uses `loadExists(['games as is_gm' => ...])` in `HandleInertiaRequests`, which dynamically sets this attribute. The boolean cast ensures 0/1 from the EXISTS query is properly serialised as `true`/`false` in the Inertia payload.
 - [ ] **Route outside admin middleware** — `admin/users/{user}` is outside the `admin` middleware group, exposing admin UI layouts to non-admin users viewing their own profile.
   - `routes/admin.php` L16
 - [ ] **Missing preventLazyLoading** — `AppServiceProvider` does not call `Model::preventLazyLoading(!app()->isProduction())` to catch N+1 queries during development.
