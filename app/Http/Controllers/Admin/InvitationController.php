@@ -30,7 +30,7 @@ class InvitationController extends Controller
             'expires_at' => now()->addDays(7),
         ]);
 
-        Mail::to($invitation->email)->send(new InvitationMail($invitation));
+        Mail::to($invitation->email)->queue(new InvitationMail($invitation));
 
         return back()->with('success', 'Invitation sent to '.$invitation->email);
     }
@@ -49,7 +49,7 @@ class InvitationController extends Controller
             'expires_at' => now()->addDays(7),
         ]);
 
-        Mail::to($invitation->email)->send(new InvitationMail($invitation));
+        Mail::to($invitation->email)->queue(new InvitationMail($invitation));
 
         return back()->with('success', 'Invitation resent to '.$invitation->email);
     }

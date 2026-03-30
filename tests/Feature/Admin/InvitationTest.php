@@ -60,7 +60,7 @@ class InvitationTest extends TestCase
             'email' => 'newuser@example.com',
         ]);
 
-        Mail::assertSent(InvitationMail::class, function (InvitationMail $mail) {
+        Mail::assertQueued(InvitationMail::class, function (InvitationMail $mail) {
             return $mail->hasTo('newuser@example.com');
         });
     }
@@ -76,7 +76,7 @@ class InvitationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('email');
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     #[Test]
@@ -91,7 +91,7 @@ class InvitationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('email');
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     #[Test]
@@ -106,7 +106,7 @@ class InvitationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('email');
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     #[Test]
@@ -122,7 +122,7 @@ class InvitationTest extends TestCase
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
-        Mail::assertSent(InvitationMail::class);
+        Mail::assertQueued(InvitationMail::class);
     }
 
     #[Test]
@@ -135,7 +135,7 @@ class InvitationTest extends TestCase
             'email' => 'newuser@example.com',
         ])->assertForbidden();
 
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     #[Test]
@@ -201,7 +201,7 @@ class InvitationTest extends TestCase
         $this->assertNotEquals($originalToken, $invitation->token);
         $this->assertTrue($invitation->expires_at->isFuture());
 
-        Mail::assertSent(InvitationMail::class, function (InvitationMail $mail) {
+        Mail::assertQueued(InvitationMail::class, function (InvitationMail $mail) {
             return $mail->hasTo('resend@example.com');
         });
     }
@@ -215,6 +215,6 @@ class InvitationTest extends TestCase
 
         $this->actingAs($user)->post("/admin/invitations/{$invitation->id}/resend")->assertForbidden();
 
-        Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 }
