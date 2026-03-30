@@ -18,7 +18,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
   - Cast is intentionally retained: the N+1 fix uses `loadExists(['games as is_gm' => ...])` in `HandleInertiaRequests`, which dynamically sets this attribute. The boolean cast ensures 0/1 from the EXISTS query is properly serialised as `true`/`false` in the Inertia payload.
 - [x] **Route outside admin middleware** — `admin/users/{user}` is outside the `admin` middleware group, exposing admin UI layouts to non-admin users viewing their own profile.
   - `routes/admin.php` L16
-- [ ] **Missing preventLazyLoading** — `AppServiceProvider` does not call `Model::preventLazyLoading(!app()->isProduction())` to catch N+1 queries during development.
+- [x] **Missing preventLazyLoading** — `AppServiceProvider` does not call `Model::preventLazyLoading(!app()->isProduction())` to catch N+1 queries during development.
   - `app/Providers/AppServiceProvider.php`
 - [ ] **SELECT * on eager load** — `GameController::show()` calls `$game->load('users')` loading all columns. Constrain to `$game->load('users:id,name,email')`.
   - `app/Http/Controllers/GameController.php` L41
