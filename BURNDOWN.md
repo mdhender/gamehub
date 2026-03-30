@@ -33,7 +33,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
   - `app/Http/Controllers/GameMemberController.php` L19–27
 - [x] **Redundant Hash::make** — `CreateAdminUser` command wraps password in `Hash::make()` but the model's `hashed` cast already handles this.
   - `app/Console/Commands/CreateAdminUser.php` L30
-- [ ] **Wrong PHPDoc** — `UserFactory::admin()` docblock says "email should be unverified" instead of "user has admin privileges".
+- [x] **Wrong PHPDoc** — `UserFactory::admin()` docblock says "email should be unverified" instead of "user has admin privileges".
   - `database/factories/UserFactory.php` L43
 
 ## Test Improvements

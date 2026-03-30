@@ -38,7 +38,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicate that the user has admin privileges.
      */
     public function admin(): static
     {
