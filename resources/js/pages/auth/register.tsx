@@ -21,7 +21,7 @@ export default function Register({ invitationToken }: { invitationToken: string 
             >
                 {({ processing, errors }) => (
                     <>
-                        <input type="hidden" name="invitation_token" value={invitationToken} />
+                        <input type="hidden" name="invitation_token" value={invitationToken ?? ''} />
                         <div className="grid gap-6">
                             {errors.invitation_token && (
                                 <InputError message={errors.invitation_token} />
