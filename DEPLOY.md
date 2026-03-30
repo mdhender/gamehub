@@ -445,51 +445,19 @@ sudo systemctl start gamehub-queue
 
 ## 11. Automated Deployments
 
-Create a deploy script at `/opt/gamehub/deploy.sh`:
+Copy `deploy/server-scripts/deploy.sh` to `/opt/gamehub/deploy.sh`:
 
 ```bash
-#!/bin/bash
-set -e
-
-cd /var/www/gamehub
-
-# Pull latest changes (reset ensures a clean state even if files were modified on the server)
-git fetch origin
-git reset --hard origin/main
-
-# Install PHP dependencies
-composer install --no-dev --optimize-autoloader --no-interaction
-
-# Clear stale caches so Wayfinder sees new routes during build
-php artisan optimize:clear
-
-# Install JS dependencies and build
-bun install
-bun run build
-
-# Run migrations
-php artisan migrate --force
-
-# Clear and rebuild caches
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan event:cache
-
-# Restart queue worker
-sudo systemctl restart gamehub-queue
-
-# Reload PHP-FPM (zero-downtime)
-sudo systemctl reload php8.4-fpm
-
-echo "✅ Deployed successfully."
+chmod +x /opt/gamehub/deploy.sh
 ```
+
+Run the script as the `deploy` user to pull changes and rebuild:
 
 ```bash
-chmod +x /var/www/gamehub/deploy.sh
+/opt/gamehub/deploy.sh
 ```
 
-Allow the deploy user to restart services without a password by adding to `/etc/sudoers.d/deploy`:
+Allow the `deploy` user to restart services without a password by adding to `/etc/sudoers.d/deploy`:
 
 ```
 deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart gamehub-queue
