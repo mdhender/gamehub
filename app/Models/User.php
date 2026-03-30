@@ -30,6 +30,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'is_admin' => 'boolean',
+            'is_gm' => 'boolean',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
@@ -41,10 +42,7 @@ class User extends Authenticatable
         return $this->belongsToMany(Game::class)->withPivot('role', 'is_active');
     }
 
-    /** @var list<string> */
-    protected $appends = ['is_gm'];
-
-    public function getIsGmAttribute(): bool
+    public function isGm(): bool
     {
         return $this->games()->wherePivot('role', GameRole::Gm->value)->wherePivot('is_active', true)->exists();
     }
