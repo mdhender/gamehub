@@ -178,7 +178,7 @@ When the GM asks the system to randomly select a star for a home system, the PRN
 
 | Entity | Table   | Notes                                                      |
 |--------|---------|------------------------------------------------------------|
-| Star   | `stars` | `game_id`, `x`, `y`, `z`, `sequence`, plus star attributes |
+| Star   | `stars` | `game_id`, `x`, `y`, `z`, `sequence` |
 
 The `display` string for a star's coordinates is formatted as `"XX-YY-ZZ"` (zero-padded).
 
@@ -281,7 +281,7 @@ If the star is in a system group (multiple stars at the same coordinates), the G
 
 ### Home System Template
 
-The home system template defines the complete set of planets for a home system star. It replaces the old `homeworld_template` concept.
+The home system template defines the complete set of planets for a home system star.
 
 ```json
 {

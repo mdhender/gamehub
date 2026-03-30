@@ -107,7 +107,7 @@ Only one generation process may run for a given game at a time. This prevents do
 
 ### 1 — Add `status` to the `games` table
 
-Create a migration adding a `status` string column (default `setup`) to `games`. Create a `GameStatus` enum with cases: `Setup`, `StarsGenerated`, `PlanetsGenerated`, `DepositsGenerated`, `HomeSystemGenerated`, `Active`. Add the cast to the `Game` model.
+Create a migration adding a `status` string column (default `setup`) to `games`. The existing `is_active` boolean column is retained. Create a `GameStatus` enum with cases: `Setup`, `StarsGenerated`, `PlanetsGenerated`, `DepositsGenerated`, `HomeSystemGenerated`, `Active`. Add the cast to the `Game` model.
 
 Add status helper methods to the `Game` model:
 - `isSetup()`, `isStarsGenerated()`, `isPlanetsGenerated()`, `isDepositsGenerated()`, `isHomeSystemGenerated()`, `isActive()`
@@ -155,7 +155,7 @@ Add `GameGenerationController::uploadHomeSystemTemplate` (`POST /games/{game}/ge
 
 Add `GameGenerationController::uploadColonyTemplate` (`POST /games/{game}/generate/templates/colony`). Same pattern for colony templates.
 
-Seed default templates from `sample-data/beta/homeworld-template.json` (renamed concept: now a home system template) and `sample-data/beta/colony-template.json` in the factory and/or a database seeder. Update the sample JSON files to match the new home system template structure if needed.
+Seed default templates from `sample-data/beta/home-system-template.json` and `sample-data/beta/colony-template.json` in the factory and/or a database seeder.
 
 Wire in the generate page: show a summary of the current template (planet count, homeworld orbit, deposit summary for home system; unit count for colony). Provide upload buttons for each. Disabled once `active`.
 
@@ -165,7 +165,7 @@ Wire in the generate page: show a summary of the current template (planet count,
 
 Create migration and Eloquent model for stars. Stars carry coordinates directly — there is no separate `systems` table.
 
-**`stars`** — `id`, `game_id`, `x` (integer 0–30), `y` (integer 0–30), `z` (integer 0–30), `sequence` (integer, 1-based position within the system group at that coordinate), plus any additional star attributes needed by generation.
+**`stars`** — `id`, `game_id`, `x` (integer 0–30), `y` (integer 0–30), `z` (integer 0–30), `sequence` (integer, 1-based position within the system group at that coordinate). Star attributes are coordinates, sequence, and their planets (via the `planets` relationship).
 
 The display string for a star's location is formatted as `"XX-YY-ZZ"` (zero-padded). The combination of (`game_id`, `x`, `y`, `z`, `sequence`) is unique.
 
