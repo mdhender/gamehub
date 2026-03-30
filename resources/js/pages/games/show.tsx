@@ -47,6 +47,8 @@ type AvailableUser = {
     email: string;
 };
 
+type Tab = 'members' | 'generate';
+
 export default function GameShow({
     game,
     members,
@@ -61,6 +63,7 @@ export default function GameShow({
     const { auth } = usePage().props;
     const isAdmin = auth.user?.is_admin;
     const [deactivatingMember, setDeactivatingMember] = useState<Member | null>(null);
+    const [activeTab, setActiveTab] = useState<Tab>('members');
 
     const editForm = useForm({
         name: game.name,
@@ -111,26 +114,6 @@ export default function GameShow({
                             <InputError message={editForm.errors.name} />
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="prng_seed">PRNG Seed</Label>
-                            <Input
-                                id="prng_seed"
-                                type="text"
-                                value={editForm.data.prng_seed}
-                                onChange={(e) =>
-                                    editForm.setData('prng_seed', e.target.value)
-                                }
-                                autoComplete="off"
-                                data-1p-ignore
-                                required
-                                className="font-mono text-sm"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Determines all random generation. Change before running entity generators.
-                            </p>
-                            <InputError message={editForm.errors.prng_seed} />
-                        </div>
-
                         <div className="flex items-center gap-3">
                             <Label htmlFor="is_active">Active</Label>
                             <input
@@ -151,231 +134,294 @@ export default function GameShow({
                     </form>
                 </section>
 
-                {/* Active members */}
-                <section>
-                    <Heading title="Members" description="" />
-
-                    <div className="mt-4 overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground">
-                                <tr>
-                                    <th className="px-4 py-3 text-left font-medium">
-                                        Name
-                                    </th>
-                                    <th className="px-4 py-3 text-left font-medium">
-                                        Email
-                                    </th>
-                                    <th className="px-4 py-3 text-left font-medium">
-                                        Role
-                                    </th>
-                                    <th className="px-4 py-3 text-right font-medium">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
-                                {members.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={4}
-                                            className="px-4 py-8 text-center text-muted-foreground"
-                                        >
-                                            No active members.
-                                        </td>
-                                    </tr>
-                                )}
-                                {members.map((member) => (
-                                    <tr
-                                        key={member.id}
-                                        className="hover:bg-muted/30"
-                                    >
-                                        <td className="px-4 py-3 font-medium">
-                                            {member.name}
-                                        </td>
-                                        <td className="px-4 py-3 text-muted-foreground">
-                                            {member.email}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {member.role === 'gm' ? (
-                                                <Badge variant="default">
-                                                    GM
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary">
-                                                    Player
-                                                </Badge>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            {(isAdmin ||
-                                                member.role === 'player') && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() =>
-                                                        setDeactivatingMember(
-                                                            member,
-                                                        )
-                                                    }
-                                                >
-                                                    Deactivate
-                                                </Button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                {/* Tabs */}
+                <div>
+                    <div className="border-b border-sidebar-border/70 dark:border-sidebar-border">
+                        <nav className="-mb-px flex gap-6">
+                            {(['members', 'generate'] as Tab[]).map((tab) => (
+                                <button
+                                    key={tab}
+                                    type="button"
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`pb-3 text-sm font-medium capitalize transition-colors ${
+                                        activeTab === tab
+                                            ? 'border-b-2 border-primary text-primary'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    {tab === 'members' ? 'Members' : 'Generate'}
+                                </button>
+                            ))}
+                        </nav>
                     </div>
 
-                    {/* Add member */}
-                    {availableUsers.length > 0 && (
-                        <form
-                            onSubmit={submitAddMember}
-                            className="mt-4 flex items-end gap-3"
-                        >
-                            <div className="grid flex-1 gap-2">
-                                <Label>User</Label>
-                                <Select
-                                    value={addMemberForm.data.user_id}
-                                    onValueChange={(v) =>
-                                        addMemberForm.setData('user_id', v)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a user" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableUsers.map((user) => (
-                                            <SelectItem
-                                                key={user.id}
-                                                value={String(user.id)}
-                                            >
-                                                {user.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError
-                                    message={addMemberForm.errors.user_id}
-                                />
-                            </div>
+                    {/* Members tab */}
+                    {activeTab === 'members' && (
+                        <div className="mt-6 space-y-8">
+                            {/* Active members */}
+                            <section>
+                                <Heading title="Members" description="" />
 
-                            <div className="grid w-36 gap-2">
-                                <Label>Role</Label>
-                                <Select
-                                    value={addMemberForm.data.role}
-                                    onValueChange={(v) =>
-                                        addMemberForm.setData(
-                                            'role',
-                                            v as 'gm' | 'player',
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="player">
-                                            Player
-                                        </SelectItem>
-                                        {isAdmin && (
-                                            <SelectItem value="gm">
-                                                GM
-                                            </SelectItem>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                <InputError
-                                    message={addMemberForm.errors.role}
-                                />
-                            </div>
-
-                            <Button
-                                type="submit"
-                                disabled={
-                                    addMemberForm.processing ||
-                                    !addMemberForm.data.user_id
-                                }
-                            >
-                                {addMemberForm.processing && <Spinner />}
-                                Add member
-                            </Button>
-                        </form>
-                    )}
-                </section>
-
-                {/* Inactive members */}
-                {inactiveMembers.length > 0 && (
-                    <section>
-                        <Heading title="Inactive Members" description="" />
-
-                        <div className="mt-4 overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/50 text-muted-foreground">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="px-4 py-3 text-left font-medium">
-                                            Email
-                                        </th>
-                                        <th className="px-4 py-3 text-left font-medium">
-                                            Role
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-medium">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
-                                    {inactiveMembers.map((member) => (
-                                        <tr
-                                            key={member.id}
-                                            className="hover:bg-muted/30"
-                                        >
-                                            <td className="px-4 py-3 font-medium text-muted-foreground">
-                                                {member.name}
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {member.email}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {member.role === 'gm' ? (
-                                                    <Badge variant="outline">
-                                                        GM
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="outline">
-                                                        Player
-                                                    </Badge>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {(isAdmin ||
-                                                    member.role ===
-                                                        'player') && (
-                                                    <Link
-                                                        href={GameMemberController.restore.url(
-                                                            { game, user: member },
-                                                        )}
-                                                        method="post"
-                                                        as="button"
-                                                        preserveScroll
-                                                        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                                <div className="mt-4 overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/50 text-muted-foreground">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Name
+                                                </th>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Email
+                                                </th>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Role
+                                                </th>
+                                                <th className="px-4 py-3 text-right font-medium">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
+                                            {members.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={4}
+                                                        className="px-4 py-8 text-center text-muted-foreground"
                                                     >
-                                                        Reactivate
-                                                    </Link>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                        No active members.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            {members.map((member) => (
+                                                <tr
+                                                    key={member.id}
+                                                    className="hover:bg-muted/30"
+                                                >
+                                                    <td className="px-4 py-3 font-medium">
+                                                        {member.name}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-muted-foreground">
+                                                        {member.email}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {member.role === 'gm' ? (
+                                                            <Badge variant="default">
+                                                                GM
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="secondary">
+                                                                Player
+                                                            </Badge>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        {(isAdmin ||
+                                                            member.role === 'player') && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-destructive hover:text-destructive"
+                                                                onClick={() =>
+                                                                    setDeactivatingMember(
+                                                                        member,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Deactivate
+                                                            </Button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Add member */}
+                                {availableUsers.length > 0 && (
+                                    <form
+                                        onSubmit={submitAddMember}
+                                        className="mt-4 flex items-end gap-3"
+                                    >
+                                        <div className="grid flex-1 gap-2">
+                                            <Label>User</Label>
+                                            <Select
+                                                value={addMemberForm.data.user_id}
+                                                onValueChange={(v) =>
+                                                    addMemberForm.setData('user_id', v)
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a user" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {availableUsers.map((user) => (
+                                                        <SelectItem
+                                                            key={user.id}
+                                                            value={String(user.id)}
+                                                        >
+                                                            {user.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <InputError
+                                                message={addMemberForm.errors.user_id}
+                                            />
+                                        </div>
+
+                                        <div className="grid w-36 gap-2">
+                                            <Label>Role</Label>
+                                            <Select
+                                                value={addMemberForm.data.role}
+                                                onValueChange={(v) =>
+                                                    addMemberForm.setData(
+                                                        'role',
+                                                        v as 'gm' | 'player',
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="player">
+                                                        Player
+                                                    </SelectItem>
+                                                    {isAdmin && (
+                                                        <SelectItem value="gm">
+                                                            GM
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <InputError
+                                                message={addMemberForm.errors.role}
+                                            />
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            disabled={
+                                                addMemberForm.processing ||
+                                                !addMemberForm.data.user_id
+                                            }
+                                        >
+                                            {addMemberForm.processing && <Spinner />}
+                                            Add member
+                                        </Button>
+                                    </form>
+                                )}
+                            </section>
+
+                            {/* Inactive members */}
+                            {inactiveMembers.length > 0 && (
+                                <section>
+                                    <Heading title="Inactive Members" description="" />
+
+                                    <div className="mt-4 overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-muted/50 text-muted-foreground">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left font-medium">
+                                                        Name
+                                                    </th>
+                                                    <th className="px-4 py-3 text-left font-medium">
+                                                        Email
+                                                    </th>
+                                                    <th className="px-4 py-3 text-left font-medium">
+                                                        Role
+                                                    </th>
+                                                    <th className="px-4 py-3 text-right font-medium">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
+                                                {inactiveMembers.map((member) => (
+                                                    <tr
+                                                        key={member.id}
+                                                        className="hover:bg-muted/30"
+                                                    >
+                                                        <td className="px-4 py-3 font-medium text-muted-foreground">
+                                                            {member.name}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-muted-foreground">
+                                                            {member.email}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {member.role === 'gm' ? (
+                                                                <Badge variant="outline">
+                                                                    GM
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge variant="outline">
+                                                                    Player
+                                                                </Badge>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            {(isAdmin ||
+                                                                member.role ===
+                                                                    'player') && (
+                                                                <Link
+                                                                    href={GameMemberController.restore.url(
+                                                                        { game, user: member },
+                                                                    )}
+                                                                    method="post"
+                                                                    as="button"
+                                                                    preserveScroll
+                                                                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                                                                >
+                                                                    Reactivate
+                                                                </Link>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+                            )}
                         </div>
-                    </section>
-                )}
+                    )}
+
+                    {/* Generate tab */}
+                    {activeTab === 'generate' && (
+                        <div className="mt-6 space-y-8">
+                            <section>
+                                <Heading
+                                    title="PRNG Seed"
+                                    description="Controls all random generation for this game. Change before running entity generators."
+                                />
+
+                                <form onSubmit={submitEdit} className="mt-4 max-w-md space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="prng_seed">Seed</Label>
+                                        <Input
+                                            id="prng_seed"
+                                            type="text"
+                                            value={editForm.data.prng_seed}
+                                            onChange={(e) =>
+                                                editForm.setData('prng_seed', e.target.value)
+                                            }
+                                            autoComplete="off"
+                                            data-1p-ignore
+                                            required
+                                            className="font-mono text-sm"
+                                        />
+                                        <InputError message={editForm.errors.prng_seed} />
+                                    </div>
+
+                                    <Button type="submit" disabled={editForm.processing}>
+                                        {editForm.processing && <Spinner />}
+                                        Save seed
+                                    </Button>
+                                </form>
+                            </section>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <Dialog
