@@ -27,8 +27,7 @@ class DashboardController extends Controller
                 'loggedInUsersCount' => DB::table('sessions')
                     ->whereNotNull('user_id')
                     ->where('last_activity', '>=', now()->subMinutes(15)->timestamp)
-                    ->distinct('user_id')
-                    ->count(),
+                    ->count(DB::raw('DISTINCT user_id')),
                 'pendingInvitesCount' => Invitation::valid()->count(),
             ];
         } else {
