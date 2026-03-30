@@ -38,7 +38,7 @@ class User extends Authenticatable
     /** @return BelongsToMany<Game, $this> */
     public function games(): BelongsToMany
     {
-        return $this->belongsToMany(Game::class)->withPivot('role');
+        return $this->belongsToMany(Game::class)->withPivot('role', 'is_active');
     }
 
     /** @var list<string> */
@@ -46,7 +46,7 @@ class User extends Authenticatable
 
     public function getIsGmAttribute(): bool
     {
-        return $this->games()->wherePivot('role', GameRole::Gm->value)->exists();
+        return $this->games()->wherePivot('role', GameRole::Gm->value)->wherePivot('is_active', true)->exists();
     }
 
     public function isAdmin(): bool
@@ -59,6 +59,7 @@ class User extends Authenticatable
         return $this->games()
             ->wherePivot('game_id', $game->id)
             ->wherePivot('role', GameRole::Gm->value)
+            ->wherePivot('is_active', true)
             ->exists();
     }
 
@@ -67,6 +68,7 @@ class User extends Authenticatable
         return $this->games()
             ->wherePivot('game_id', $game->id)
             ->wherePivot('role', GameRole::Player->value)
+            ->wherePivot('is_active', true)
             ->exists();
     }
 }

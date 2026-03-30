@@ -17,6 +17,14 @@ class GamePolicy
     }
 
     /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Game $game): bool
+    {
+        return $user->isAdmin() || $game->users()->where('user_id', $user->id)->exists();
+    }
+
+    /**
      * Determine whether the user can create models.
      */
     public function create(User $user): bool

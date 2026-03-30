@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\GameRole;
 use App\Models\Game;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -31,6 +32,33 @@ class GameController extends Controller
         ]);
     }
 
+    public function show(Game $game): Response
+    {
+        Gate::authorize('view', $game);
+
+        $game->load('users');
+        $allMemberIds = $game->users->pluck('id');
+
+        [$activeMembers, $inactiveMembers] = $game->users->partition(fn (User $user) => $user->pivot->is_active);
+
+        $formatMember = fn (User $user) => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->pivot->role,
+        ];
+
+        return Inertia::render('games/show', [
+            'game' => $game->only('id', 'name', 'is_active', 'created_at', 'updated_at'),
+            'members' => $activeMembers->map($formatMember)->values(),
+            'inactiveMembers' => $inactiveMembers->map($formatMember)->values(),
+            'availableUsers' => User::whereNotIn('id', $allMemberIds)
+                ->where('is_admin', false)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('create', Game::class);
@@ -42,6 +70,20 @@ class GameController extends Controller
         Game::create($validated);
 
         return back()->with('success', 'Game created.');
+    }
+
+    public function update(Request $request, Game $game): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $game->update($validated);
+
+        return back()->with('success', 'Game updated.');
     }
 
     public function destroy(Game $game): RedirectResponse

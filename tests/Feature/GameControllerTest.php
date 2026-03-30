@@ -96,6 +96,50 @@ class GameControllerTest extends TestCase
             ->assertSessionHasErrors('name');
     }
 
+    // --- update ---
+
+    #[Test]
+    public function admin_can_update_a_game(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create(['name' => 'Old Name', 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->put("/games/{$game->id}", ['name' => 'New Name', 'is_active' => false])
+            ->assertRedirect();
+
+        $game->refresh();
+        $this->assertSame('New Name', $game->name);
+        $this->assertFalse($game->is_active);
+    }
+
+    #[Test]
+    public function gm_can_update_their_own_game(): void
+    {
+        $gm = User::factory()->create();
+        $game = Game::factory()->create(['name' => 'Old Name']);
+        $game->users()->attach($gm, ['role' => GameRole::Gm->value]);
+
+        $this->actingAs($gm)
+            ->put("/games/{$game->id}", ['name' => 'New Name', 'is_active' => true])
+            ->assertRedirect();
+
+        $this->assertSame('New Name', $game->fresh()->name);
+    }
+
+    #[Test]
+    public function gm_cannot_update_a_game_they_are_not_gm_of(): void
+    {
+        $gm = User::factory()->create();
+        $ownGame = Game::factory()->create();
+        $otherGame = Game::factory()->create();
+        $ownGame->users()->attach($gm, ['role' => GameRole::Gm->value]);
+
+        $this->actingAs($gm)
+            ->put("/games/{$otherGame->id}", ['name' => 'Hacked', 'is_active' => true])
+            ->assertForbidden();
+    }
+
     // --- destroy ---
 
     #[Test]

@@ -58,6 +58,8 @@ export default function GamesIndex({ games }: { games: Game[] }) {
                                         type="text"
                                         name="name"
                                         required
+                                        autoComplete="off"
+                                        data-1p-ignore
                                         placeholder="Enter game name"
                                     />
                                     <InputError message={errors.name} />
@@ -126,7 +128,12 @@ export default function GamesIndex({ games }: { games: Game[] }) {
                             {filtered.map((game) => (
                                 <tr key={game.id} className="hover:bg-muted/30">
                                     <td className="px-4 py-3 font-medium">
-                                        {game.name}
+                                        <Link
+                                            href={GameController.show.url(game)}
+                                            className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current dark:decoration-neutral-500"
+                                        >
+                                            {game.name}
+                                        </Link>
                                     </td>
                                     <td className="px-4 py-3">
                                         {game.is_active ? (
