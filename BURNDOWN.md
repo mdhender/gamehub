@@ -22,7 +22,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
   - `app/Providers/AppServiceProvider.php`
 - [x] **SELECT * on eager load** — `GameController::show()` calls `$game->load('users')` loading all columns. Constrain to `$game->load('users:id,name,email')`.
   - `app/Http/Controllers/GameController.php` L41
-- [ ] **Missing index on user_id** — `game_user` table uses composite PK `(game_id, user_id)` but has no standalone index on `user_id`, causing full table scans for reverse lookups.
+- [x] **Missing index on user_id** — `game_user` table uses composite PK `(game_id, user_id)` but has no standalone index on `user_id`, causing full table scans for reverse lookups.
   - `database/migrations/2026_03_29_024414_create_game_user_table.php` L16
 
 ## Low Severity
