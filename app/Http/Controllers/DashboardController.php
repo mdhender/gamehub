@@ -40,11 +40,7 @@ class DashboardController extends Controller
                 ->latest('games.updated_at')
                 ->first(['games.id', 'games.name']);
 
-            $adminStats = [
-                'totalActiveUsers' => null,
-                'loggedInUsersCount' => null,
-                'pendingInvitesCount' => null,
-            ];
+            $adminStats = [];
         }
 
         return Inertia::render('dashboard', [

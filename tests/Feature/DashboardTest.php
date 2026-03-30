@@ -162,9 +162,9 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertInertia(fn ($page) => $page
-            ->where('totalActiveUsers', null)
-            ->where('loggedInUsersCount', null)
-            ->where('pendingInvitesCount', null)
+            ->missing('totalActiveUsers')
+            ->missing('loggedInUsersCount')
+            ->missing('pendingInvitesCount')
         );
     }
 }
