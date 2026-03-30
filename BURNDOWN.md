@@ -4,7 +4,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
 
 ## High Severity
 
-- [ ] **N+1 on every request** — `HandleInertiaRequests::share()` calls `$user->isGm()` which queries the DB on every Inertia request. Cache the value in the session at login or use `loadExists()`.
+- [x] **N+1 on every request** — `HandleInertiaRequests::share()` calls `$user->isGm()` which queries the DB on every Inertia request. Cache the value in the session at login or use `loadExists()`.
   - `app/Http/Middleware/HandleInertiaRequests.php` L44
 - [ ] **Bypasses validated data** — `SecurityController::update()` accesses `$request->password` instead of `$request->validated('password')`.
   - `app/Http/Controllers/Settings/SecurityController.php` L53

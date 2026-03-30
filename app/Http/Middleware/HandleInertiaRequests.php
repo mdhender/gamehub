@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\GameRole;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,11 +38,15 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        if ($user) {
+            $user->loadExists(['games as is_gm' => fn ($query) => $query->wherePivot('role', GameRole::Gm)->wherePivot('is_active', true)]);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $user ? [...$user->toArray(), 'is_gm' => $user->isGm()] : null,
+                'user' => $user?->toArray(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
