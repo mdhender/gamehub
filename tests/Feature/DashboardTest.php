@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Enums\GameRole;
 use App\Models\Game;
+use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -100,6 +102,69 @@ class DashboardTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->where('activeGamesCount', 0)
             ->where('currentGame', null)
+        );
+    }
+
+    #[Test]
+    public function admin_sees_user_stats(): void
+    {
+        $admin = User::factory()->admin()->create();
+        User::factory()->count(2)->create();
+
+        Invitation::factory()->count(2)->create();
+        Invitation::factory()->expired()->create();
+        Invitation::factory()->registered()->create();
+
+        $response = $this->actingAs($admin)->get(route('dashboard'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('totalActiveUsers', 3)
+            ->where('pendingInvitesCount', 2)
+        );
+    }
+
+    #[Test]
+    public function admin_sees_logged_in_users_count(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $otherUser = User::factory()->create();
+
+        DB::table('sessions')->insert([
+            'id' => 'session-active',
+            'user_id' => $otherUser->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'test',
+            'payload' => '',
+            'last_activity' => now()->subMinutes(5)->timestamp,
+        ]);
+
+        DB::table('sessions')->insert([
+            'id' => 'session-expired',
+            'user_id' => $otherUser->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'test',
+            'payload' => '',
+            'last_activity' => now()->subMinutes(30)->timestamp,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('dashboard'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('loggedInUsersCount', 1)
+        );
+    }
+
+    #[Test]
+    public function non_admin_does_not_receive_user_stats(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('totalActiveUsers', null)
+            ->where('loggedInUsersCount', null)
+            ->where('pendingInvitesCount', null)
         );
     }
 }

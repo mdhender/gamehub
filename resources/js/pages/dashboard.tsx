@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Swords } from 'lucide-react';
+import { LogIn, Mail, Swords, Users } from 'lucide-react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
@@ -13,9 +13,15 @@ type Game = {
 export default function Dashboard({
     activeGamesCount,
     currentGame,
+    totalActiveUsers,
+    loggedInUsersCount,
+    pendingInvitesCount,
 }: {
     activeGamesCount: number;
     currentGame: Game | null;
+    totalActiveUsers: number | null;
+    loggedInUsersCount: number | null;
+    pendingInvitesCount: number | null;
 }) {
     return (
         <>
@@ -50,9 +56,48 @@ export default function Dashboard({
                             )}
                         </CardContent>
                     </Card>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
+                    {totalActiveUsers !== null ? (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Users
+                                </CardTitle>
+                                <Users className="size-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">
+                                        Total active
+                                    </span>
+                                    <span className="text-sm font-semibold">
+                                        {totalActiveUsers}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <LogIn className="size-3" />
+                                        Online now
+                                    </span>
+                                    <span className="text-sm font-semibold">
+                                        {loggedInUsersCount}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Mail className="size-3" />
+                                        Pending invites
+                                    </span>
+                                    <span className="text-sm font-semibold">
+                                        {pendingInvitesCount}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                            <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+                        </div>
+                    )}
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                         <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
                     </div>

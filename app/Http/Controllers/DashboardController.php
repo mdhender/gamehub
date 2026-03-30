@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\Invitation;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,6 +21,16 @@ class DashboardController extends Controller
             $currentGame = Game::where('is_active', true)
                 ->latest('updated_at')
                 ->first(['id', 'name']);
+
+            $adminStats = [
+                'totalActiveUsers' => User::count(),
+                'loggedInUsersCount' => DB::table('sessions')
+                    ->whereNotNull('user_id')
+                    ->where('last_activity', '>=', now()->subMinutes(15)->timestamp)
+                    ->distinct('user_id')
+                    ->count(),
+                'pendingInvitesCount' => Invitation::valid()->count(),
+            ];
         } else {
             $activeGamesCount = $user->games()
                 ->where('games.is_active', true)
@@ -26,11 +39,18 @@ class DashboardController extends Controller
                 ->where('games.is_active', true)
                 ->latest('games.updated_at')
                 ->first(['games.id', 'games.name']);
+
+            $adminStats = [
+                'totalActiveUsers' => null,
+                'loggedInUsersCount' => null,
+                'pendingInvitesCount' => null,
+            ];
         }
 
         return Inertia::render('dashboard', [
             'activeGamesCount' => $activeGamesCount,
             'currentGame' => $currentGame,
+            ...$adminStats,
         ]);
     }
 }
