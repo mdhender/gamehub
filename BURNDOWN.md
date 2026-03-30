@@ -29,7 +29,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
 
 - [x] **Duplicated GM-check logic** — `GamePolicy::viewAny()` manually queries pivot instead of calling `$user->isGm()`.
   - `app/Policies/GamePolicy.php` L15–19
-- [ ] **Inline validation** — `GameMemberController::store()` uses inline validation. Extract to a `StoreGameMemberRequest` Form Request.
+- [x] **Inline validation** — `GameMemberController::store()` uses inline validation. Extract to a `StoreGameMemberRequest` Form Request.
   - `app/Http/Controllers/GameMemberController.php` L19–27
 - [ ] **Redundant Hash::make** — `CreateAdminUser` command wraps password in `Hash::make()` but the model's `hashed` cast already handles this.
   - `app/Console/Commands/CreateAdminUser.php` L30

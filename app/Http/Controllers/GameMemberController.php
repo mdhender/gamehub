@@ -3,28 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Enums\GameRole;
+use App\Http\Requests\StoreGameMemberRequest;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 
 class GameMemberController extends Controller
 {
-    public function store(Request $request, Game $game): RedirectResponse
+    public function store(StoreGameMemberRequest $request, Game $game): RedirectResponse
     {
         Gate::authorize('update', $game);
 
-        $validated = $request->validate([
-            'user_id' => [
-                'required',
-                'integer',
-                Rule::exists('users', 'id'),
-                Rule::unique('game_user', 'user_id')->where('game_id', $game->id),
-            ],
-            'role' => ['required', Rule::enum(GameRole::class)],
-        ]);
+        $validated = $request->validated();
 
         if ($validated['role'] === GameRole::Gm->value && ! $request->user()->isAdmin()) {
             abort(403, 'Only admins can add GMs.');
