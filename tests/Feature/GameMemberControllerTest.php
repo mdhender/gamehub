@@ -38,6 +38,22 @@ class GameMemberControllerTest extends TestCase
         );
     }
 
+    #[Test]
+    public function player_does_not_receive_available_users(): void
+    {
+        $player = User::factory()->create();
+        $game = Game::factory()->create();
+        $nonMember = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+
+        $response = $this->actingAs($player)->get("/games/{$game->id}");
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('games/show')
+            ->where('availableUsers', [])
+        );
+    }
+
     // --- store (add member) ---
 
     #[Test]

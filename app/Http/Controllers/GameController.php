@@ -52,10 +52,12 @@ class GameController extends Controller
             'game' => $game->only('id', 'name', 'is_active', 'created_at', 'updated_at'),
             'members' => $activeMembers->map($formatMember)->values(),
             'inactiveMembers' => $inactiveMembers->map($formatMember)->values(),
-            'availableUsers' => User::whereNotIn('id', $allMemberIds)
-                ->where('is_admin', false)
-                ->orderBy('name')
-                ->get(['id', 'name', 'email']),
+            'availableUsers' => Gate::allows('update', $game)
+                ? User::whereNotIn('id', $allMemberIds)
+                    ->where('is_admin', false)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'email'])
+                : [],
         ]);
     }
 
