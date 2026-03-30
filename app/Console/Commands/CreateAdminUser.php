@@ -7,7 +7,6 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
-use Illuminate\Support\Facades\Hash;
 
 #[Signature('app:create-admin-user {name} {email} {password}')]
 #[Description('Create an admin user for production use')]
@@ -26,8 +25,7 @@ class CreateAdminUser extends Command implements PromptsForMissingInput
         $user = new User([
             'name' => $this->argument('name'),
             'email' => $email,
-            // Hash::make is redundant here — the User model's "hashed" cast prevents double-hashing via Hash::isHashed().
-            'password' => Hash::make($this->argument('password')),
+            'password' => $this->argument('password'),
         ]);
         $user->is_admin = true;
         $user->save();
