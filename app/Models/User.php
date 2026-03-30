@@ -41,6 +41,14 @@ class User extends Authenticatable
         return $this->belongsToMany(Game::class)->withPivot('role');
     }
 
+    /** @var list<string> */
+    protected $appends = ['is_gm'];
+
+    public function getIsGmAttribute(): bool
+    {
+        return $this->games()->wherePivot('role', GameRole::Gm->value)->exists();
+    }
+
     public function isAdmin(): bool
     {
         return $this->is_admin;

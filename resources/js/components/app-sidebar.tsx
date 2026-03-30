@@ -1,7 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, MailPlus, Users } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, MailPlus, Swords, Users } from 'lucide-react';
 import InvitationController from '@/actions/App/Http/Controllers/Admin/InvitationController';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import GameController from '@/actions/App/Http/Controllers/GameController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -23,6 +24,14 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+];
+
+const gamesNavItems: NavItem[] = [
+    {
+        title: 'Games',
+        href: GameController.index.url(),
+        icon: Swords,
     },
 ];
 
@@ -71,7 +80,12 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
-                {auth.user?.is_admin && <NavMain items={adminNavItems} />}
+                {(auth.user?.is_admin || auth.user?.is_gm) && (
+                    <NavMain items={gamesNavItems} label="Games" />
+                )}
+                {auth.user?.is_admin && (
+                    <NavMain items={adminNavItems} label="Admin" />
+                )}
             </SidebarContent>
 
             <SidebarFooter>

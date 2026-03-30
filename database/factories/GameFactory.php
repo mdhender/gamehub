@@ -19,6 +19,14 @@ class GameFactory extends Factory
     {
         return [
             'name' => fake()->words(3, true),
+            'is_active' => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
     }
 }

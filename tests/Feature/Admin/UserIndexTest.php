@@ -54,6 +54,7 @@ class UserIndexTest extends TestCase
                 ->has('name')
                 ->has('email')
                 ->has('is_admin')
+                ->has('is_gm')
                 ->has('created_at')
             )
         );
