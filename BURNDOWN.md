@@ -20,7 +20,7 @@ Findings from a full codebase review. Tackle in chunks as time permits.
   - `routes/admin.php` L16
 - [x] **Missing preventLazyLoading** — `AppServiceProvider` does not call `Model::preventLazyLoading(!app()->isProduction())` to catch N+1 queries during development.
   - `app/Providers/AppServiceProvider.php`
-- [ ] **SELECT * on eager load** — `GameController::show()` calls `$game->load('users')` loading all columns. Constrain to `$game->load('users:id,name,email')`.
+- [x] **SELECT * on eager load** — `GameController::show()` calls `$game->load('users')` loading all columns. Constrain to `$game->load('users:id,name,email')`.
   - `app/Http/Controllers/GameController.php` L41
 - [ ] **Missing index on user_id** — `game_user` table uses composite PK `(game_id, user_id)` but has no standalone index on `user_id`, causing full table scans for reverse lookups.
   - `database/migrations/2026_03_29_024414_create_game_user_table.php` L16

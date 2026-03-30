@@ -38,7 +38,7 @@ class GameController extends Controller
     {
         Gate::authorize('view', $game);
 
-        $game->load('users');
+        $game->load('users:id,name,email');
         $allMemberIds = $game->users->pluck('id');
 
         [$activeMembers, $inactiveMembers] = $game->users->partition(fn (User $user) => $user->pivot->is_active);
