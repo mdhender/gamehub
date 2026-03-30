@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -51,7 +52,7 @@ class GameController extends Controller
         ];
 
         return Inertia::render('games/show', [
-            'game' => $game->only('id', 'name', 'is_active', 'created_at', 'updated_at'),
+            'game' => $game->only('id', 'name', 'is_active', 'prng_seed', 'created_at', 'updated_at'),
             'members' => $activeMembers->map($formatMember)->values(),
             'inactiveMembers' => $inactiveMembers->map($formatMember)->values(),
             'availableUsers' => Gate::allows('update', $game)
@@ -67,7 +68,10 @@ class GameController extends Controller
     {
         Gate::authorize('create', Game::class);
 
-        Game::create($request->validated());
+        Game::create([
+            ...$request->validated(),
+            'prng_seed' => Str::random(32),
+        ]);
 
         return back()->with('success', 'Game created.');
     }

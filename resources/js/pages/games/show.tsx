@@ -29,6 +29,7 @@ type Game = {
     id: number;
     name: string;
     is_active: boolean;
+    prng_seed: string;
     created_at: string;
     updated_at: string;
 };
@@ -64,6 +65,7 @@ export default function GameShow({
     const editForm = useForm({
         name: game.name,
         is_active: game.is_active,
+        prng_seed: game.prng_seed,
     });
 
     const addMemberForm = useForm({
@@ -107,6 +109,26 @@ export default function GameShow({
                                 required
                             />
                             <InputError message={editForm.errors.name} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="prng_seed">PRNG Seed</Label>
+                            <Input
+                                id="prng_seed"
+                                type="text"
+                                value={editForm.data.prng_seed}
+                                onChange={(e) =>
+                                    editForm.setData('prng_seed', e.target.value)
+                                }
+                                autoComplete="off"
+                                data-1p-ignore
+                                required
+                                className="font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Determines all random generation. Change before running entity generators.
+                            </p>
+                            <InputError message={editForm.errors.prng_seed} />
                         </div>
 
                         <div className="flex items-center gap-3">

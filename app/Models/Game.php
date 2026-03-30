@@ -9,11 +9,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['name', 'is_active'])]
+#[Fillable(['name', 'is_active', 'prng_seed'])]
 class Game extends Model
 {
     /** @use HasFactory<GameFactory> */
     use HasFactory;
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'prng_seed' => '',
+    ];
 
     /**
      * @return array<string, string>

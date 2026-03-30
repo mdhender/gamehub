@@ -95,6 +95,9 @@ class GameControllerTest extends TestCase
         $this->actingAs($admin)->post('/games', ['name' => 'My Campaign'])->assertRedirect();
 
         $this->assertDatabaseHas('games', ['name' => 'My Campaign', 'is_active' => true]);
+
+        $game = Game::where('name', 'My Campaign')->first();
+        $this->assertNotEmpty($game->prng_seed);
     }
 
     #[Test]
@@ -125,12 +128,13 @@ class GameControllerTest extends TestCase
         $game = Game::factory()->create(['name' => 'Old Name', 'is_active' => true]);
 
         $this->actingAs($admin)
-            ->put("/games/{$game->id}", ['name' => 'New Name', 'is_active' => false])
+            ->put("/games/{$game->id}", ['name' => 'New Name', 'is_active' => false, 'prng_seed' => 'custom-seed'])
             ->assertRedirect();
 
         $game->refresh();
         $this->assertSame('New Name', $game->name);
         $this->assertFalse($game->is_active);
+        $this->assertSame('custom-seed', $game->prng_seed);
     }
 
     #[Test]
@@ -141,7 +145,7 @@ class GameControllerTest extends TestCase
         $game->users()->attach($gm, ['role' => GameRole::Gm->value]);
 
         $this->actingAs($gm)
-            ->put("/games/{$game->id}", ['name' => 'New Name', 'is_active' => true])
+            ->put("/games/{$game->id}", ['name' => 'New Name', 'is_active' => true, 'prng_seed' => $game->prng_seed])
             ->assertRedirect();
 
         $this->assertSame('New Name', $game->fresh()->name);
@@ -156,7 +160,7 @@ class GameControllerTest extends TestCase
         $ownGame->users()->attach($gm, ['role' => GameRole::Gm->value]);
 
         $this->actingAs($gm)
-            ->put("/games/{$otherGame->id}", ['name' => 'Hacked', 'is_active' => true])
+            ->put("/games/{$otherGame->id}", ['name' => 'Hacked', 'is_active' => true, 'prng_seed' => 'hacked'])
             ->assertForbidden();
     }
 

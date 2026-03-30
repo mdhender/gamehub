@@ -20,6 +20,7 @@ class GameFactory extends Factory
         return [
             'name' => fake()->words(3, true),
             'is_active' => true,
+            'prng_seed' => fake()->sha256(),
         ];
     }
 
