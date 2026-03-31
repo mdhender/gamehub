@@ -36,6 +36,8 @@ class GameGenerationController extends Controller
     {
         Gate::authorize('update', $game);
 
+        $game->load('generationSteps');
+
         $homeSystemTemplate = $game->homeSystemTemplate?->load('planets.deposits');
         $colonyTemplate = $game->colonyTemplate?->load('items');
 
@@ -293,14 +295,18 @@ class GameGenerationController extends Controller
     {
         Gate::authorize('update', $game);
 
-        if (! $game->canActivate()) {
-            throw ValidationException::withMessages([
-                'game' => 'The game can only be activated when at least one home system has been created.',
-            ]);
-        }
+        DB::transaction(function () use ($game) {
+            $game = Game::lockForUpdate()->findOrFail($game->id);
 
-        $game->status = GameStatus::Active;
-        $game->save();
+            if (! $game->canActivate()) {
+                throw ValidationException::withMessages([
+                    'game' => 'The game can only be activated when at least one home system has been created.',
+                ]);
+            }
+
+            $game->status = GameStatus::Active;
+            $game->save();
+        });
 
         return back()->with('success', 'Game activated.');
     }

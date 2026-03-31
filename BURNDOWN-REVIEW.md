@@ -107,13 +107,9 @@ protected function casts(): array
 
 ## Low Findings
 
-### Finding 12. `GameRng::fromState()` creates a throwaway RNG instance
+### Finding 12. ~~`GameRng::fromState()` creates a throwaway RNG instance~~ ✅ RESOLVED
 
-**File:** `app/Services/GameRng.php:28–34`
-
-**Problem:** `fromState` calls `new self('unused')` which hashes a seed and creates a Xoshiro engine, only to immediately discard it. This is wasteful.
-
-**Recommendation:** Use a static factory that bypasses the constructor, or use a private constructor + named constructors pattern.
+**Resolution:** The public constructor was made private and replaced with two named static factories: `GameRng::fromSeed(string $seed)` and `GameRng::fromState(string $serialized)`. `fromState()` no longer hashes a seed or constructs a throwaway engine. Call sites in `StarGenerator` and `GameRngTest` were updated to use `GameRng::fromSeed()`.
 
 ### Finding 13. `Star` model missing `homeSystem` relationship
 
@@ -131,21 +127,17 @@ protected function casts(): array
 
 **Problem:** The entire generate page is a single component file. `EmpiresTable` is extracted but inline in the same file. Each section (Stars, Planets, Deposits, Home Systems, Activate, Empires) could be its own component.
 
-### Finding 16. `generationSteps` relationship is loaded eagerly via `$game->generationSteps` in `show()`
+### Finding 16. ~~`generationSteps` relationship is loaded eagerly via `$game->generationSteps` in `show()`~~ ✅ RESOLVED
 
-**File:** `app/Http/Controllers/GameGenerationController.php:164`
-
-**Problem:** `$game->generationSteps` triggers a lazy load. While `preventLazyLoading()` may not be enabled, this should use explicit eager loading to be consistent with the rest of the method.
+**Resolution:** Added an explicit `$game->load('generationSteps')` call at the top of `show()`, immediately after the Gate authorization. The `$game->generationSteps` reference in the Inertia payload now uses the pre-loaded relation.
 
 ### Finding 17. ~~Missing `game_user` pivot `id` column~~ ✅ RESOLVED
 
 **Resolution:** The `game_user` pivot was promoted to a first-class `players` table with its own auto-increment `id` column. Resolved as part of finding #1.
 
-### Finding 18. `activate` action doesn't use a DB lock
+### Finding 18. ~~`activate` action doesn't use a DB lock~~ ✅ RESOLVED
 
-**File:** `app/Http/Controllers/GameGenerationController.php:279–293`
-
-**Problem:** The activate action reads the game status, checks `canActivate()`, and then saves — without acquiring a lock. Two concurrent activate requests could both succeed. While the result is idempotent (setting `active` twice is harmless), it's inconsistent with the concurrency pattern used by all other state-changing actions.
+**Resolution:** The `activate` action now wraps its read-check-save sequence in a `DB::transaction()` with `Game::lockForUpdate()->findOrFail($game->id)`, consistent with all other state-changing actions in the controller.
 
 ---
 
@@ -174,9 +166,9 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 5  | ~~Move JSON structure validation from controller into Form Request `after()` hooks; add JSON parse error handling~~ ✅ Done                  | Medium   | S      | `UploadHomeSystemTemplateRequest.php`, `UploadColonyTemplateRequest.php`, `GameGenerationController.php` |
 | 6  | ~~Create Form Requests for `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, `reassignEmpire`~~ ✅ Done                 | Medium   | M      | New Form Request files, `GameGenerationController.php`                                                   |
 | 7  | ~~Batch-insert planets and deposits in `HomeSystemCreator::applyTemplate()` and colony inventory in `EmpireCreator::createColony()`~~ ✅ Done | Medium   | S      | `HomeSystemCreator.php`, `EmpireCreator.php`                                                             |
-| 8  | Add `lockForUpdate` to the `activate` action for concurrency consistency                                                                     | Low      | S      | `GameGenerationController.php`                                                                           |
-| 9  | Fix `GameRng::fromState()` to avoid throwaway constructor work                                                                               | Low      | S      | `GameRng.php`                                                                                            |
-| 10 | Eager-load `generationSteps` in the `show()` method                                                                                          | Low      | S      | `GameGenerationController.php`                                                                           |
+| 8  | ~~Add `lockForUpdate` to the `activate` action for concurrency consistency~~ ✅ Done                                                          | Low      | S      | `GameGenerationController.php`                                                                           |
+| 9  | ~~Fix `GameRng::fromState()` to avoid throwaway constructor work~~ ✅ Done                                                                    | Low      | S      | `GameRng.php`, `StarGenerator.php`, `GameRngTest.php`                                                   |
+| 10 | ~~Eager-load `generationSteps` in the `show()` method~~ ✅ Done                                                                               | Low      | S      | `GameGenerationController.php`                                                                           |
 | 11 | Split `GameGenerationController` into smaller controllers (optional, do if touching these routes for other work)                             | Low      | L      | Routes, controller files                                                                                 |
 | 12 | Extract frontend sections into sub-components (optional, do if modifying generate page)                                                      | Low      | M      | `generate.tsx`                                                                                           |
 | 13 | Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists                                   | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |

@@ -10,16 +10,21 @@ class GameRng
 {
     private Randomizer $rng;
 
+    private function __construct() {}
+
     /**
      * Create a new GameRng from a human-readable seed string.
      *
      * The seed is hashed to produce the 256-bit state required by Xoshiro256StarStar.
      */
-    public function __construct(string $seed)
+    public static function fromSeed(string $seed): self
     {
-        $this->rng = new Randomizer(
+        $instance = new self;
+        $instance->rng = new Randomizer(
             new Xoshiro256StarStar(hash('sha256', $seed, binary: true))
         );
+
+        return $instance;
     }
 
     /**
@@ -27,7 +32,7 @@ class GameRng
      */
     public static function fromState(string $serialized): self
     {
-        $instance = new self('unused');
+        $instance = new self;
         $instance->rng = new Randomizer(unserialize($serialized));
 
         return $instance;

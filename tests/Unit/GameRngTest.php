@@ -11,8 +11,8 @@ class GameRngTest extends TestCase
     #[Test]
     public function same_seed_produces_same_sequence(): void
     {
-        $a = new GameRng('test-seed-42');
-        $b = new GameRng('test-seed-42');
+        $a = GameRng::fromSeed('test-seed-42');
+        $b = GameRng::fromSeed('test-seed-42');
 
         for ($i = 0; $i < 10; $i++) {
             $this->assertSame($a->int(1, 1000), $b->int(1, 1000));
@@ -22,8 +22,8 @@ class GameRngTest extends TestCase
     #[Test]
     public function different_seeds_produce_different_sequences(): void
     {
-        $a = new GameRng('seed-alpha');
-        $b = new GameRng('seed-beta');
+        $a = GameRng::fromSeed('seed-alpha');
+        $b = GameRng::fromSeed('seed-beta');
 
         $aValues = [];
         $bValues = [];
@@ -38,7 +38,7 @@ class GameRngTest extends TestCase
     #[Test]
     public function state_can_be_saved_and_restored(): void
     {
-        $rng = new GameRng('test-seed');
+        $rng = GameRng::fromSeed('test-seed');
         $rng->int(1, 100);
         $rng->int(1, 100);
 
@@ -52,7 +52,7 @@ class GameRngTest extends TestCase
     #[Test]
     public function float_returns_value_between_zero_and_one(): void
     {
-        $rng = new GameRng('float-test');
+        $rng = GameRng::fromSeed('float-test');
 
         for ($i = 0; $i < 100; $i++) {
             $value = $rng->float();
@@ -66,8 +66,8 @@ class GameRngTest extends TestCase
     {
         $items = range(1, 20);
 
-        $a = new GameRng('shuffle-seed');
-        $b = new GameRng('shuffle-seed');
+        $a = GameRng::fromSeed('shuffle-seed');
+        $b = GameRng::fromSeed('shuffle-seed');
 
         $this->assertSame($a->shuffle($items), $b->shuffle($items));
     }
@@ -76,7 +76,7 @@ class GameRngTest extends TestCase
     public function pick_returns_element_from_array(): void
     {
         $items = ['alpha', 'beta', 'gamma'];
-        $rng = new GameRng('pick-test');
+        $rng = GameRng::fromSeed('pick-test');
 
         for ($i = 0; $i < 20; $i++) {
             $this->assertContains($rng->pick($items), $items);
@@ -88,7 +88,7 @@ class GameRngTest extends TestCase
     {
         $items = ['common', 'rare'];
         $weights = [1000, 1];
-        $rng = new GameRng('weighted-test');
+        $rng = GameRng::fromSeed('weighted-test');
 
         $counts = ['common' => 0, 'rare' => 0];
         for ($i = 0; $i < 500; $i++) {

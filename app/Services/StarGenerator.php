@@ -21,7 +21,7 @@ class StarGenerator
         DB::transaction(function () use ($game, $seed) {
             $game = Game::lockForUpdate()->findOrFail($game->id);
 
-            $rng = new GameRng($seed ?? $game->prng_seed);
+            $rng = GameRng::fromSeed($seed ?? $game->prng_seed);
             $inputState = $rng->saveState();
 
             // Delete all existing stars — cascades to planets, deposits, home systems, empires, colonies
