@@ -120,11 +120,9 @@ Route names are unchanged. Wayfinder regenerated. Frontend imports updated to re
 
 **Resolution:** The `Empire` model now has a `player()` BelongsTo relationship to the `Player` model, with a proper FK on `player_id`. Resolved as part of finding #1.
 
-### Finding 15. Frontend page component is 1246 lines
+### Finding 15. ~~Frontend page component is 1246 lines~~ ✅ RESOLVED
 
-**File:** `resources/js/pages/games/generate.tsx`
-
-**Problem:** The entire generate page is a single component file. `EmpiresTable` is extracted but inline in the same file. Each section (Stars, Planets, Deposits, Home Systems, Activate, Empires) could be its own component.
+**Resolution:** `generate.tsx` was split into 9 focused sub-components under `resources/js/pages/games/generate/`: `types.ts` (shared types), `PrngSeedSection`, `HomeSystemTemplateSection`, `ColonyTemplateSection`, `StarsSection`, `PlanetsSection`, `DepositsSection`, `HomeSystemsSection`, `ActivateSection` (owns its own dialog), and `EmpiresSection` (owns `EmpiresTable`). The shared delete-step dialog state remains in the orchestrating `generate.tsx`, which is now ~160 lines.
 
 ### Finding 16. ~~`generationSteps` relationship is loaded eagerly via `$game->generationSteps` in `show()`~~ ✅ RESOLVED
 
@@ -169,7 +167,7 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 9  | ~~Fix `GameRng::fromState()` to avoid throwaway constructor work~~ ✅ Done                                                                    | Low      | S      | `GameRng.php`, `StarGenerator.php`, `GameRngTest.php`                                                   |
 | 10 | ~~Eager-load `generationSteps` in the `show()` method~~ ✅ Done                                                                               | Low      | S      | `GameGenerationController.php`                                                                           |
 | 11 | ~~Split `GameGenerationController` into smaller controllers~~ ✅ Done                                                                        | Low      | L      | `GameGeneration/` subdirectory (6 new controllers), `routes/games.php`, `generate.tsx`                  |
-| 12 | Extract frontend sections into sub-components (optional, do if modifying generate page)                                                      | Low      | M      | `generate.tsx`                                                                                           |
+| 12 | ~~Extract frontend sections into sub-components~~ ✅ Done                                                                                    | Low      | M      | `generate/` subdirectory (9 new files), `generate.tsx`                                                  |
 | 13 | Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists                                   | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
 | 14 | Investigate OOM (out-of-memory) issue when running the full test suite                                                                       | Medium   | M      | `phpunit.xml`, test files                                                                                |
 
