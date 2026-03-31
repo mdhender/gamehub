@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'is_active', 'prng_seed', 'status', 'min_home_system_distance'])]
 class Game extends Model
@@ -35,6 +36,18 @@ class Game extends Model
             'status' => GameStatus::class,
             'min_home_system_distance' => 'float',
         ];
+    }
+
+    /** @return HasOne<HomeSystemTemplate, $this> */
+    public function homeSystemTemplate(): HasOne
+    {
+        return $this->hasOne(HomeSystemTemplate::class);
+    }
+
+    /** @return HasOne<ColonyTemplate, $this> */
+    public function colonyTemplate(): HasOne
+    {
+        return $this->hasOne(ColonyTemplate::class);
     }
 
     /** @return BelongsToMany<User, $this> */
