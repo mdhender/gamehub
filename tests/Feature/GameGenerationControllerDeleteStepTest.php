@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\GameStatus;
 use App\Enums\GenerationStepName;
+use App\Models\Colony;
+use App\Models\Empire;
 use App\Models\Game;
 use App\Models\HomeSystem;
 use App\Models\User;
@@ -113,6 +115,29 @@ class GameGenerationControllerDeleteStepTest extends TestCase
         $this->assertSame(0, $game->planets()->count());
         $this->assertSame(0, $game->deposits()->count());
         $this->assertModelMissing($homeSystem);
+    }
+
+    #[Test]
+    public function delete_stars_cascades_to_empires_and_colonies(): void
+    {
+        $game = $this->gameWithDeposits();
+        $star = $game->stars()->first();
+        $planet = $game->planets()->first();
+        $homeSystem = HomeSystem::factory()->create([
+            'game_id' => $game->id,
+            'star_id' => $star->id,
+            'homeworld_planet_id' => $planet->id,
+            'queue_position' => 1,
+        ]);
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'home_system_id' => $homeSystem->id]);
+        $colony = Colony::factory()->create(['empire_id' => $empire->id, 'planet_id' => $planet->id]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->delete("/games/{$game->id}/generate/stars");
+
+        $this->assertModelMissing($empire);
+        $this->assertModelMissing($colony);
     }
 
     #[Test]
@@ -324,6 +349,30 @@ class GameGenerationControllerDeleteStepTest extends TestCase
             ->delete("/games/{$game->id}/generate/home_systems");
 
         $this->assertSame(3, $game->generationSteps()->count());
+    }
+
+    #[Test]
+    public function delete_home_systems_cascades_to_empires_and_colonies(): void
+    {
+        $game = $this->gameWithDeposits();
+        $star = $game->stars()->first();
+        $planet = $game->planets()->first();
+        $homeSystem = HomeSystem::factory()->create([
+            'game_id' => $game->id,
+            'star_id' => $star->id,
+            'homeworld_planet_id' => $planet->id,
+            'queue_position' => 1,
+        ]);
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'home_system_id' => $homeSystem->id]);
+        $colony = Colony::factory()->create(['empire_id' => $empire->id, 'planet_id' => $planet->id]);
+        $game->update(['status' => GameStatus::HomeSystemGenerated]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->delete("/games/{$game->id}/generate/home_systems");
+
+        $this->assertModelMissing($empire);
+        $this->assertModelMissing($colony);
     }
 
     // -------------------------------------------------------------------------

@@ -16,7 +16,7 @@ The implementation is solid overall. The state machine, PRNG pipeline, service-l
 
 **Resolution:** The `game_user` pivot table was promoted to a first-class `players` table with its own auto-increment `id`. The `empires.game_user_id` column was renamed to `player_id` with a proper FK constraint (`nullable`, `nullOnDelete`) to `players.id`. A new `Player` model was created as the domain entity representing a User's membership in a Game. The `Empire` model now has a `player()` BelongsTo relationship. The `Game` model's `players()` BelongsToMany was renamed to `activePlayers()`, and a new `playerRecords()` HasMany was added. `EmpireCreator` looks up the Player record by `(game_id, user_id)` and stores `player->id`. Three incremental alter migrations on the old pivot were deleted and baked into the create migration. All 146 tests updated and passing.
 
-### Finding 2. Delete cascade does not explicitly delete empires/colonies (relies on DB FK cascade)
+### Finding 2. ~~Delete cascade does not explicitly delete empires/colonies (relies on DB FK cascade)~~ ✅ RESOLVED
 
 **Files:** `app/Http/Controllers/GameGenerationController.php:512–576`
 
@@ -88,7 +88,7 @@ protected function casts(): array
 
 **Problem:** Multiple actions use `$request->validate()` inline. Laravel best practice is to use dedicated Form Request classes for all validated endpoints. The `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, and `reassignEmpire` actions should each have their own Form Request.
 
-### Finding 9. Hardcoded capacity constant (25 empires per home system) scattered across codebase
+### Finding 9. ~~Hardcoded capacity constant (25 empires per home system) scattered across codebase~~ ✅ RESOLVED
 
 **Files:** `app/Services/EmpireCreator.php:43,50,82`, `app/Http/Controllers/GameGenerationController.php:107`, `resources/js/pages/games/generate.tsx:129`
 
@@ -176,8 +176,8 @@ Ordered by priority (highest first). Each task is independent unless noted.
 |----|----------------------------------------------------------------------------------------------------------------------------------------------|----------|--------|----------------------------------------------------------------------------------------------------------|
 | 1  | ~~Resolve `game_user_id` semantics~~ ✅ Promoted `game_user` pivot to `players` table; `empires.player_id` now has proper FK                  | Critical | M      | Done                                                                                                     |
 | 2  | ~~Replace `$dates` with `casts()` on `HomeSystem` and `GenerationStep`~~ ✅ Done                                                              | Medium   | S      | `HomeSystem.php`, `GenerationStep.php`                                                                   |
-| 3  | Extract a constant for home system capacity (25) and empire cap (250)                                                                        | Medium   | S      | `HomeSystem.php`, `EmpireCreator.php`, `GameGenerationController.php`, `generate.tsx`                    |
-| 4  | Add clarifying comments on cascade deletes; add test assertions for empire/colony cleanup in delete step tests                               | Medium   | S      | `GameGenerationController.php`, `GameGenerationControllerDeleteStepTest.php`                             |
+| 3  | ~~Extract a constant for home system capacity (25) and empire cap (250)~~ ✅ Done                                                             | Medium   | S      | `HomeSystem.php`, `EmpireCreator.php`, `GameGenerationController.php`, `generate.tsx`                    |
+| 4  | ~~Add clarifying comments on cascade deletes; add test assertions for empire/colony cleanup in delete step tests~~ ✅ Done                    | Medium   | S      | `GameGenerationController.php`, `GameGenerationControllerDeleteStepTest.php`                             |
 | 5  | Move JSON structure validation from controller into Form Request `after()` hooks; add JSON parse error handling                              | Medium   | S      | `UploadHomeSystemTemplateRequest.php`, `UploadColonyTemplateRequest.php`, `GameGenerationController.php` |
 | 6  | Create Form Requests for `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, `reassignEmpire`                            | Medium   | M      | New Form Request files, `GameGenerationController.php`                                                   |
 | 7  | Batch-insert planets and deposits in `HomeSystemCreator::applyTemplate()` and colony inventory in `EmpireCreator::createColony()`            | Medium   | S      | `HomeSystemCreator.php`, `EmpireCreator.php`                                                             |

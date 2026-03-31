@@ -529,6 +529,10 @@ class GameGenerationController extends Controller
             ->where('step', GenerationStepName::Deposits->value)
             ->first();
 
+        // Empires/colonies/colony_inventory are removed via DB-level FK cascades:
+        //   home_systems → empires (empires.home_system_id cascadeOnDelete)
+        //   empires      → colonies (colonies.empire_id cascadeOnDelete)
+        //   colonies     → colony_inventory (colony_inventory.colony_id cascadeOnDelete)
         $game->homeSystems()->delete();
         $game->generationSteps()->where('step', GenerationStepName::HomeSystem->value)->delete();
 
@@ -543,6 +547,8 @@ class GameGenerationController extends Controller
             ->where('step', GenerationStepName::Planets->value)
             ->first();
 
+        // Empires/colonies/colony_inventory are removed via DB-level FK cascades when
+        // home_systems are deleted (see performDeleteHomeSystems for the full chain).
         $game->homeSystems()->delete();
         $game->deposits()->delete();
         $game->generationSteps()
@@ -560,6 +566,8 @@ class GameGenerationController extends Controller
             ->where('step', GenerationStepName::Stars->value)
             ->first();
 
+        // Empires/colonies/colony_inventory are removed via DB-level FK cascades when
+        // home_systems are deleted (see performDeleteHomeSystems for the full chain).
         $game->homeSystems()->delete();
         $game->deposits()->delete();
         $game->planets()->delete();
@@ -578,6 +586,8 @@ class GameGenerationController extends Controller
 
     private function performDeleteStars(Game $game): void
     {
+        // Empires/colonies/colony_inventory are removed via DB-level FK cascades when
+        // home_systems are deleted (see performDeleteHomeSystems for the full chain).
         $game->homeSystems()->delete();
         $game->deposits()->delete();
         $game->planets()->delete();
