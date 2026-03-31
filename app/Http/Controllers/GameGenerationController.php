@@ -219,6 +219,22 @@ class GameGenerationController extends Controller
         return back()->with('success', 'Deposits generated successfully.');
     }
 
+    public function activate(Game $game): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $game->canActivate()) {
+            throw ValidationException::withMessages([
+                'game' => 'The game can only be activated when at least one home system has been created.',
+            ]);
+        }
+
+        $game->status = GameStatus::Active;
+        $game->save();
+
+        return back()->with('success', 'Game activated.');
+    }
+
     public function createHomeSystemRandom(Game $game): RedirectResponse
     {
         Gate::authorize('update', $game);

@@ -161,10 +161,12 @@ export default function GameGenerate({
     const depositsForm = useForm({});
     const homeSystemsRandomForm = useForm({});
     const homeSystemsManualForm = useForm({ star_id: '' });
+    const activateForm = useForm({});
     const deleteForm = useForm({});
     const starEditForm = useForm({ x: 0, y: 0, z: 0 });
     const planetEditForm = useForm({ orbit: 1, type: 'terrestrial', habitability: 0 });
 
+    const [activateConfirm, setActivateConfirm] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<
         'stars' | 'planets' | 'deposits' | 'home_systems' | null
     >(null);
@@ -988,7 +990,14 @@ export default function GameGenerate({
                             <p className="text-sm text-muted-foreground">Not yet available.</p>
                         )}
 
-                        <Button disabled={!game.can_activate}>Activate Game</Button>
+                        {game.can_activate && (
+                            <>
+                                <Button onClick={() => setActivateConfirm(true)}>
+                                    Activate Game
+                                </Button>
+                                <InputError message={activateForm.errors.game} />
+                            </>
+                        )}
                     </div>
                 </section>
 
@@ -1044,6 +1053,33 @@ export default function GameGenerate({
                     </div>
                 </section>
             </div>
+
+            <Dialog open={activateConfirm} onOpenChange={setActivateConfirm}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Activate Game</DialogTitle>
+                        <DialogDescription>
+                            This will permanently lock templates and cluster data. The GM can still create home systems and assign empires after activation, but cannot modify or delete generation steps.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            onClick={() => {
+                                activateForm.post(GameGenerationController.activate.url(game), {
+                                    onSuccess: () => setActivateConfirm(false),
+                                });
+                            }}
+                            disabled={activateForm.processing}
+                        >
+                            {activateForm.processing && <Spinner />}
+                            Activate
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog
                 open={deleteConfirm !== null}

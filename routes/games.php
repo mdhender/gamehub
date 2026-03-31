@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
         Route::post('planets', [GameGenerationController::class, 'generatePlanets'])->name('planets');
         Route::put('planets/{planet}', [GameGenerationController::class, 'updatePlanet'])->name('update-planet');
         Route::post('deposits', [GameGenerationController::class, 'generateDeposits'])->name('deposits');
+        Route::post('activate', [GameGenerationController::class, 'activate'])->name('activate');
         Route::post('home-systems/random', [GameGenerationController::class, 'createHomeSystemRandom'])->name('home-systems.random');
         Route::post('home-systems/manual', [GameGenerationController::class, 'createHomeSystemManual'])->name('home-systems.manual');
         Route::delete('{step}', [GameGenerationController::class, 'deleteStep'])->name('delete-step');
