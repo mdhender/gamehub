@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\GameStatus;
 use App\Enums\GenerationStepName;
-use App\Enums\PlanetType;
+use App\Http\Requests\CreateEmpireRequest;
+use App\Http\Requests\CreateHomeSystemManualRequest;
+use App\Http\Requests\ReassignEmpireRequest;
+use App\Http\Requests\UpdatePlanetRequest;
+use App\Http\Requests\UpdateStarRequest;
 use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Empire;
@@ -22,7 +26,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -323,7 +326,7 @@ class GameGenerationController extends Controller
         return back()->with('success', 'Home system created.');
     }
 
-    public function createHomeSystemManual(Request $request, Game $game): RedirectResponse
+    public function createHomeSystemManual(CreateHomeSystemManualRequest $request, Game $game): RedirectResponse
     {
         Gate::authorize('update', $game);
 
@@ -333,9 +336,7 @@ class GameGenerationController extends Controller
             ]);
         }
 
-        $validated = $request->validate([
-            'star_id' => ['required', 'integer', 'exists:stars,id'],
-        ]);
+        $validated = $request->validated();
 
         $star = Star::findOrFail($validated['star_id']);
 
@@ -354,7 +355,7 @@ class GameGenerationController extends Controller
         return back()->with('success', 'Home system created.');
     }
 
-    public function createEmpire(Request $request, Game $game): RedirectResponse
+    public function createEmpire(CreateEmpireRequest $request, Game $game): RedirectResponse
     {
         Gate::authorize('update', $game);
 
@@ -364,10 +365,7 @@ class GameGenerationController extends Controller
             ]);
         }
 
-        $validated = $request->validate([
-            'player_id' => ['required', 'integer'],
-            'home_system_id' => ['nullable', 'integer', 'exists:home_systems,id'],
-        ]);
+        $validated = $request->validated();
 
         $player = Player::findOrFail($validated['player_id']);
 
@@ -394,7 +392,7 @@ class GameGenerationController extends Controller
         return back()->with('success', 'Empire assigned.');
     }
 
-    public function reassignEmpire(Request $request, Game $game, Empire $empire): RedirectResponse
+    public function reassignEmpire(ReassignEmpireRequest $request, Game $game, Empire $empire): RedirectResponse
     {
         Gate::authorize('update', $game);
 
@@ -408,9 +406,7 @@ class GameGenerationController extends Controller
             abort(404);
         }
 
-        $validated = $request->validate([
-            'home_system_id' => ['required', 'integer', 'exists:home_systems,id'],
-        ]);
+        $validated = $request->validated();
 
         $homeSystem = HomeSystem::findOrFail($validated['home_system_id']);
 
@@ -429,7 +425,7 @@ class GameGenerationController extends Controller
         return back()->with('success', 'Empire reassigned.');
     }
 
-    public function updateStar(Request $request, Game $game, Star $star): RedirectResponse
+    public function updateStar(UpdateStarRequest $request, Game $game, Star $star): RedirectResponse
     {
         Gate::authorize('update', $game);
 
@@ -443,11 +439,7 @@ class GameGenerationController extends Controller
             ]);
         }
 
-        $validated = $request->validate([
-            'x' => ['required', 'integer', 'min:0', 'max:30'],
-            'y' => ['required', 'integer', 'min:0', 'max:30'],
-            'z' => ['required', 'integer', 'min:0', 'max:30'],
-        ]);
+        $validated = $request->validated();
 
         $x = (int) $validated['x'];
         $y = (int) $validated['y'];
@@ -470,7 +462,7 @@ class GameGenerationController extends Controller
         return back()->with('success', 'Star updated.');
     }
 
-    public function updatePlanet(Request $request, Game $game, Planet $planet): RedirectResponse
+    public function updatePlanet(UpdatePlanetRequest $request, Game $game, Planet $planet): RedirectResponse
     {
         Gate::authorize('update', $game);
 
@@ -484,13 +476,7 @@ class GameGenerationController extends Controller
             ]);
         }
 
-        $validated = $request->validate([
-            'orbit' => ['required', 'integer', 'min:1', 'max:11'],
-            'type' => ['required', Rule::enum(PlanetType::class)],
-            'habitability' => ['required', 'integer', 'min:0', 'max:25'],
-        ]);
-
-        $planet->update($validated);
+        $planet->update($request->validated());
 
         return back()->with('success', 'Planet updated.');
     }

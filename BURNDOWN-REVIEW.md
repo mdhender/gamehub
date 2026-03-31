@@ -77,11 +77,11 @@ protected function casts(): array
 
 **Resolution:** Both Form Requests now implement `after()` hooks that handle JSON parse error detection and structural validation (non-empty `planets` array, exactly one homeworld for home system template; non-empty `inventory` array for colony template). The controller's manual `if` validation blocks were removed.
 
-### Finding 8. Inline validation in controller actions instead of Form Requests
+### Finding 8. ~~Inline validation in controller actions instead of Form Requests~~ ✅ RESOLVED
 
 **Files:** `app/Http/Controllers/GameGenerationController.php:238–239, 326–328, 357–359, 397–398, 432–436, 473–477`
 
-**Problem:** Multiple actions use `$request->validate()` inline. Laravel best practice is to use dedicated Form Request classes for all validated endpoints. The `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, and `reassignEmpire` actions should each have their own Form Request.
+**Resolution:** Created dedicated Form Request classes for all five actions: `UpdateStarRequest`, `UpdatePlanetRequest`, `CreateHomeSystemManualRequest`, `CreateEmpireRequest`, and `ReassignEmpireRequest`. Inline `$request->validate()` calls replaced with `$request->validated()`. Unused `PlanetType` and `Rule` imports removed from the controller.
 
 ### Finding 9. ~~Hardcoded capacity constant (25 empires per home system) scattered across codebase~~ ✅ RESOLVED
 
@@ -174,7 +174,7 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 3  | ~~Extract a constant for home system capacity (25) and empire cap (250)~~ ✅ Done                                                             | Medium   | S      | `HomeSystem.php`, `EmpireCreator.php`, `GameGenerationController.php`, `generate.tsx`                    |
 | 4  | ~~Add clarifying comments on cascade deletes; add test assertions for empire/colony cleanup in delete step tests~~ ✅ Done                    | Medium   | S      | `GameGenerationController.php`, `GameGenerationControllerDeleteStepTest.php`                             |
 | 5  | ~~Move JSON structure validation from controller into Form Request `after()` hooks; add JSON parse error handling~~ ✅ Done                  | Medium   | S      | `UploadHomeSystemTemplateRequest.php`, `UploadColonyTemplateRequest.php`, `GameGenerationController.php` |
-| 6  | Create Form Requests for `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, `reassignEmpire`                            | Medium   | M      | New Form Request files, `GameGenerationController.php`                                                   |
+| 6  | ~~Create Form Requests for `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, `reassignEmpire`~~ ✅ Done                 | Medium   | M      | New Form Request files, `GameGenerationController.php`                                                   |
 | 7  | Batch-insert planets and deposits in `HomeSystemCreator::applyTemplate()` and colony inventory in `EmpireCreator::createColony()`            | Medium   | S      | `HomeSystemCreator.php`, `EmpireCreator.php`                                                             |
 | 8  | Add `lockForUpdate` to the `activate` action for concurrency consistency                                                                     | Low      | S      | `GameGenerationController.php`                                                                           |
 | 9  | Fix `GameRng::fromState()` to avoid throwaway constructor work                                                                               | Low      | S      | `GameRng.php`                                                                                            |
