@@ -118,11 +118,13 @@ Route names are unchanged. Wayfinder regenerated. Frontend imports updated to re
 
 **Resolution:** The public constructor was made private and replaced with two named static factories: `GameRng::fromSeed(string $seed)` and `GameRng::fromState(string $serialized)`. `fromState()` no longer hashes a seed or constructs a throwaway engine. Call sites in `StarGenerator` and `GameRngTest` were updated to use `GameRng::fromSeed()`.
 
-### Finding 13. `Star` model missing `homeSystem` relationship
+### Finding 13. ~~`Star` model missing `homeSystem` relationship~~ ✅ RESOLVED
 
 **File:** `app/Models/Star.php`
 
 **Problem:** `HomeSystem` belongsTo `Star`, but `Star` doesn't define a `hasOne HomeSystem` inverse. This isn't currently needed but is an incomplete relationship mapping.
+
+**Resolution:** Added `homeSystem(): HasOne` to `Star`, completing the inverse of `HomeSystem::star()`. Two tests in `StarModelTest` verify the relationship loads correctly and returns `null` when no home system is assigned.
 
 ### Finding 14. ~~`Empire` model missing `gameUser` relationship~~ ✅ RESOLVED
 
@@ -206,5 +208,6 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 12 | ~~Extract frontend sections into sub-components~~ ✅ Done                                                                                    | Low      | M      | `generate/` subdirectory (9 new files), `generate.tsx`                                                  |
 | 13 | ~~Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists~~ ✅ Done                        | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
 | 14 | Investigate OOM (out-of-memory) issue when running the full test suite                                                                       | Medium   | M      | `phpunit.xml`, test files                                                                                |
+| 15 | ~~Add `homeSystem` inverse relationship to `Star` model~~ ✅ Done                                                                            | Low      | S      | `Star.php`, `StarModelTest.php`                                                                          |
 
 **Effort key:** S = < 1 hour, M = 1–3 hours, L = 3+ hours

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['game_id', 'x', 'y', 'z', 'sequence'])]
 class Star extends Model
@@ -21,6 +22,12 @@ class Star extends Model
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
+    }
+
+    /** @return HasOne<HomeSystem, $this> */
+    public function homeSystem(): HasOne
+    {
+        return $this->hasOne(HomeSystem::class);
     }
 
     /** @return HasMany<Planet, $this> */
