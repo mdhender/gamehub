@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'is_active', 'prng_seed', 'status', 'min_home_system_distance'])]
@@ -48,6 +49,42 @@ class Game extends Model
     public function colonyTemplate(): HasOne
     {
         return $this->hasOne(ColonyTemplate::class);
+    }
+
+    /** @return HasMany<Star, $this> */
+    public function stars(): HasMany
+    {
+        return $this->hasMany(Star::class);
+    }
+
+    /** @return HasMany<Planet, $this> */
+    public function planets(): HasMany
+    {
+        return $this->hasMany(Planet::class);
+    }
+
+    /** @return HasMany<Deposit, $this> */
+    public function deposits(): HasMany
+    {
+        return $this->hasMany(Deposit::class);
+    }
+
+    /** @return HasMany<HomeSystem, $this> */
+    public function homeSystems(): HasMany
+    {
+        return $this->hasMany(HomeSystem::class)->orderBy('queue_position');
+    }
+
+    /** @return HasMany<Empire, $this> */
+    public function empires(): HasMany
+    {
+        return $this->hasMany(Empire::class);
+    }
+
+    /** @return HasMany<GenerationStep, $this> */
+    public function generationSteps(): HasMany
+    {
+        return $this->hasMany(GenerationStep::class)->orderBy('sequence');
     }
 
     /** @return BelongsToMany<User, $this> */

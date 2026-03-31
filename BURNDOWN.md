@@ -472,11 +472,11 @@ To be updated upon completion of each task.
 | 1    | Add `status` to the `games` table         | DONE   |
 | 2    | Relational template schema                | DONE   |
 | 3    | Template upload and management            | DONE   |
-| 4    | Star migration and model                  | TODO   |
-| 5    | Planet and deposit migrations and models  | TODO   |
-| 6    | Home system migration and model           | TODO   |
-| 7    | Empire and colony migrations and models   | TODO   |
-| 8    | Generation steps migration and model      | TODO   |
+| 4    | Star migration and model                  | DONE   |
+| 5    | Planet and deposit migrations and models  | DONE   |
+| 6    | Home system migration and model           | DONE   |
+| 7    | Empire and colony migrations and models   | DONE   |
+| 8    | Generation steps migration and model      | DONE   |
 | 9    | `GameGenerationController` and route      | TODO   |
 | 10   | Generate page frontend shell              | TODO   |
 | 11   | `StarGenerator` service                   | TODO   |
