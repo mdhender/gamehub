@@ -15,6 +15,12 @@ class HomeSystem extends Model
     /** @use HasFactory<HomeSystemFactory> */
     use HasFactory;
 
+    /** Maximum number of empires that can be assigned to a single home system. */
+    public const int MAX_EMPIRES_PER_HOME_SYSTEM = 25;
+
+    /** Maximum number of empires that can exist across the entire game. */
+    public const int MAX_EMPIRES_PER_GAME = 250;
+
     public $timestamps = false;
 
     /**

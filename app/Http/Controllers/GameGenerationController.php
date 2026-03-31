@@ -104,7 +104,7 @@ class GameGenerationController extends Controller
                 'queue_position' => $hs->queue_position,
                 'star_location' => $hs->star->location(),
                 'empire_count' => $hs->empires_count,
-                'capacity' => 25,
+                'capacity' => HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM,
             ]);
 
         $availableStars = null;

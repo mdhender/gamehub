@@ -29,8 +29,8 @@ class EmpireCreator
         return DB::transaction(function () use ($game, $user, $homeSystem) {
             $game = Game::lockForUpdate()->findOrFail($game->id);
 
-            if ($game->empires()->count() >= 250) {
-                throw new \RuntimeException('This game has reached the maximum of 250 empires.');
+            if ($game->empires()->count() >= HomeSystem::MAX_EMPIRES_PER_GAME) {
+                throw new \RuntimeException('This game has reached the maximum of '.HomeSystem::MAX_EMPIRES_PER_GAME.' empires.');
             }
 
             $player = Player::where('game_id', $game->id)
@@ -46,14 +46,14 @@ class EmpireCreator
             }
 
             if ($homeSystem !== null) {
-                if ($homeSystem->empires()->count() >= 25) {
-                    throw new \RuntimeException('This home system is at full capacity (25 empires).');
+                if ($homeSystem->empires()->count() >= HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM) {
+                    throw new \RuntimeException('This home system is at full capacity ('.HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM.' empires).');
                 }
             } else {
                 $homeSystem = $game->homeSystems()
                     ->withCount('empires')
                     ->get()
-                    ->first(fn (HomeSystem $hs) => $hs->empires_count < 25);
+                    ->first(fn (HomeSystem $hs) => $hs->empires_count < HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM);
 
                 if ($homeSystem === null) {
                     throw new \RuntimeException('No home system has remaining capacity. Create a new home system to continue.');
@@ -85,8 +85,8 @@ class EmpireCreator
                 return $empire;
             }
 
-            if ($homeSystem->empires()->where('id', '!=', $empire->id)->count() >= 25) {
-                throw new \RuntimeException('This home system is at full capacity (25 empires).');
+            if ($homeSystem->empires()->where('id', '!=', $empire->id)->count() >= HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM) {
+                throw new \RuntimeException('This home system is at full capacity ('.HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM.' empires).');
             }
 
             $empire->colonies()
