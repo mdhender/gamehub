@@ -27,6 +27,8 @@ The implementation is solid overall. The state machine, PRNG pipeline, service-l
 
 **Verdict:** This is correct and the DB-level cascade is reliable. However, a clarifying comment should be added, and the existing tests should verify empire/colony cleanup (the delete step tests currently don't assert empires/colonies are removed).
 
+**Resolution:** Added a three-line comment block above each `performDelete*` call in `GenerationStepController` documenting the FK cascade chain (`home_systems → empires → colonies → colony_inventory`). Added a dedicated test `delete_stars_cascades_to_empires_and_colonies` in `GameGenerationControllerDeleteStepTest` that creates a full empire+colony fixture, deletes the stars step, and asserts both `Empire` and `Colony` records are missing.
+
 ### Finding 3. `prng_state` is not in `$fillable` — direct assignment works but it's inconsistent
 
 **File:** `app/Models/Game.php:15`
@@ -48,6 +50,8 @@ protected function casts(): array
     return ['created_at' => 'datetime'];
 }
 ```
+
+**Resolution:** Replaced `protected $dates = ['created_at']` with a `protected function casts(): array` method returning `['created_at' => 'datetime']` on both `HomeSystem` and `GenerationStep`.
 
 ### Finding 5. Controller `show()` method is excessively large — 177 lines
 
@@ -89,6 +93,8 @@ Route names are unchanged. Wayfinder regenerated. Frontend imports updated to re
 **Problem:** The number `25` appears as a magic number in three separate files. If this value ever changes, it must be updated in all locations.
 
 **Recommendation:** Define as a constant on the `HomeSystem` model (e.g., `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM = 25`) and reference it everywhere. Pass it to the frontend via the Inertia payload.
+
+**Resolution:** Defined `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM = 25` and `HomeSystem::MAX_EMPIRES_PER_GAME = 250` as typed `public const int` on the `HomeSystem` model. All three magic-number references in `EmpireCreator` were replaced with the constant. The Inertia payload already passed `capacity` per home system item; that value is now populated from `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM` in the controller, so the frontend reads the constant indirectly without needing a separate prop.
 
 ### Finding 10. ~~`HomeSystemCreator::applyTemplate()` creates planets/deposits one-by-one~~ ✅ RESOLVED
 
