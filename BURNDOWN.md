@@ -469,7 +469,7 @@ To be updated upon completion of each task.
 
 | Task | Description                               | Status |
 |------|-------------------------------------------|--------|
-| 1    | Add `status` to the `games` table         | TODO   |
+| 1    | Add `status` to the `games` table         | DONE   |
 | 2    | Relational template schema                | TODO   |
 | 3    | Template upload and management            | TODO   |
 | 4    | Star migration and model                  | TODO   |
