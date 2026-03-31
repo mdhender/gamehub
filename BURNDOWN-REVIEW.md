@@ -57,19 +57,18 @@ protected function casts(): array
 
 **Recommendation:** Extract data preparation into private methods or a dedicated resource/DTO class. Consider using Inertia deferred/optional props for the star list and planet list so they don't block initial page render.
 
-### Finding 6. `GameGenerationController` is a 667-line mega-controller
+### Finding 6. ~~`GameGenerationController` is a 667-line mega-controller~~ ✅ RESOLVED
 
-**File:** `app/Http/Controllers/GameGenerationController.php`
+**Resolution:** Split into 7 single-responsibility controllers under `app/Http/Controllers/GameGeneration/`:
+- `GameGenerationController` — `show`, `download`, `activate` (3 methods)
+- `GameGeneration/GenerationStepController` — `generateStars`, `generatePlanets`, `generateDeposits`, `deleteStep`
+- `GameGeneration/HomeSystemController` — `createRandom`, `createManual`
+- `GameGeneration/EmpireController` — `store`, `reassign`
+- `GameGeneration/TemplateController` — `uploadHomeSystem`, `uploadColony`
+- `GameGeneration/StarController` — `update`
+- `GameGeneration/PlanetController` — `update`
 
-**Problem:** 14 public action methods in one controller. While the routes are logically grouped under `{game}/generate`, the controller violates single-responsibility. Template upload, star/planet/deposit generation, home system creation, empire assignment, downloading, and step deletion are all distinct concerns.
-
-**Recommendation:** Consider splitting into:
-- `GameGenerationController` — show, download
-- `GenerationStepController` — generateStars, generatePlanets, generateDeposits, deleteStep
-- `HomeSystemController` — createRandom, createManual
-- `EmpireController` — createEmpire, reassignEmpire
-- `TemplateController` — uploadHomeSystemTemplate, uploadColonyTemplate
-- `StarController` / `PlanetController` — updateStar, updatePlanet
+Route names are unchanged. Wayfinder regenerated. Frontend imports updated to reference the new controller modules.
 
 ### Finding 7. ~~Template upload does manual JSON validation instead of using Form Request rules~~ ✅ RESOLVED
 
@@ -169,7 +168,7 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 8  | ~~Add `lockForUpdate` to the `activate` action for concurrency consistency~~ ✅ Done                                                          | Low      | S      | `GameGenerationController.php`                                                                           |
 | 9  | ~~Fix `GameRng::fromState()` to avoid throwaway constructor work~~ ✅ Done                                                                    | Low      | S      | `GameRng.php`, `StarGenerator.php`, `GameRngTest.php`                                                   |
 | 10 | ~~Eager-load `generationSteps` in the `show()` method~~ ✅ Done                                                                               | Low      | S      | `GameGenerationController.php`                                                                           |
-| 11 | Split `GameGenerationController` into smaller controllers (optional, do if touching these routes for other work)                             | Low      | L      | Routes, controller files                                                                                 |
+| 11 | ~~Split `GameGenerationController` into smaller controllers~~ ✅ Done                                                                        | Low      | L      | `GameGeneration/` subdirectory (6 new controllers), `routes/games.php`, `generate.tsx`                  |
 | 12 | Extract frontend sections into sub-components (optional, do if modifying generate page)                                                      | Low      | M      | `generate.tsx`                                                                                           |
 | 13 | Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists                                   | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
 | 14 | Investigate OOM (out-of-memory) issue when running the full test suite                                                                       | Medium   | M      | `phpunit.xml`, test files                                                                                |

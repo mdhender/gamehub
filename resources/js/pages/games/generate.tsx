@@ -2,6 +2,12 @@ import { Form, Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
 import GameGenerationController from '@/actions/App/Http/Controllers/GameGenerationController';
+import EmpireController from '@/actions/App/Http/Controllers/GameGeneration/EmpireController';
+import GenerationStepController from '@/actions/App/Http/Controllers/GameGeneration/GenerationStepController';
+import HomeSystemController from '@/actions/App/Http/Controllers/GameGeneration/HomeSystemController';
+import PlanetController from '@/actions/App/Http/Controllers/GameGeneration/PlanetController';
+import StarController from '@/actions/App/Http/Controllers/GameGeneration/StarController';
+import TemplateController from '@/actions/App/Http/Controllers/GameGeneration/TemplateController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -133,14 +139,14 @@ function EmpiresTable({
 
     function submitAssign(memberId: number) {
         assignForm.setData('player_id', String(memberId));
-        assignForm.post(GameGenerationController.createEmpire.url(game), {
+        assignForm.post(EmpireController.store.url(game), {
             onSuccess: () => assignForm.reset(),
         });
     }
 
     function submitReassign(empire: NonNullable<MemberItem['empire']>) {
         reassignForm.put(
-            GameGenerationController.reassignEmpire.url({ game, empire }),
+            EmpireController.reassign.url({ game, empire }),
             { onSuccess: () => setReassigningEmpireId(null) },
         );
     }
@@ -342,7 +348,7 @@ export default function GameGenerate({
     function handleDeleteConfirm() {
         if (deleteConfirm === null) { return; }
 
-        deleteForm.delete(GameGenerationController.deleteStep.url({ game, step: deleteConfirm }), {
+        deleteForm.delete(GenerationStepController.deleteStep.url({ game, step: deleteConfirm }), {
             onSuccess: () => setDeleteConfirm(null),
         });
     }
@@ -353,7 +359,7 @@ export default function GameGenerate({
     }
 
     function submitStarEdit(star: StarItem) {
-        starEditForm.put(GameGenerationController.updateStar.url({ game, star }), {
+        starEditForm.put(StarController.update.url({ game, star }), {
             onSuccess: () => setEditingStarId(null),
         });
     }
@@ -364,7 +370,7 @@ export default function GameGenerate({
     }
 
     function submitPlanetEdit(planet: PlanetItem) {
-        planetEditForm.put(GameGenerationController.updatePlanet.url({ game, planet }), {
+        planetEditForm.put(PlanetController.update.url({ game, planet }), {
             onSuccess: () => setEditingPlanetId(null),
         });
     }
@@ -446,7 +452,7 @@ export default function GameGenerate({
 
                         {game.can_edit_templates ? (
                             <Form
-                                {...GameGenerationController.uploadHomeSystemTemplate.form(game)}
+                                {...TemplateController.uploadHomeSystem.form(game)}
                                 encType="multipart/form-data"
                                 resetOnSuccess
                                 className="flex items-end gap-3"
@@ -510,7 +516,7 @@ export default function GameGenerate({
 
                         {game.can_edit_templates ? (
                             <Form
-                                {...GameGenerationController.uploadColonyTemplate.form(game)}
+                                {...TemplateController.uploadColony.form(game)}
                                 encType="multipart/form-data"
                                 resetOnSuccess
                                 className="flex items-end gap-3"
@@ -683,7 +689,7 @@ export default function GameGenerate({
                                 onSubmit={(e) => {
                                     e.preventDefault();
                                     starsForm.post(
-                                        GameGenerationController.generateStars.url(game),
+                                        GenerationStepController.generateStars.url(game),
                                     );
                                 }}
                                 className="max-w-md space-y-4"
@@ -885,7 +891,7 @@ export default function GameGenerate({
                                 onSubmit={(e) => {
                                     e.preventDefault();
                                     planetsForm.post(
-                                        GameGenerationController.generatePlanets.url(game),
+                                        GenerationStepController.generatePlanets.url(game),
                                     );
                                 }}
                                 className="flex gap-3"
@@ -948,7 +954,7 @@ export default function GameGenerate({
                                 onSubmit={(e) => {
                                     e.preventDefault();
                                     depositsForm.post(
-                                        GameGenerationController.generateDeposits.url(game),
+                                        GenerationStepController.generateDeposits.url(game),
                                     );
                                 }}
                                 className="flex gap-3"
@@ -1026,7 +1032,7 @@ export default function GameGenerate({
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         homeSystemsRandomForm.post(
-                                            GameGenerationController.createHomeSystemRandom.url(game),
+                                            HomeSystemController.createRandom.url(game),
                                         );
                                     }}
                                 >
@@ -1046,7 +1052,7 @@ export default function GameGenerate({
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         homeSystemsManualForm.post(
-                                            GameGenerationController.createHomeSystemManual.url(game),
+                                            HomeSystemController.createManual.url(game),
                                         );
                                     }}
                                     className="space-y-2"
