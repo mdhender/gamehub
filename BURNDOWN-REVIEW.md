@@ -29,11 +29,13 @@ The implementation is solid overall. The state machine, PRNG pipeline, service-l
 
 **Resolution:** Added a three-line comment block above each `performDelete*` call in `GenerationStepController` documenting the FK cascade chain (`home_systems → empires → colonies → colony_inventory`). Added a dedicated test `delete_stars_cascades_to_empires_and_colonies` in `GameGenerationControllerDeleteStepTest` that creates a full empire+colony fixture, deletes the stars step, and asserts both `Empire` and `Colony` records are missing.
 
-### Finding 3. `prng_state` is not in `$fillable` — direct assignment works but it's inconsistent
+### Finding 3. ~~`prng_state` is not in `$fillable` — direct assignment works but it's inconsistent~~ ✅ RESOLVED
 
 **File:** `app/Models/Game.php:15`
 
 **Problem:** The `Game` model marks `['name', 'is_active', 'prng_seed', 'status', 'min_home_system_distance']` as fillable but not `prng_state`. The services set `$game->prng_state` directly (which bypasses fillable), so this works. But it's an inconsistency — every other mutable column is in `$fillable`.
+
+**Resolution:** Added `prng_state` to the `#[Fillable]` attribute on `Game`, making it consistent with every other mutable column.
 
 ---
 

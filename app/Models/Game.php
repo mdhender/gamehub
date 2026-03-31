@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['name', 'is_active', 'prng_seed', 'status', 'min_home_system_distance'])]
+#[Fillable(['name', 'is_active', 'prng_seed', 'prng_state', 'status', 'min_home_system_distance'])]
 class Game extends Model
 {
     /** @use HasFactory<GameFactory> */
