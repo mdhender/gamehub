@@ -499,33 +499,33 @@ To be updated upon completion of each task.
 
 ## Exit Criteria
 
-- [ ] Game status transitions correctly through `setup → stars_generated → planets_generated → deposits_generated → home_system_generated → active`
-- [ ] Before `active`, the GM can delete any step, which cascades to all downstream data and reverts the status
-- [ ] Once `active`, no steps can be deleted and no cluster/template data can be modified
-- [ ] GM can upload home system and colony templates as JSON files; templates are stored relationally
-- [ ] Templates are locked once the game is `active`
-- [ ] GM can generate stars with a seed (defaulting to `game.prng_seed`) and see a summary
-- [ ] GM can override the seed at star generation without permanently changing `game.prng_seed`
-- [ ] GM can generate planets and deposits as separate steps, each chaining PRNG state from the prior step
-- [ ] GM can edit star attributes at `stars_generated` (before planets exist)
-- [ ] GM can edit planet attributes at `planets_generated` (before deposits exist)
-- [ ] GM can create home systems by random selection (consumes PRNG, respects minimum distance) or manual selection (no PRNG)
-- [ ] Random home system selection enforces minimum Euclidean distance N (per-game, default 9) from existing home systems
-- [ ] Manual home system selection allows any star with no distance constraint
-- [ ] Home system creation replaces all planetary/deposit data on the selected star (kill-and-fill from template)
-- [ ] A star cannot be designated as a home system more than once
-- [ ] Home systems form an ordered queue by creation order
-- [ ] GM can activate the game once at least one home system exists
-- [ ] After activation, the GM can still create home systems and assign empires
-- [ ] GM can assign empires to a specific home system or use first-available queue order
-- [ ] Empire assignment finds the first home system in the queue with capacity; it fails with a clear error if no home system has capacity — no silent generation
-- [ ] "Full" means 25 empires on the home system's homeworld planet (fixed game-wide constant)
-- [ ] Maximum 250 empires per game
-- [ ] GM can reassign an existing empire to a different home system
-- [ ] A player member cannot be assigned more than one empire per game
-- [ ] A deactivated member's empire persists; the member cannot be assigned a new empire
-- [ ] Player members without an empire are indicated on the Members tab with a link to the generate page
-- [ ] Generation steps are recorded for each PRNG-consuming event and deleted when their step is deleted
-- [ ] Each generator is deterministic: the same input state always produces the same output (proven by tests with fixed seeds)
-- [ ] Only one generation process can run per game at a time (database-level concurrency guard)
-- [ ] All controller actions are covered by feature tests; generator services are covered by unit/feature tests
+- [x] Game status transitions correctly through `setup → stars_generated → planets_generated → deposits_generated → home_system_generated → active`
+- [x] Before `active`, the GM can delete any step, which cascades to all downstream data and reverts the status
+- [x] Once `active`, no steps can be deleted and no cluster/template data can be modified
+- [x] GM can upload home system and colony templates as JSON files; templates are stored relationally
+- [x] Templates are locked once the game is `active`
+- [x] GM can generate stars with a seed (defaulting to `game.prng_seed`) and see a summary
+- [x] GM can override the seed at star generation without permanently changing `game.prng_seed`
+- [x] GM can generate planets and deposits as separate steps, each chaining PRNG state from the prior step
+- [x] GM can edit star attributes at `stars_generated` (before planets exist)
+- [x] GM can edit planet attributes at `planets_generated` (before deposits exist)
+- [x] GM can create home systems by random selection (consumes PRNG, respects minimum distance) or manual selection (no PRNG)
+- [x] Random home system selection enforces minimum Euclidean distance N (per-game, default 9) from existing home systems
+- [x] Manual home system selection allows any star with no distance constraint
+- [x] Home system creation replaces all planetary/deposit data on the selected star (kill-and-fill from template)
+- [x] A star cannot be designated as a home system more than once
+- [x] Home systems form an ordered queue by creation order
+- [x] GM can activate the game once at least one home system exists
+- [x] After activation, the GM can still create home systems and assign empires
+- [x] GM can assign empires to a specific home system or use first-available queue order
+- [x] Empire assignment finds the first home system in the queue with capacity; it fails with a clear error if no home system has capacity — no silent generation
+- [x] "Full" means 25 empires on the home system's homeworld planet (fixed game-wide constant)
+- [x] Maximum 250 empires per game
+- [x] GM can reassign an existing empire to a different home system
+- [x] A player member cannot be assigned more than one empire per game
+- [x] A deactivated member's empire persists; the member cannot be assigned a new empire
+- [x] Player members without an empire are indicated on the Members tab with a link to the generate page
+- [x] Generation steps are recorded for each PRNG-consuming event and deleted when their step is deleted
+- [x] Each generator is deterministic: the same input state always produces the same output (proven by tests with fixed seeds)
+- [x] Only one generation process can run per game at a time (database-level concurrency guard)
+- [x] All controller actions are covered by feature tests; generator services are covered by unit/feature tests
