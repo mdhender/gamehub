@@ -46,14 +46,14 @@ class DepositGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function generate_each_planet_has_at_most_40_deposits(): void
+    public function generate_each_planet_has_at_most_34_deposits(): void
     {
         $game = $this->gameWithPlanets();
 
         $this->generator->generate($game);
 
         $game->planets()->each(function ($planet) {
-            $this->assertLessThanOrEqual(40, $planet->deposits()->count());
+            $this->assertLessThanOrEqual(34, $planet->deposits()->count());
         });
     }
 
@@ -79,9 +79,10 @@ class DepositGeneratorTest extends TestCase
 
         $this->generator->generate($game);
 
+        // yield_pct can be 0 (e.g. gold on inhabited terrestrial: 3d4-3)
         $outOfRange = $game->deposits()
             ->where(function ($q) {
-                $q->where('yield_pct', '<', 1)->orWhere('yield_pct', '>', 100);
+                $q->where('yield_pct', '<', 0)->orWhere('yield_pct', '>', 100);
             })
             ->count();
 
@@ -95,9 +96,10 @@ class DepositGeneratorTest extends TestCase
 
         $this->generator->generate($game);
 
+        // Gold min: 100,000; all others max: 99,000,000
         $outOfRange = $game->deposits()
             ->where(function ($q) {
-                $q->where('quantity_remaining', '<', 1000)->orWhere('quantity_remaining', '>', 50000);
+                $q->where('quantity_remaining', '<', 100_000)->orWhere('quantity_remaining', '>', 99_000_000);
             })
             ->count();
 

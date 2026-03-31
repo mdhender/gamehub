@@ -49,7 +49,7 @@ class PlanetGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function generate_each_star_has_between_1_and_11_planets(): void
+    public function generate_each_star_has_between_1_and_10_planets(): void
     {
         $game = $this->gameWithStars();
 
@@ -58,7 +58,7 @@ class PlanetGeneratorTest extends TestCase
         $game->stars()->each(function ($star) {
             $count = $star->planets()->count();
             $this->assertGreaterThanOrEqual(1, $count);
-            $this->assertLessThanOrEqual(11, $count);
+            $this->assertLessThanOrEqual(10, $count);
         });
     }
 
@@ -84,7 +84,7 @@ class PlanetGeneratorTest extends TestCase
 
         $outOfRange = $game->planets()
             ->where(function ($q) {
-                $q->where('orbit', '<', 1)->orWhere('orbit', '>', 11);
+                $q->where('orbit', '<', 1)->orWhere('orbit', '>', 10);
             })
             ->count();
 
@@ -92,33 +92,73 @@ class PlanetGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function generate_non_terrestrial_planets_have_zero_habitability(): void
+    public function generate_no_star_has_more_than_3_gas_giants(): void
     {
         $game = $this->gameWithStars();
 
         $this->generator->generate($game);
 
-        $nonTerrestrialWithHabitability = $game->planets()
-            ->whereIn('type', [PlanetType::Asteroid->value, PlanetType::GasGiant->value])
-            ->where('habitability', '>', 0)
-            ->count();
-
-        $this->assertSame(0, $nonTerrestrialWithHabitability);
+        $game->stars()->each(function ($star) {
+            $count = $star->planets()->where('type', PlanetType::GasGiant->value)->count();
+            $this->assertLessThanOrEqual(3, $count);
+        });
     }
 
     #[Test]
-    public function generate_terrestrial_planets_have_positive_habitability(): void
+    public function generate_no_star_has_more_than_2_asteroid_belts(): void
     {
         $game = $this->gameWithStars();
 
         $this->generator->generate($game);
 
-        $terrestrialWithNoHabitability = $game->planets()
-            ->where('type', PlanetType::Terrestrial->value)
-            ->where('habitability', '<=', 0)
+        $game->stars()->each(function ($star) {
+            $count = $star->planets()->where('type', PlanetType::Asteroid->value)->count();
+            $this->assertLessThanOrEqual(2, $count);
+        });
+    }
+
+    #[Test]
+    public function generate_asteroid_belts_have_zero_habitability(): void
+    {
+        $game = $this->gameWithStars();
+
+        $this->generator->generate($game);
+
+        $asteroidWithHabitability = $game->planets()
+            ->where('type', PlanetType::Asteroid->value)
+            ->where('habitability', '!=', 0)
             ->count();
 
-        $this->assertSame(0, $terrestrialWithNoHabitability);
+        $this->assertSame(0, $asteroidWithHabitability);
+    }
+
+    #[Test]
+    public function generate_all_habitability_is_non_negative(): void
+    {
+        $game = $this->gameWithStars();
+
+        $this->generator->generate($game);
+
+        $negative = $game->planets()
+            ->where('habitability', '<', 0)
+            ->count();
+
+        $this->assertSame(0, $negative);
+    }
+
+    #[Test]
+    public function generate_all_habitability_within_max_range(): void
+    {
+        $game = $this->gameWithStars();
+
+        $this->generator->generate($game);
+
+        // Max is 25: terrestrial orbit 5 (2d12+1)
+        $outOfRange = $game->planets()
+            ->where('habitability', '>', 25)
+            ->count();
+
+        $this->assertSame(0, $outOfRange);
     }
 
     #[Test]

@@ -98,6 +98,19 @@ class GameRng
     }
 
     /**
+     * Roll n dice each with the given number of sides and return the sum.
+     */
+    public function rollDice(int $n, int $sides): int
+    {
+        $total = 0;
+        for ($i = 0; $i < $n; $i++) {
+            $total += $this->rng->getInt(1, $sides);
+        }
+
+        return $total;
+    }
+
+    /**
      * Serialize the engine state for storage.
      */
     public function saveState(): string
