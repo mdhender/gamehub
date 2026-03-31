@@ -27,6 +27,8 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
         Route::post('activate', [GameGenerationController::class, 'activate'])->name('activate');
         Route::post('home-systems/random', [GameGenerationController::class, 'createHomeSystemRandom'])->name('home-systems.random');
         Route::post('home-systems/manual', [GameGenerationController::class, 'createHomeSystemManual'])->name('home-systems.manual');
+        Route::post('empires', [GameGenerationController::class, 'createEmpire'])->name('empires.create');
+        Route::put('empires/{empire}', [GameGenerationController::class, 'reassignEmpire'])->name('empires.reassign');
         Route::delete('{step}', [GameGenerationController::class, 'deleteStep'])->name('delete-step');
     });
 });

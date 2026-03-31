@@ -492,7 +492,7 @@ To be updated upon completion of each task.
 | 21   | Home system creation actions              | DONE   |
 | 22   | Activate game action                      | DONE   |
 | 23   | `EmpireCreator` service                   | DONE   |
-| 24   | Empire assignment actions and Members tab | TODO   |
+| 24   | Empire assignment actions and Members tab | DONE   |
 | 25   | Cluster JSON download                     | TODO   |
 
 ---

@@ -40,6 +40,7 @@ type Member = {
     name: string;
     email: string;
     role: 'gm' | 'player';
+    has_empire: boolean;
 };
 
 type AvailableUser = {
@@ -179,6 +180,9 @@ export default function GameShow({
                                                 <th className="px-4 py-3 text-left font-medium">
                                                     Role
                                                 </th>
+                                                <th className="px-4 py-3 text-left font-medium">
+                                                    Empire
+                                                </th>
                                                 <th className="px-4 py-3 text-right font-medium">
                                                     Actions
                                                 </th>
@@ -188,7 +192,7 @@ export default function GameShow({
                                             {members.length === 0 && (
                                                 <tr>
                                                     <td
-                                                        colSpan={4}
+                                                        colSpan={5}
                                                         className="px-4 py-8 text-center text-muted-foreground"
                                                     >
                                                         No active members.
@@ -215,6 +219,18 @@ export default function GameShow({
                                                             <Badge variant="secondary">
                                                                 Player
                                                             </Badge>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {member.role === 'player' && !member.has_empire && (
+                                                            <Link
+                                                                href={GameGenerationController.show.url(game)}
+                                                                className="inline-flex items-center gap-1.5"
+                                                            >
+                                                                <Badge variant="outline" className="text-muted-foreground">
+                                                                    No empire
+                                                                </Badge>
+                                                            </Link>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">

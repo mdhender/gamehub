@@ -7,10 +7,14 @@ use App\Enums\GenerationStepName;
 use App\Enums\PlanetType;
 use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
+use App\Models\Empire;
 use App\Models\Game;
+use App\Models\HomeSystem;
 use App\Models\Planet;
 use App\Models\Star;
+use App\Models\User;
 use App\Services\DepositGenerator;
+use App\Services\EmpireCreator;
 use App\Services\HomeSystemCreator;
 use App\Services\PlanetGenerator;
 use App\Services\StarGenerator;
@@ -116,12 +120,17 @@ class GameGenerationController extends Controller
                 ]);
         }
 
-        $empiresByUserId = $game->empires()->get()->keyBy('game_user_id');
+        $empiresByUserId = $game->empires()->with('homeSystem.star')->get()->keyBy('game_user_id');
         $members = $game->players()->get()->map(fn ($player) => [
             'id' => $player->id,
             'name' => $player->name,
             'empire' => ($empire = $empiresByUserId->get($player->id))
-                ? ['id' => $empire->id, 'name' => $empire->name, 'home_system_id' => $empire->home_system_id]
+                ? [
+                    'id' => $empire->id,
+                    'name' => $empire->name,
+                    'home_system_id' => $empire->home_system_id,
+                    'home_system_location' => $empire->homeSystem->star->location(),
+                ]
                 : null,
         ]);
 
@@ -285,6 +294,77 @@ class GameGenerationController extends Controller
         }
 
         return back()->with('success', 'Home system created.');
+    }
+
+    public function createEmpire(Request $request, Game $game): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $game->canAssignEmpires()) {
+            throw ValidationException::withMessages([
+                'empire' => 'Empires can only be assigned when the game is active.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'game_user_id' => ['required', 'integer'],
+            'home_system_id' => ['nullable', 'integer', 'exists:home_systems,id'],
+        ]);
+
+        $player = User::findOrFail($validated['game_user_id']);
+
+        $homeSystem = isset($validated['home_system_id'])
+            ? HomeSystem::findOrFail($validated['home_system_id'])
+            : null;
+
+        if ($homeSystem && $homeSystem->game_id !== $game->id) {
+            abort(404);
+        }
+
+        try {
+            app(EmpireCreator::class)->create($game, $player, $homeSystem);
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages([
+                'empire' => $e->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'Empire assigned.');
+    }
+
+    public function reassignEmpire(Request $request, Game $game, Empire $empire): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $game->canAssignEmpires()) {
+            throw ValidationException::withMessages([
+                'empire' => 'Empires can only be reassigned when the game is active.',
+            ]);
+        }
+
+        if ($empire->game_id !== $game->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'home_system_id' => ['required', 'integer', 'exists:home_systems,id'],
+        ]);
+
+        $homeSystem = HomeSystem::findOrFail($validated['home_system_id']);
+
+        if ($homeSystem->game_id !== $game->id) {
+            abort(404);
+        }
+
+        try {
+            app(EmpireCreator::class)->reassign($empire, $homeSystem);
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages([
+                'home_system_id' => $e->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'Empire reassigned.');
     }
 
     public function updateStar(Request $request, Game $game, Star $star): RedirectResponse

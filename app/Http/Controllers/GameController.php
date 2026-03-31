@@ -44,11 +44,16 @@ class GameController extends Controller
 
         [$activeMembers, $inactiveMembers] = $game->users->partition(fn (User $user) => $user->pivot->is_active);
 
+        $empiriesByUserId = $game->isActive()
+            ? $game->empires()->pluck('game_user_id')->flip()
+            : collect();
+
         $formatMember = fn (User $user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->pivot->role,
+            'has_empire' => $empiriesByUserId->has($user->id),
         ];
 
         return Inertia::render('games/show', [
