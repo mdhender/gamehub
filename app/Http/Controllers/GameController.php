@@ -23,10 +23,10 @@ class GameController extends Controller
         $user = $request->user();
 
         $games = $user->isAdmin()
-            ? Game::withCount(['gms', 'activePlayers'])->orderBy('name')->get(['id', 'name', 'is_active', 'created_at'])
+            ? Game::withCount(['gms', 'players'])->orderBy('name')->get(['id', 'name', 'is_active', 'created_at'])
             : $user->games()
                 ->wherePivot('role', GameRole::Gm->value)
-                ->withCount(['gms', 'activePlayers'])
+                ->withCount(['gms', 'players'])
                 ->orderBy('name')
                 ->get(['games.id', 'games.name', 'games.is_active', 'games.created_at']);
 

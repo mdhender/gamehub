@@ -108,7 +108,7 @@ class Game extends Model
     }
 
     /** @return BelongsToMany<User, $this> */
-    public function activePlayers(): BelongsToMany
+    public function players(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'players')
             ->wherePivot('role', GameRole::Player->value)
