@@ -22,7 +22,7 @@ type Game = {
     name: string;
     is_active: boolean;
     gms_count: number;
-    players_count: number;
+    active_players_count: number;
     created_at: string;
 };
 
@@ -150,7 +150,7 @@ export default function GamesIndex({ games }: { games: Game[] }) {
                                         {game.gms_count}
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
-                                        {game.players_count}
+                                        {game.active_players_count}
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {new Date(

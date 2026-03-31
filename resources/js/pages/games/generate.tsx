@@ -127,12 +127,12 @@ function EmpiresTable({
     game: Game;
 }) {
     const hasCapacity = homeSystems.some((hs) => hs.empire_count < hs.capacity);
-    const assignForm = useForm({ game_user_id: '', home_system_id: '' });
+    const assignForm = useForm({ player_id: '', home_system_id: '' });
     const reassignForm = useForm({ home_system_id: '' });
     const [reassigningEmpireId, setReassigningEmpireId] = useState<number | null>(null);
 
     function submitAssign(memberId: number) {
-        assignForm.setData('game_user_id', String(memberId));
+        assignForm.setData('player_id', String(memberId));
         assignForm.post(GameGenerationController.createEmpire.url(game), {
             onSuccess: () => assignForm.reset(),
         });
@@ -237,7 +237,7 @@ function EmpiresTable({
                                                 disabled={!hasCapacity || assignForm.processing}
                                                 onClick={() => submitAssign(member.id)}
                                             >
-                                                {assignForm.processing && assignForm.data.game_user_id === String(member.id) && <Spinner />}
+                                                {assignForm.processing && assignForm.data.player_id === String(member.id) && <Spinner />}
                                                 Assign Empire
                                             </Button>
                                         )}

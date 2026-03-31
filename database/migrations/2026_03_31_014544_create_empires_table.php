@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('empires', function (Blueprint $table) {
             $table->id();
             $table->foreignId('game_id')->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('game_user_id')->nullable();
+            $table->foreignId('player_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->foreignId('home_system_id')->constrained('home_systems')->cascadeOnDelete();
-            $table->unique(['game_id', 'game_user_id']);
+            $table->unique(['game_id', 'player_id']);
             $table->timestamps();
         });
     }

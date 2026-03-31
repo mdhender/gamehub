@@ -21,7 +21,7 @@ class EmpireFactory extends Factory
     {
         return [
             'game_id' => Game::factory(),
-            'game_user_id' => null, // Set explicitly when creating via EmpireCreator service
+            'player_id' => null, // Set explicitly when creating via EmpireCreator service
             'name' => fake()->words(2, true),
             'home_system_id' => HomeSystem::factory(),
         ];

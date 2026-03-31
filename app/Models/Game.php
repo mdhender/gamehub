@@ -87,24 +87,30 @@ class Game extends Model
         return $this->hasMany(GenerationStep::class)->orderBy('sequence');
     }
 
+    /** @return HasMany<Player, $this> */
+    public function playerRecords(): HasMany
+    {
+        return $this->hasMany(Player::class);
+    }
+
     /** @return BelongsToMany<User, $this> */
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withPivot('role', 'is_active')->withTimestamps();
+        return $this->belongsToMany(User::class, 'players')->withPivot('id', 'role', 'is_active')->withTimestamps();
     }
 
     /** @return BelongsToMany<User, $this> */
     public function gms(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)
+        return $this->belongsToMany(User::class, 'players')
             ->wherePivot('role', GameRole::Gm->value)
             ->wherePivot('is_active', true);
     }
 
     /** @return BelongsToMany<User, $this> */
-    public function players(): BelongsToMany
+    public function activePlayers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)
+        return $this->belongsToMany(User::class, 'players')
             ->wherePivot('role', GameRole::Player->value)
             ->wherePivot('is_active', true);
     }

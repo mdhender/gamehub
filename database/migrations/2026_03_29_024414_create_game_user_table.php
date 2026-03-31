@@ -11,11 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('game_user', function (Blueprint $table) {
+        Schema::create('players', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('game_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('role');
-            $table->primary(['game_id', 'user_id']);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+            $table->unique(['game_id', 'user_id']);
+            $table->index('user_id');
         });
     }
 
@@ -24,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('game_user');
+        Schema::dropIfExists('players');
     }
 };

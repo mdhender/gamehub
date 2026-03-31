@@ -67,7 +67,7 @@ class GameMemberControllerTest extends TestCase
             ->post("/games/{$game->id}/members", ['user_id' => $user->id, 'role' => 'player'])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $user->id, 'role' => 'player', 'is_active' => true]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $user->id, 'role' => 'player', 'is_active' => true]);
     }
 
     #[Test]
@@ -81,7 +81,7 @@ class GameMemberControllerTest extends TestCase
             ->post("/games/{$game->id}/members", ['user_id' => $user->id, 'role' => 'gm'])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $user->id, 'role' => 'gm', 'is_active' => true]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $user->id, 'role' => 'gm', 'is_active' => true]);
     }
 
     #[Test]
@@ -96,7 +96,7 @@ class GameMemberControllerTest extends TestCase
             ->post("/games/{$game->id}/members", ['user_id' => $user->id, 'role' => 'player'])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $user->id, 'role' => 'player']);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $user->id, 'role' => 'player']);
     }
 
     #[Test]
@@ -165,7 +165,7 @@ class GameMemberControllerTest extends TestCase
             ->delete("/games/{$game->id}/members/{$user->id}")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $user->id, 'is_active' => false]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $user->id, 'is_active' => false]);
     }
 
     #[Test]
@@ -180,7 +180,7 @@ class GameMemberControllerTest extends TestCase
             ->delete("/games/{$game->id}/members/{$gm->id}")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $gm->id, 'is_active' => false]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $gm->id, 'is_active' => false]);
     }
 
     #[Test]
@@ -196,7 +196,7 @@ class GameMemberControllerTest extends TestCase
             ->delete("/games/{$game->id}/members/{$player->id}")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $player->id, 'is_active' => false]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $player->id, 'is_active' => false]);
     }
 
     #[Test]
@@ -241,7 +241,7 @@ class GameMemberControllerTest extends TestCase
             ->post("/games/{$game->id}/members/{$user->id}/restore")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $user->id, 'is_active' => true]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $user->id, 'is_active' => true]);
     }
 
     #[Test]
@@ -256,7 +256,7 @@ class GameMemberControllerTest extends TestCase
             ->post("/games/{$game->id}/members/{$gm->id}/restore")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $gm->id, 'is_active' => true]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $gm->id, 'is_active' => true]);
     }
 
     #[Test]
@@ -272,7 +272,7 @@ class GameMemberControllerTest extends TestCase
             ->post("/games/{$game->id}/members/{$player->id}/restore")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('game_user', ['game_id' => $game->id, 'user_id' => $player->id, 'is_active' => true]);
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $player->id, 'is_active' => true]);
     }
 
     #[Test]

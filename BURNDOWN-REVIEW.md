@@ -187,5 +187,6 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 11 | Split `GameGenerationController` into smaller controllers (optional, do if touching these routes for other work)                             | Low      | L      | Routes, controller files                                                                                 |
 | 12 | Extract frontend sections into sub-components (optional, do if modifying generate page)                                                      | Low      | M      | `generate.tsx`                                                                                           |
 | 13 | Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists                                   | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
+| 14 | Investigate OOM (out-of-memory) issue when running the full test suite                                                                       | Medium   | M      | `phpunit.xml`, test files                                                                                |
 
 **Effort key:** S = < 1 hour, M = 1–3 hours, L = 3+ hours

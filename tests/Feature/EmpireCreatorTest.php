@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\GameStatus;
 use App\Models\Empire;
 use App\Models\Game;
+use App\Models\Player;
 use App\Models\User;
 use App\Services\DepositGenerator;
 use App\Services\EmpireCreator;
@@ -81,7 +82,8 @@ class EmpireCreatorTest extends TestCase
         $empire = $this->creator->create($game, $player);
 
         $this->assertSame($game->homeSystems()->first()->id, $empire->home_system_id);
-        $this->assertSame($player->id, $empire->game_user_id);
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->first();
+        $this->assertSame($playerRecord->id, $empire->player_id);
     }
 
     #[Test]
@@ -136,7 +138,7 @@ class EmpireCreatorTest extends TestCase
         for ($i = 0; $i < 25; $i++) {
             Empire::factory()->create([
                 'game_id' => $game->id,
-                'game_user_id' => null,
+                'player_id' => null,
                 'home_system_id' => $homeSystem->id,
             ]);
         }
@@ -158,7 +160,7 @@ class EmpireCreatorTest extends TestCase
         for ($i = 0; $i < 25; $i++) {
             Empire::factory()->create([
                 'game_id' => $game->id,
-                'game_user_id' => null,
+                'player_id' => null,
                 'home_system_id' => $homeSystem->id,
             ]);
         }
@@ -185,7 +187,7 @@ class EmpireCreatorTest extends TestCase
             $hsId = $i < 25 ? $game->homeSystems()->first()->id : $hs2->id;
             Empire::factory()->create([
                 'game_id' => $game->id,
-                'game_user_id' => null,
+                'player_id' => null,
                 'home_system_id' => $hsId,
             ]);
         }
@@ -299,7 +301,7 @@ class EmpireCreatorTest extends TestCase
         for ($i = 0; $i < 25; $i++) {
             Empire::factory()->create([
                 'game_id' => $game->id,
-                'game_user_id' => null,
+                'player_id' => null,
                 'home_system_id' => $newHomeSystem->id,
             ]);
         }

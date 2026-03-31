@@ -23,10 +23,10 @@ class GameController extends Controller
         $user = $request->user();
 
         $games = $user->isAdmin()
-            ? Game::withCount(['gms', 'players'])->orderBy('name')->get(['id', 'name', 'is_active', 'created_at'])
+            ? Game::withCount(['gms', 'activePlayers'])->orderBy('name')->get(['id', 'name', 'is_active', 'created_at'])
             : $user->games()
                 ->wherePivot('role', GameRole::Gm->value)
-                ->withCount(['gms', 'players'])
+                ->withCount(['gms', 'activePlayers'])
                 ->orderBy('name')
                 ->get(['games.id', 'games.name', 'games.is_active', 'games.created_at']);
 
@@ -45,7 +45,7 @@ class GameController extends Controller
         [$activeMembers, $inactiveMembers] = $game->users->partition(fn (User $user) => $user->pivot->is_active);
 
         $empiriesByUserId = $game->isActive()
-            ? $game->empires()->pluck('game_user_id')->flip()
+            ? $game->empires()->with('player')->get()->mapWithKeys(fn ($e) => [$e->player?->user_id => true])
             : collect();
 
         $formatMember = fn (User $user) => [

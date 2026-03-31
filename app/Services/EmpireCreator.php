@@ -7,6 +7,7 @@ use App\Models\ColonyInventory;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\HomeSystem;
+use App\Models\Player;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -15,27 +16,32 @@ class EmpireCreator
     /**
      * Assign an empire to a player in the game.
      *
+     * The Player record (not the User) is the owner of the empire. This preserves
+     * per-game context: if a user is deactivated, their empire persists independently.
+     *
      * If $homeSystem is provided, assigns the empire to that specific home system (if not full).
      * Otherwise, assigns to the first home system in queue order that has capacity.
      *
      * @throws \RuntimeException for all business-rule violations.
      */
-    public function create(Game $game, User $player, ?HomeSystem $homeSystem = null): Empire
+    public function create(Game $game, User $user, ?HomeSystem $homeSystem = null): Empire
     {
-        return DB::transaction(function () use ($game, $player, $homeSystem) {
+        return DB::transaction(function () use ($game, $user, $homeSystem) {
             $game = Game::lockForUpdate()->findOrFail($game->id);
 
             if ($game->empires()->count() >= 250) {
                 throw new \RuntimeException('This game has reached the maximum of 250 empires.');
             }
 
-            $pivot = $game->users()->where('user_id', $player->id)->first()?->pivot;
+            $player = Player::where('game_id', $game->id)
+                ->where('user_id', $user->id)
+                ->first();
 
-            if (! $pivot || ! $pivot->is_active) {
+            if (! $player || ! $player->is_active) {
                 throw new \RuntimeException('This member is not an active player in this game.');
             }
 
-            if ($game->empires()->where('game_user_id', $player->id)->exists()) {
+            if ($player->empire()->exists()) {
                 throw new \RuntimeException('This player already has an empire in this game.');
             }
 
@@ -56,8 +62,8 @@ class EmpireCreator
 
             $empire = Empire::create([
                 'game_id' => $game->id,
-                'game_user_id' => $player->id,
-                'name' => $player->name."'s Empire",
+                'player_id' => $player->id,
+                'name' => $user->name."'s Empire",
                 'home_system_id' => $homeSystem->id,
             ]);
 

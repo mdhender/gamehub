@@ -25,7 +25,7 @@ class StoreGameMemberRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('users', 'id'),
-                Rule::unique('game_user', 'user_id')->where('game_id', $game->id),
+                Rule::unique('players', 'user_id')->where('game_id', $game->id),
             ],
             'role' => ['required', Rule::enum(GameRole::class)],
         ];

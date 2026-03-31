@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\GameStatus;
 use App\Models\Empire;
 use App\Models\Game;
+use App\Models\Player;
 use App\Models\User;
 use App\Services\DepositGenerator;
 use App\Services\EmpireCreator;
@@ -79,12 +80,14 @@ class GameGenerationControllerEmpireTest extends TestCase
         $gm = $this->gmUser($game);
         $player = $this->playerUser($game);
 
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->sole();
+
         $this->actingAs($gm)
-            ->post("/games/{$game->id}/generate/empires", ['game_user_id' => $player->id])
+            ->post("/games/{$game->id}/generate/empires", ['player_id' => $playerRecord->id])
             ->assertRedirect();
 
         $this->assertSame(1, $game->empires()->count());
-        $this->assertSame($player->id, $game->empires()->first()->game_user_id);
+        $this->assertSame($playerRecord->id, $game->empires()->first()->player_id);
     }
 
     #[Test]
@@ -95,9 +98,11 @@ class GameGenerationControllerEmpireTest extends TestCase
         $player = $this->playerUser($game);
         $homeSystem = $game->homeSystems()->first();
 
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->sole();
+
         $this->actingAs($gm)
             ->post("/games/{$game->id}/generate/empires", [
-                'game_user_id' => $player->id,
+                'player_id' => $playerRecord->id,
                 'home_system_id' => $homeSystem->id,
             ])
             ->assertRedirect();
@@ -111,9 +116,10 @@ class GameGenerationControllerEmpireTest extends TestCase
         $game = Game::factory()->create(['status' => GameStatus::HomeSystemGenerated]);
         $gm = $this->gmUser($game);
         $player = $this->playerUser($game);
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->sole();
 
         $this->actingAs($gm)
-            ->post("/games/{$game->id}/generate/empires", ['game_user_id' => $player->id])
+            ->post("/games/{$game->id}/generate/empires", ['player_id' => $playerRecord->id])
             ->assertSessionHasErrors('empire');
     }
 
@@ -124,8 +130,10 @@ class GameGenerationControllerEmpireTest extends TestCase
         $player = $this->playerUser($game);
         $nonGm = User::factory()->create();
 
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->sole();
+
         $this->actingAs($nonGm)
-            ->post("/games/{$game->id}/generate/empires", ['game_user_id' => $player->id])
+            ->post("/games/{$game->id}/generate/empires", ['player_id' => $playerRecord->id])
             ->assertForbidden();
     }
 
@@ -139,15 +147,17 @@ class GameGenerationControllerEmpireTest extends TestCase
         for ($i = 0; $i < 25; $i++) {
             Empire::factory()->create([
                 'game_id' => $game->id,
-                'game_user_id' => null,
+                'player_id' => null,
                 'home_system_id' => $homeSystem->id,
             ]);
         }
 
         $player = $this->playerUser($game);
 
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->sole();
+
         $this->actingAs($gm)
-            ->post("/games/{$game->id}/generate/empires", ['game_user_id' => $player->id])
+            ->post("/games/{$game->id}/generate/empires", ['player_id' => $playerRecord->id])
             ->assertSessionHasErrors('empire');
     }
 
@@ -159,10 +169,11 @@ class GameGenerationControllerEmpireTest extends TestCase
         $gm = $this->gmUser($game);
         $player = $this->playerUser($game);
         $foreignHomeSystem = $otherGame->homeSystems()->first();
+        $playerRecord = Player::where('game_id', $game->id)->where('user_id', $player->id)->sole();
 
         $this->actingAs($gm)
             ->post("/games/{$game->id}/generate/empires", [
-                'game_user_id' => $player->id,
+                'player_id' => $playerRecord->id,
                 'home_system_id' => $foreignHomeSystem->id,
             ])
             ->assertNotFound();

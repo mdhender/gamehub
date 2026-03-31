@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['game_id', 'game_user_id', 'name', 'home_system_id'])]
+#[Fillable(['game_id', 'player_id', 'name', 'home_system_id'])]
 class Empire extends Model
 {
     /** @use HasFactory<EmpireFactory> */
@@ -19,6 +19,12 @@ class Empire extends Model
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
+    }
+
+    /** @return BelongsTo<Player, $this> */
+    public function player(): BelongsTo
+    {
+        return $this->belongsTo(Player::class);
     }
 
     /** @return BelongsTo<HomeSystem, $this> */
