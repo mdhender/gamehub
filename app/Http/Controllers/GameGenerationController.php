@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\GameStatus;
+use App\Enums\GenerationStepName;
 use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Game;
@@ -162,6 +164,100 @@ class GameGenerationController extends Controller
         app(DepositGenerator::class)->generate($game);
 
         return back()->with('success', 'Deposits generated successfully.');
+    }
+
+    public function deleteStep(Game $game, string $step): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! in_array($step, ['stars', 'planets', 'deposits', 'home_systems'], true)) {
+            abort(404);
+        }
+
+        if (! $game->canDeleteStep()) {
+            throw ValidationException::withMessages([
+                'step' => 'Steps cannot be deleted at the current game status.',
+            ]);
+        }
+
+        DB::transaction(function () use ($game, $step) {
+            $game = Game::lockForUpdate()->findOrFail($game->id);
+
+            match ($step) {
+                'home_systems' => $this->performDeleteHomeSystems($game),
+                'deposits' => $this->performDeleteDeposits($game),
+                'planets' => $this->performDeletePlanets($game),
+                'stars' => $this->performDeleteStars($game),
+            };
+        });
+
+        return back()->with('success', ucwords(str_replace('_', ' ', $step)).' deleted successfully.');
+    }
+
+    private function performDeleteHomeSystems(Game $game): void
+    {
+        $depositStep = $game->generationSteps()
+            ->where('step', GenerationStepName::Deposits->value)
+            ->first();
+
+        $game->homeSystems()->delete();
+        $game->generationSteps()->where('step', GenerationStepName::HomeSystem->value)->delete();
+
+        $game->prng_state = $depositStep?->output_state;
+        $game->status = GameStatus::DepositsGenerated;
+        $game->save();
+    }
+
+    private function performDeleteDeposits(Game $game): void
+    {
+        $planetStep = $game->generationSteps()
+            ->where('step', GenerationStepName::Planets->value)
+            ->first();
+
+        $game->homeSystems()->delete();
+        $game->deposits()->delete();
+        $game->generationSteps()
+            ->whereIn('step', [GenerationStepName::HomeSystem->value, GenerationStepName::Deposits->value])
+            ->delete();
+
+        $game->prng_state = $planetStep?->output_state;
+        $game->status = GameStatus::PlanetsGenerated;
+        $game->save();
+    }
+
+    private function performDeletePlanets(Game $game): void
+    {
+        $starStep = $game->generationSteps()
+            ->where('step', GenerationStepName::Stars->value)
+            ->first();
+
+        $game->homeSystems()->delete();
+        $game->deposits()->delete();
+        $game->planets()->delete();
+        $game->generationSteps()
+            ->whereIn('step', [
+                GenerationStepName::HomeSystem->value,
+                GenerationStepName::Deposits->value,
+                GenerationStepName::Planets->value,
+            ])
+            ->delete();
+
+        $game->prng_state = $starStep?->output_state;
+        $game->status = GameStatus::StarsGenerated;
+        $game->save();
+    }
+
+    private function performDeleteStars(Game $game): void
+    {
+        $game->homeSystems()->delete();
+        $game->deposits()->delete();
+        $game->planets()->delete();
+        $game->stars()->delete();
+        $game->generationSteps()->delete();
+
+        $game->prng_state = null;
+        $game->status = GameStatus::Setup;
+        $game->save();
     }
 
     public function uploadHomeSystemTemplate(UploadHomeSystemTemplateRequest $request, Game $game): RedirectResponse

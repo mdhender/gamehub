@@ -1,10 +1,20 @@
 import { Form, Head, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
 import GameGenerationController from '@/actions/App/Http/Controllers/GameGenerationController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -112,6 +122,49 @@ export default function GameGenerate({
     const starsForm = useForm({ seed: game.prng_seed });
     const planetsForm = useForm({});
     const depositsForm = useForm({});
+    const deleteForm = useForm({});
+
+    const [deleteConfirm, setDeleteConfirm] = useState<
+        'stars' | 'planets' | 'deposits' | 'home_systems' | null
+    >(null);
+
+    const deleteConfig: Record<
+        'stars' | 'planets' | 'deposits' | 'home_systems',
+        { title: string; description: string }
+    > = {
+        stars: {
+            title: 'Delete Stars',
+            description:
+                'This will permanently delete all stars, planets, deposits, home systems, empires, and colonies. The game will revert to Setup status.',
+        },
+        planets: {
+            title: 'Delete Planets',
+            description:
+                'This will permanently delete all planets, deposits, home systems, empires, and colonies. The game will revert to Stars Generated status.',
+        },
+        deposits: {
+            title: 'Delete Deposits',
+            description:
+                'This will permanently delete all deposits, home systems, empires, and colonies. The game will revert to Planets Generated status.',
+        },
+        home_systems: {
+            title: 'Delete Home Systems',
+            description:
+                'This will permanently delete all home systems, empires, and colonies. The game will revert to Deposits Generated status.',
+        },
+    };
+
+    function confirmDelete(step: 'stars' | 'planets' | 'deposits' | 'home_systems') {
+        setDeleteConfirm(step);
+    }
+
+    function handleDeleteConfirm() {
+        if (deleteConfirm === null) { return; }
+
+        deleteForm.delete(GameGenerationController.deleteStep.url({ game, step: deleteConfirm }), {
+            onSuccess: () => setDeleteConfirm(null),
+        });
+    }
 
     function submitSeed(e: React.FormEvent) {
         e.preventDefault();
@@ -344,7 +397,11 @@ export default function GameGenerate({
                                         Generate Stars
                                     </Button>
                                     {stars && (
-                                        <Button variant="destructive" disabled={!game.can_delete_step}>
+                                        <Button
+                                            variant="destructive"
+                                            disabled={!game.can_delete_step}
+                                            onClick={() => confirmDelete('stars')}
+                                        >
                                             Delete Stars
                                         </Button>
                                     )}
@@ -355,7 +412,11 @@ export default function GameGenerate({
                         {!game.can_generate_stars && (
                             <div className="flex gap-3">
                                 {stars && (
-                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={!game.can_delete_step}
+                                        onClick={() => confirmDelete('stars')}
+                                    >
                                         Delete Stars
                                     </Button>
                                 )}
@@ -410,7 +471,11 @@ export default function GameGenerate({
                                     Generate Planets
                                 </Button>
                                 {planets && (
-                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={!game.can_delete_step}
+                                        onClick={() => confirmDelete('planets')}
+                                    >
                                         Delete Planets
                                     </Button>
                                 )}
@@ -418,7 +483,11 @@ export default function GameGenerate({
                         ) : (
                             <div className="flex gap-3">
                                 {planets && (
-                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={!game.can_delete_step}
+                                        onClick={() => confirmDelete('planets')}
+                                    >
                                         Delete Planets
                                     </Button>
                                 )}
@@ -465,7 +534,11 @@ export default function GameGenerate({
                                     Generate Deposits
                                 </Button>
                                 {deposits && (
-                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={!game.can_delete_step}
+                                        onClick={() => confirmDelete('deposits')}
+                                    >
                                         Delete Deposits
                                     </Button>
                                 )}
@@ -473,7 +546,11 @@ export default function GameGenerate({
                         ) : (
                             <div className="flex gap-3">
                                 {deposits && (
-                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={!game.can_delete_step}
+                                        onClick={() => confirmDelete('deposits')}
+                                    >
                                         Delete Deposits
                                     </Button>
                                 )}
@@ -527,7 +604,11 @@ export default function GameGenerate({
                                 Create Manual Home System
                             </Button>
                             {homeSystems.length > 0 && (
-                                <Button variant="destructive" disabled={!game.can_delete_step}>
+                                <Button
+                                    variant="destructive"
+                                    disabled={!game.can_delete_step}
+                                    onClick={() => confirmDelete('home_systems')}
+                                >
                                     Delete All Home Systems
                                 </Button>
                             )}
@@ -632,6 +713,37 @@ export default function GameGenerate({
                     </div>
                 </section>
             </div>
+
+            <Dialog
+                open={deleteConfirm !== null}
+                onOpenChange={(open) => {
+                    if (!open) { setDeleteConfirm(null); }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {deleteConfirm ? deleteConfig[deleteConfirm].title : ''}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {deleteConfirm ? deleteConfig[deleteConfirm].description : ''}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeleteConfirm}
+                            disabled={deleteForm.processing}
+                        >
+                            {deleteForm.processing && <Spinner />}
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
