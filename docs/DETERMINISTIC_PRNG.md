@@ -90,7 +90,7 @@ public function test_state_can_be_saved_and_restored(): void
 
 ## Database Schema
 
-| Column | Type | Description |
-|---|---|---|
-| `prng_seed` | `string(255)` | Human-readable seed, editable by GM before generation |
-| `prng_state` | `text`, nullable | Serialized engine state after last generation pass |
+| Column       | Type             | Description                                           |
+|--------------|------------------|-------------------------------------------------------|
+| `prng_seed`  | `string(255)`    | Human-readable seed, editable by GM before generation |
+| `prng_state` | `text`, nullable | Serialized engine state after last generation pass    |
