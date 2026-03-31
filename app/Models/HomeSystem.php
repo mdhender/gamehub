@@ -17,7 +17,13 @@ class HomeSystem extends Model
 
     public $timestamps = false;
 
-    protected $dates = ['created_at'];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['created_at' => 'datetime'];
+    }
 
     /** @return BelongsTo<Game, $this> */
     public function game(): BelongsTo

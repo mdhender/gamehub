@@ -17,8 +17,6 @@ class GenerationStep extends Model
 
     public $timestamps = false;
 
-    protected $dates = ['created_at'];
-
     /**
      * @return array<string, string>
      */
@@ -26,6 +24,7 @@ class GenerationStep extends Model
     {
         return [
             'step' => GenerationStepName::class,
+            'created_at' => 'datetime',
         ];
     }
 
