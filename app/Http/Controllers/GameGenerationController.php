@@ -6,6 +6,7 @@ use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Game;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -20,10 +21,66 @@ class GameGenerationController extends Controller
         $homeSystemTemplate = $game->homeSystemTemplate?->load('planets.deposits');
         $colonyTemplate = $game->colonyTemplate?->load('items');
 
+        $stars = null;
+        if (! $game->isSetup()) {
+            $starCoords = $game->stars()->select(['x', 'y', 'z'])->get();
+            $stars = [
+                'count' => $starCoords->count(),
+                'system_count' => $starCoords->unique(fn ($s) => "{$s->x}-{$s->y}-{$s->z}")->count(),
+            ];
+        }
+
+        $planets = null;
+        if (! $game->isSetup() && ! $game->isStarsGenerated()) {
+            $planets = [
+                'count' => $game->planets()->count(),
+                'by_type' => $game->planets()
+                    ->select('type', DB::raw('COUNT(*) as cnt'))
+                    ->groupBy('type')
+                    ->get()
+                    ->mapWithKeys(fn ($p) => [$p->type->value => (int) $p->cnt])
+                    ->toArray(),
+            ];
+        }
+
+        $deposits = null;
+        if ($game->isDepositsGenerated() || $game->isHomeSystemGenerated() || $game->isActive()) {
+            $deposits = ['count' => $game->deposits()->count()];
+        }
+
+        $homeSystems = $game->homeSystems()
+            ->with('star')
+            ->withCount('empires')
+            ->get()
+            ->map(fn ($hs) => [
+                'id' => $hs->id,
+                'queue_position' => $hs->queue_position,
+                'star_location' => $hs->star->location(),
+                'empire_count' => $hs->empires_count,
+                'capacity' => 25,
+            ]);
+
+        $empiresByUserId = $game->empires()->get()->keyBy('game_user_id');
+        $members = $game->players()->get()->map(fn ($player) => [
+            'id' => $player->id,
+            'name' => $player->name,
+            'empire' => ($empire = $empiresByUserId->get($player->id))
+                ? ['id' => $empire->id, 'name' => $empire->name, 'home_system_id' => $empire->home_system_id]
+                : null,
+        ]);
+
         return Inertia::render('games/generate', [
             'game' => [
-                ...$game->only('id', 'name', 'prng_seed', 'status'),
+                ...$game->only('id', 'name', 'prng_seed', 'min_home_system_distance'),
+                'status' => $game->status->value,
                 'can_edit_templates' => $game->canEditTemplates(),
+                'can_generate_stars' => $game->canGenerateStars(),
+                'can_generate_planets' => $game->canGeneratePlanets(),
+                'can_generate_deposits' => $game->canGenerateDeposits(),
+                'can_create_home_systems' => $game->canCreateHomeSystems(),
+                'can_delete_step' => $game->canDeleteStep(),
+                'can_activate' => $game->canActivate(),
+                'can_assign_empires' => $game->canAssignEmpires(),
             ],
             'homeSystemTemplate' => $homeSystemTemplate ? [
                 'planet_count' => $homeSystemTemplate->planets->count(),
@@ -39,6 +96,16 @@ class GameGenerationController extends Controller
                 'kind' => $colonyTemplate->kind,
                 'tech_level' => $colonyTemplate->tech_level,
             ] : null,
+            'generationSteps' => $game->generationSteps->map(fn ($step) => [
+                'id' => $step->id,
+                'step' => $step->step->value,
+                'sequence' => $step->sequence,
+            ]),
+            'stars' => $stars,
+            'planets' => $planets,
+            'deposits' => $deposits,
+            'homeSystems' => $homeSystems,
+            'members' => $members,
         ]);
     }
 

@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\GameStatus;
 use App\Models\Game;
+use App\Models\HomeSystem;
+use App\Models\Planet;
+use App\Models\Star;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -119,6 +122,147 @@ class GameGenerationControllerTest extends TestCase
         $this->actingAs($user)
             ->get("/games/{$game->id}/generate")
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function generate_page_passes_all_required_props(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('generationSteps')
+                ->has('stars')
+                ->has('planets')
+                ->has('deposits')
+                ->has('homeSystems')
+                ->has('members')
+                ->has('game.min_home_system_distance')
+                ->has('game.status')
+                ->has('game.can_generate_stars')
+                ->has('game.can_generate_planets')
+                ->has('game.can_generate_deposits')
+                ->has('game.can_create_home_systems')
+                ->has('game.can_delete_step')
+                ->has('game.can_activate')
+                ->has('game.can_assign_empires')
+            );
+    }
+
+    #[Test]
+    public function generate_page_stars_is_null_at_setup(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('stars', null));
+    }
+
+    #[Test]
+    public function generate_page_stars_has_count_when_stars_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::StarsGenerated]);
+        Star::factory()->count(3)->create(['game_id' => $game->id]);
+        // Two stars at same coordinates form a system group
+        Star::factory()->create(['game_id' => $game->id, 'x' => 0, 'y' => 0, 'z' => 0, 'sequence' => 1]);
+        Star::factory()->create(['game_id' => $game->id, 'x' => 0, 'y' => 0, 'z' => 0, 'sequence' => 2]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('stars.count', 5)
+                ->where('stars.system_count', 4)
+            );
+    }
+
+    #[Test]
+    public function generate_page_planets_is_null_at_stars_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::StarsGenerated]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('planets', null));
+    }
+
+    #[Test]
+    public function generate_page_planets_has_count_when_planets_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::PlanetsGenerated]);
+        $star = Star::factory()->create(['game_id' => $game->id]);
+        Planet::factory()->count(2)->create(['game_id' => $game->id, 'star_id' => $star->id]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('planets.count', 2));
+    }
+
+    #[Test]
+    public function generate_page_deposits_is_null_before_deposits_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::PlanetsGenerated]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('deposits', null));
+    }
+
+    #[Test]
+    public function generate_page_members_are_players_only_with_empire_info(): void
+    {
+        $game = Game::factory()->create();
+        $gm = $this->gmUser($game);
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => 'player', 'is_active' => true]);
+
+        $this->actingAs($gm)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('members', 1)
+                ->where('members.0.id', $player->id)
+                ->where('members.0.empire', null)
+            );
+    }
+
+    #[Test]
+    public function generate_page_home_systems_list_includes_location_and_capacity(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::HomeSystemGenerated]);
+        $star = Star::factory()->create(['game_id' => $game->id, 'x' => 5, 'y' => 12, 'z' => 0]);
+        $planet = Planet::factory()->create(['game_id' => $game->id, 'star_id' => $star->id]);
+        HomeSystem::factory()->create([
+            'game_id' => $game->id,
+            'star_id' => $star->id,
+            'homeworld_planet_id' => $planet->id,
+            'queue_position' => 1,
+        ]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('homeSystems', 1)
+                ->where('homeSystems.0.queue_position', 1)
+                ->where('homeSystems.0.star_location', '05-12-00')
+                ->where('homeSystems.0.empire_count', 0)
+                ->where('homeSystems.0.capacity', 25)
+            );
     }
 
     // -------------------------------------------------------------------------

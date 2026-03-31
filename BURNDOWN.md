@@ -477,8 +477,8 @@ To be updated upon completion of each task.
 | 6    | Home system migration and model           | DONE   |
 | 7    | Empire and colony migrations and models   | DONE   |
 | 8    | Generation steps migration and model      | DONE   |
-| 9    | `GameGenerationController` and route      | TODO   |
-| 10   | Generate page frontend shell              | TODO   |
+| 9    | `GameGenerationController` and route      | DONE   |
+| 10   | Generate page frontend shell              | DONE   |
 | 11   | `StarGenerator` service                   | TODO   |
 | 12   | Generate stars action                     | TODO   |
 | 13   | `PlanetGenerator` service                 | TODO   |
