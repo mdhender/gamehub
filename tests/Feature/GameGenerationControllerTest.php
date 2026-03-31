@@ -223,6 +223,77 @@ class GameGenerationControllerTest extends TestCase
     }
 
     #[Test]
+    public function star_list_is_deferred_and_null_before_stars_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('starList')
+                ->loadDeferredProps(fn ($reload) => $reload->where('starList', null))
+            );
+    }
+
+    #[Test]
+    public function star_list_is_deferred_and_contains_stars_when_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::StarsGenerated]);
+        Star::factory()->create(['game_id' => $game->id, 'x' => 1, 'y' => 2, 'z' => 3, 'sequence' => 1]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('starList')
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('starList', 1)
+                    ->where('starList.0.x', 1)
+                    ->where('starList.0.location', '01-02-03')
+                )
+            );
+    }
+
+    #[Test]
+    public function planet_list_is_deferred_and_null_before_planets_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::StarsGenerated]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('planetList')
+                ->loadDeferredProps(fn ($reload) => $reload->where('planetList', null))
+            );
+    }
+
+    #[Test]
+    public function planet_list_is_deferred_and_contains_planets_when_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::PlanetsGenerated]);
+        $star = Star::factory()->create(['game_id' => $game->id, 'x' => 5, 'y' => 6, 'z' => 7]);
+        Planet::factory()->create(['game_id' => $game->id, 'star_id' => $star->id, 'orbit' => 3]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('planetList')
+                ->loadDeferredProps(fn ($reload) => $reload
+                    ->has('planetList', 1)
+                    ->where('planetList.0.orbit', 3)
+                    ->where('planetList.0.star_location', '05-06-07')
+                )
+            );
+    }
+
+    #[Test]
     public function generate_page_members_are_players_only_with_empire_info(): void
     {
         $game = Game::factory()->create();

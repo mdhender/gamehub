@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Deferred, Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
 import GenerationStepController from '@/actions/App/Http/Controllers/GameGeneration/GenerationStepController';
@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import ActivateSection from './generate/ActivateSection';
 import ColonyTemplateSection from './generate/ColonyTemplateSection';
@@ -81,8 +82,8 @@ export default function GameGenerate({
     stars: StarsSummary | null;
     planets: PlanetsSummary | null;
     deposits: DepositsSummary | null;
-    starList: StarItem[] | null;
-    planetList: PlanetItem[] | null;
+    starList: StarItem[] | null | undefined;
+    planetList: PlanetItem[] | null | undefined;
     homeSystems: HomeSystemItem[];
     availableStars: AvailableStar[] | null;
     members: MemberItem[];
@@ -109,19 +110,43 @@ export default function GameGenerate({
 
                 <ColonyTemplateSection game={game} colonyTemplate={colonyTemplate} />
 
-                <StarsSection
-                    game={game}
-                    stars={stars}
-                    starList={starList}
-                    onRequestDelete={setDeleteConfirm}
-                />
+                <Deferred
+                    data="starList"
+                    fallback={
+                        <section>
+                            <div className="mt-4 space-y-3">
+                                <Skeleton className="h-6 w-32" />
+                                <Skeleton className="h-48 w-full rounded-lg" />
+                            </div>
+                        </section>
+                    }
+                >
+                    <StarsSection
+                        game={game}
+                        stars={stars}
+                        starList={starList ?? null}
+                        onRequestDelete={setDeleteConfirm}
+                    />
+                </Deferred>
 
-                <PlanetsSection
-                    game={game}
-                    planets={planets}
-                    planetList={planetList}
-                    onRequestDelete={setDeleteConfirm}
-                />
+                <Deferred
+                    data="planetList"
+                    fallback={
+                        <section>
+                            <div className="mt-4 space-y-3">
+                                <Skeleton className="h-6 w-32" />
+                                <Skeleton className="h-48 w-full rounded-lg" />
+                            </div>
+                        </section>
+                    }
+                >
+                    <PlanetsSection
+                        game={game}
+                        planets={planets}
+                        planetList={planetList ?? null}
+                        onRequestDelete={setDeleteConfirm}
+                    />
+                </Deferred>
 
                 <DepositsSection
                     game={game}

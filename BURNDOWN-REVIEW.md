@@ -61,6 +61,8 @@ protected function casts(): array
 
 **Recommendation:** Extract data preparation into private methods or a dedicated resource/DTO class. Consider using Inertia deferred/optional props for the star list and planet list so they don't block initial page render.
 
+**Resolution:** Extracted all data preparation from `show()` into nine focused private methods (`gamePayload`, `homeSystemTemplateSummary`, `colonyTemplateSummary`, `starsSummary`, `planetsSummary`, `depositsSummary`, `starList`, `planetList`, `homeSystemsList`, `availableStarsList`, `membersList`), reducing `show()` to ~25 lines. `starList` and `planetList` are now wrapped in `Inertia::defer()` so they load asynchronously after the initial page render. On the frontend, both sections are wrapped in `<Deferred>` with a `Skeleton` fallback. Four new tests cover the deferred prop behaviour using `loadDeferredProps()`.
+
 ### Finding 6. ~~`GameGenerationController` is a 667-line mega-controller~~ ✅ RESOLVED
 
 **Resolution:** Split into 7 single-responsibility controllers under `app/Http/Controllers/GameGeneration/`:
@@ -202,7 +204,7 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 10 | ~~Eager-load `generationSteps` in the `show()` method~~ ✅ Done                                                                               | Low      | S      | `GameGenerationController.php`                                                                           |
 | 11 | ~~Split `GameGenerationController` into smaller controllers~~ ✅ Done                                                                        | Low      | L      | `GameGeneration/` subdirectory (6 new controllers), `routes/games.php`, `generate.tsx`                  |
 | 12 | ~~Extract frontend sections into sub-components~~ ✅ Done                                                                                    | Low      | M      | `generate/` subdirectory (9 new files), `generate.tsx`                                                  |
-| 13 | Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists                                   | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
+| 13 | ~~Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists~~ ✅ Done                        | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
 | 14 | Investigate OOM (out-of-memory) issue when running the full test suite                                                                       | Medium   | M      | `phpunit.xml`, test files                                                                                |
 
 **Effort key:** S = < 1 hour, M = 1–3 hours, L = 3+ hours
