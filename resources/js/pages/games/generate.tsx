@@ -110,6 +110,7 @@ export default function GameGenerate({
 }) {
     const seedForm = useForm({ prng_seed: game.prng_seed });
     const starsForm = useForm({ seed: game.prng_seed });
+    const planetsForm = useForm({});
 
     function submitSeed(e: React.FormEvent) {
         e.preventDefault();
@@ -393,14 +394,35 @@ export default function GameGenerate({
                             )
                         )}
 
-                        <div className="flex gap-3">
-                            <Button disabled={!game.can_generate_planets}>Generate Planets</Button>
-                            {planets && (
-                                <Button variant="destructive" disabled={!game.can_delete_step}>
-                                    Delete Planets
+                        {game.can_generate_planets ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    planetsForm.post(
+                                        GameGenerationController.generatePlanets.url(game),
+                                    );
+                                }}
+                                className="flex gap-3"
+                            >
+                                <Button type="submit" disabled={planetsForm.processing}>
+                                    {planetsForm.processing && <Spinner />}
+                                    Generate Planets
                                 </Button>
-                            )}
-                        </div>
+                                {planets && (
+                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                        Delete Planets
+                                    </Button>
+                                )}
+                            </form>
+                        ) : (
+                            <div className="flex gap-3">
+                                {planets && (
+                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                        Delete Planets
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </section>
 

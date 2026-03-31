@@ -504,4 +504,63 @@ class GameGenerationControllerTest extends TestCase
             ->post("/games/{$game->id}/generate/stars")
             ->assertSessionHasErrors('seed');
     }
+
+    // -------------------------------------------------------------------------
+    // generatePlanets
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function generate_planets_creates_planets_and_redirects(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+        $this->actingAs($user)->post("/games/{$game->id}/generate/stars");
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/planets")
+            ->assertRedirect();
+
+        $this->assertGreaterThan(0, $game->planets()->count());
+        $this->assertSame(GameStatus::PlanetsGenerated, $game->fresh()->status);
+    }
+
+    #[Test]
+    public function generate_planets_writes_generation_step_record(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+        $this->actingAs($user)->post("/games/{$game->id}/generate/stars");
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/planets");
+
+        $step = $game->generationSteps()
+            ->where('step', GenerationStepName::Planets->value)
+            ->first();
+
+        $this->assertNotNull($step);
+        $this->assertSame(GenerationStepName::Planets, $step->step);
+    }
+
+    #[Test]
+    public function generate_planets_is_forbidden_for_non_gm(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::StarsGenerated]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/planets")
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function generate_planets_is_rejected_when_status_is_not_stars_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/planets")
+            ->assertSessionHasErrors('planets');
+    }
 }
