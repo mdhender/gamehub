@@ -109,6 +109,7 @@ export default function GameGenerate({
     members: MemberItem[];
 }) {
     const seedForm = useForm({ prng_seed: game.prng_seed });
+    const starsForm = useForm({ seed: game.prng_seed });
 
     function submitSeed(e: React.FormEvent) {
         e.preventDefault();
@@ -311,14 +312,53 @@ export default function GameGenerate({
                             )
                         )}
 
-                        <div className="flex gap-3">
-                            <Button disabled={!game.can_generate_stars}>Generate Stars</Button>
-                            {stars && (
-                                <Button variant="destructive" disabled={!game.can_delete_step}>
-                                    Delete Stars
-                                </Button>
-                            )}
-                        </div>
+                        {game.can_generate_stars && (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    starsForm.post(
+                                        GameGenerationController.generateStars.url(game),
+                                    );
+                                }}
+                                className="max-w-md space-y-4"
+                            >
+                                <div className="grid gap-2">
+                                    <Label htmlFor="stars-seed">Seed override</Label>
+                                    <Input
+                                        id="stars-seed"
+                                        type="text"
+                                        value={starsForm.data.seed}
+                                        onChange={(e) => starsForm.setData('seed', e.target.value)}
+                                        autoComplete="off"
+                                        data-1p-ignore
+                                        className="font-mono text-sm"
+                                    />
+                                    <InputError message={starsForm.errors.seed} />
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <Button type="submit" disabled={starsForm.processing}>
+                                        {starsForm.processing && <Spinner />}
+                                        Generate Stars
+                                    </Button>
+                                    {stars && (
+                                        <Button variant="destructive" disabled={!game.can_delete_step}>
+                                            Delete Stars
+                                        </Button>
+                                    )}
+                                </div>
+                            </form>
+                        )}
+
+                        {!game.can_generate_stars && (
+                            <div className="flex gap-3">
+                                {stars && (
+                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                        Delete Stars
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </section>
 

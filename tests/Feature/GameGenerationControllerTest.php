@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\GameStatus;
+use App\Enums\GenerationStepName;
 use App\Models\Game;
 use App\Models\HomeSystem;
 use App\Models\Planet;
@@ -419,5 +420,88 @@ class GameGenerationControllerTest extends TestCase
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
             ->assertSessionHasErrors('template');
+    }
+
+    // -------------------------------------------------------------------------
+    // generateStars
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function generate_stars_creates_100_stars_and_redirects(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/stars")
+            ->assertRedirect();
+
+        $this->assertSame(100, $game->stars()->count());
+        $this->assertSame(GameStatus::StarsGenerated, $game->fresh()->status);
+    }
+
+    #[Test]
+    public function generate_stars_writes_generation_step_record(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/stars");
+
+        $step = $game->generationSteps()->first();
+        $this->assertNotNull($step);
+        $this->assertSame(GenerationStepName::Stars, $step->step);
+    }
+
+    #[Test]
+    public function generate_stars_accepts_seed_override(): void
+    {
+        $gameA = Game::factory()->create(['status' => GameStatus::Setup, 'prng_seed' => 'seed-a']);
+        $gameB = Game::factory()->create(['status' => GameStatus::Setup, 'prng_seed' => 'seed-a']);
+        $user = $this->gmUser($gameA);
+        $gameB->users()->attach($user, ['role' => 'gm', 'is_active' => true]);
+
+        $this->actingAs($user)->post("/games/{$gameA->id}/generate/stars");
+        $this->actingAs($user)->post("/games/{$gameB->id}/generate/stars", ['seed' => 'override-seed']);
+
+        $starsA = $gameA->stars()->get(['x', 'y', 'z'])->toArray();
+        $starsB = $gameB->stars()->get(['x', 'y', 'z'])->toArray();
+
+        $this->assertNotSame($starsA, $starsB);
+    }
+
+    #[Test]
+    public function generate_stars_seed_override_does_not_change_game_prng_seed(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup, 'prng_seed' => 'original']);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/stars", ['seed' => 'override']);
+
+        $this->assertSame('original', $game->fresh()->prng_seed);
+    }
+
+    #[Test]
+    public function generate_stars_is_forbidden_for_non_gm(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/stars")
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function generate_stars_is_rejected_when_status_is_not_setup(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::StarsGenerated]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/stars")
+            ->assertSessionHasErrors('seed');
     }
 }

@@ -480,7 +480,7 @@ To be updated upon completion of each task.
 | 9    | `GameGenerationController` and route      | DONE   |
 | 10   | Generate page frontend shell              | DONE   |
 | 11   | `StarGenerator` service                   | DONE   |
-| 12   | Generate stars action                     | TODO   |
+| 12   | Generate stars action                     | DONE   |
 | 13   | `PlanetGenerator` service                 | TODO   |
 | 14   | Generate planets action                   | TODO   |
 | 15   | `DepositGenerator` service                | TODO   |
