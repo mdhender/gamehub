@@ -1,6 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
+import GameGenerationController from '@/actions/App/Http/Controllers/GameGenerationController';
 import GameMemberController from '@/actions/App/Http/Controllers/GameMemberController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -47,7 +48,7 @@ type AvailableUser = {
     email: string;
 };
 
-type Tab = 'members' | 'generate';
+type Tab = 'members';
 
 export default function GameShow({
     game,
@@ -138,20 +139,23 @@ export default function GameShow({
                 <div>
                     <div className="border-b border-sidebar-border/70 dark:border-sidebar-border">
                         <nav className="-mb-px flex gap-6">
-                            {(['members', 'generate'] as Tab[]).map((tab) => (
-                                <button
-                                    key={tab}
-                                    type="button"
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`pb-3 text-sm font-medium capitalize transition-colors ${
-                                        activeTab === tab
-                                            ? 'border-b-2 border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                >
-                                    {tab === 'members' ? 'Members' : 'Generate'}
-                                </button>
-                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('members')}
+                                className={`pb-3 text-sm font-medium transition-colors ${
+                                    activeTab === 'members'
+                                        ? 'border-b-2 border-primary text-primary'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                Members
+                            </button>
+                            <Link
+                                href={GameGenerationController.show.url(game)}
+                                className="pb-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Generate
+                            </Link>
                         </nav>
                     </div>
 
@@ -386,41 +390,7 @@ export default function GameShow({
                         </div>
                     )}
 
-                    {/* Generate tab */}
-                    {activeTab === 'generate' && (
-                        <div className="mt-6 space-y-8">
-                            <section>
-                                <Heading
-                                    title="PRNG Seed"
-                                    description="Controls all random generation for this game. Change before running entity generators."
-                                />
-
-                                <form onSubmit={submitEdit} className="mt-4 max-w-md space-y-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="prng_seed">Seed</Label>
-                                        <Input
-                                            id="prng_seed"
-                                            type="text"
-                                            value={editForm.data.prng_seed}
-                                            onChange={(e) =>
-                                                editForm.setData('prng_seed', e.target.value)
-                                            }
-                                            autoComplete="off"
-                                            data-1p-ignore
-                                            required
-                                            className="font-mono text-sm"
-                                        />
-                                        <InputError message={editForm.errors.prng_seed} />
-                                    </div>
-
-                                    <Button type="submit" disabled={editForm.processing}>
-                                        {editForm.processing && <Spinner />}
-                                        Save seed
-                                    </Button>
-                                </form>
-                            </section>
-                        </div>
-                    )}
+                    {/* Generate tab — navigates away; content lives on the generate page */}
                 </div>
             </div>
 
