@@ -488,7 +488,7 @@ To be updated upon completion of each task.
 | 17   | Delete step actions                       | DONE   |
 | 18   | Star editing                              | DONE   |
 | 19   | Planet editing                            | DONE   |
-| 20   | `HomeSystemCreator` service               | TODO   |
+| 20   | `HomeSystemCreator` service               | DONE   |
 | 21   | Home system creation actions              | TODO   |
 | 22   | Activate game action                      | TODO   |
 | 23   | `EmpireCreator` service                   | TODO   |
