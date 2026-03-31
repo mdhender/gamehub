@@ -17,6 +17,7 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
 
     Route::prefix('{game}/generate')->name('generate.')->group(function () {
         Route::get('/', [GameGenerationController::class, 'show'])->name('show');
+        Route::get('download', [GameGenerationController::class, 'download'])->name('download');
         Route::post('templates/home-system', [GameGenerationController::class, 'uploadHomeSystemTemplate'])->name('templates.home-system');
         Route::post('templates/colony', [GameGenerationController::class, 'uploadColonyTemplate'])->name('templates.colony');
         Route::post('stars', [GameGenerationController::class, 'generateStars'])->name('stars');

@@ -552,17 +552,25 @@ export default function GameGenerate({
 
                     <div className="mt-4 space-y-4">
                         {stars ? (
-                            <div className="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">
-                                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-                                    <div>
-                                        <dt className="text-muted-foreground">Stars</dt>
-                                        <dd className="font-medium">{stars.count}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-muted-foreground">Systems</dt>
-                                        <dd className="font-medium">{stars.system_count}</dd>
-                                    </div>
-                                </dl>
+                            <div className="space-y-3">
+                                <div className="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+                                    <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                                        <div>
+                                            <dt className="text-muted-foreground">Stars</dt>
+                                            <dd className="font-medium">{stars.count}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-muted-foreground">Systems</dt>
+                                            <dd className="font-medium">{stars.system_count}</dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                                <a
+                                    href={GameGenerationController.download.url(game)}
+                                    className="inline-flex items-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+                                >
+                                    Download JSON
+                                </a>
                             </div>
                         ) : (
                             !game.can_generate_stars && (

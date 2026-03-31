@@ -177,6 +177,54 @@ class GameGenerationController extends Controller
         ]);
     }
 
+    public function download(Game $game): \Symfony\Component\HttpFoundation\Response
+    {
+        Gate::authorize('update', $game);
+
+        if ($game->isSetup()) {
+            abort(404);
+        }
+
+        $data = [
+            'game' => [
+                'id' => $game->id,
+                'name' => $game->name,
+                'status' => $game->status->value,
+            ],
+            'stars' => $game->stars()
+                ->with(['planets' => fn ($q) => $q->orderBy('orbit'), 'planets.deposits'])
+                ->orderBy('x')->orderBy('y')->orderBy('z')->orderBy('sequence')
+                ->get()
+                ->map(fn ($star) => [
+                    'location' => $star->location(),
+                    'x' => $star->x,
+                    'y' => $star->y,
+                    'z' => $star->z,
+                    'sequence' => $star->sequence,
+                    'planets' => $star->planets->map(fn ($planet) => [
+                        'orbit' => $planet->orbit,
+                        'type' => $planet->type->value,
+                        'habitability' => $planet->habitability,
+                        'is_homeworld' => $planet->is_homeworld,
+                        'deposits' => $planet->deposits->map(fn ($deposit) => [
+                            'resource' => $deposit->resource->value,
+                            'yield_pct' => $deposit->yield_pct,
+                            'quantity_remaining' => $deposit->quantity_remaining,
+                        ])->values(),
+                    ])->values(),
+                ])
+                ->values(),
+        ];
+
+        $filename = 'cluster-'.$game->id.'.json';
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        return response($json, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
     public function generateStars(Request $request, Game $game): RedirectResponse
     {
         Gate::authorize('update', $game);
