@@ -484,7 +484,7 @@ To be updated upon completion of each task.
 | 13   | `PlanetGenerator` service                 | DONE   |
 | 14   | Generate planets action                   | DONE   |
 | 15   | `DepositGenerator` service                | DONE   |
-| 16   | Generate deposits action                  | TODO   |
+| 16   | Generate deposits action                  | DONE   |
 | 17   | Delete step actions                       | TODO   |
 | 18   | Star editing                              | TODO   |
 | 19   | Planet editing                            | TODO   |

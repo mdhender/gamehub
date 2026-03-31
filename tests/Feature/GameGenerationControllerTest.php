@@ -563,4 +563,65 @@ class GameGenerationControllerTest extends TestCase
             ->post("/games/{$game->id}/generate/planets")
             ->assertSessionHasErrors('planets');
     }
+
+    // -------------------------------------------------------------------------
+    // generateDeposits
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function generate_deposits_creates_deposits_and_redirects(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+        $this->actingAs($user)->post("/games/{$game->id}/generate/stars");
+        $this->actingAs($user)->post("/games/{$game->id}/generate/planets");
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/deposits")
+            ->assertRedirect();
+
+        $this->assertGreaterThan(0, $game->deposits()->count());
+        $this->assertSame(GameStatus::DepositsGenerated, $game->fresh()->status);
+    }
+
+    #[Test]
+    public function generate_deposits_writes_generation_step_record(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+        $this->actingAs($user)->post("/games/{$game->id}/generate/stars");
+        $this->actingAs($user)->post("/games/{$game->id}/generate/planets");
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/deposits");
+
+        $step = $game->generationSteps()
+            ->where('step', GenerationStepName::Deposits->value)
+            ->first();
+
+        $this->assertNotNull($step);
+        $this->assertSame(GenerationStepName::Deposits, $step->step);
+    }
+
+    #[Test]
+    public function generate_deposits_is_forbidden_for_non_gm(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::PlanetsGenerated]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/deposits")
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function generate_deposits_is_rejected_when_status_is_not_planets_generated(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/deposits")
+            ->assertSessionHasErrors('deposits');
+    }
 }

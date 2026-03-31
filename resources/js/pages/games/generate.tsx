@@ -111,6 +111,7 @@ export default function GameGenerate({
     const seedForm = useForm({ prng_seed: game.prng_seed });
     const starsForm = useForm({ seed: game.prng_seed });
     const planetsForm = useForm({});
+    const depositsForm = useForm({});
 
     function submitSeed(e: React.FormEvent) {
         e.preventDefault();
@@ -449,14 +450,35 @@ export default function GameGenerate({
                             )
                         )}
 
-                        <div className="flex gap-3">
-                            <Button disabled={!game.can_generate_deposits}>Generate Deposits</Button>
-                            {deposits && (
-                                <Button variant="destructive" disabled={!game.can_delete_step}>
-                                    Delete Deposits
+                        {game.can_generate_deposits ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    depositsForm.post(
+                                        GameGenerationController.generateDeposits.url(game),
+                                    );
+                                }}
+                                className="flex gap-3"
+                            >
+                                <Button type="submit" disabled={depositsForm.processing}>
+                                    {depositsForm.processing && <Spinner />}
+                                    Generate Deposits
                                 </Button>
-                            )}
-                        </div>
+                                {deposits && (
+                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                        Delete Deposits
+                                    </Button>
+                                )}
+                            </form>
+                        ) : (
+                            <div className="flex gap-3">
+                                {deposits && (
+                                    <Button variant="destructive" disabled={!game.can_delete_step}>
+                                        Delete Deposits
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </section>
 

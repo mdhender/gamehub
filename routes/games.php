@@ -21,5 +21,6 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
         Route::post('templates/colony', [GameGenerationController::class, 'uploadColonyTemplate'])->name('templates.colony');
         Route::post('stars', [GameGenerationController::class, 'generateStars'])->name('stars');
         Route::post('planets', [GameGenerationController::class, 'generatePlanets'])->name('planets');
+        Route::post('deposits', [GameGenerationController::class, 'generateDeposits'])->name('deposits');
     });
 });

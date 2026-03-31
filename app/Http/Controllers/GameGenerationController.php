@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Game;
+use App\Services\DepositGenerator;
 use App\Services\PlanetGenerator;
 use App\Services\StarGenerator;
 use Illuminate\Http\RedirectResponse;
@@ -146,6 +147,21 @@ class GameGenerationController extends Controller
         app(PlanetGenerator::class)->generate($game);
 
         return back()->with('success', 'Planets generated successfully.');
+    }
+
+    public function generateDeposits(Game $game): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $game->canGenerateDeposits()) {
+            throw ValidationException::withMessages([
+                'deposits' => 'Deposits can only be generated when the game is in planets generated status.',
+            ]);
+        }
+
+        app(DepositGenerator::class)->generate($game);
+
+        return back()->with('success', 'Deposits generated successfully.');
     }
 
     public function uploadHomeSystemTemplate(UploadHomeSystemTemplateRequest $request, Game $game): RedirectResponse
