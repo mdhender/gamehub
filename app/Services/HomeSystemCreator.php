@@ -134,35 +134,45 @@ class HomeSystemCreator
             $star->planets()->delete();
         }
 
-        $homeworldPlanet = null;
+        $planetRows = $template->planets->map(fn ($tp) => [
+            'game_id' => $game->id,
+            'star_id' => $star->id,
+            'orbit' => $tp->orbit,
+            'type' => $tp->type->value,
+            'habitability' => $tp->habitability,
+            'is_homeworld' => $tp->is_homeworld,
+        ])->all();
+
+        Planet::insert($planetRows);
+
+        $insertedPlanets = Planet::where('star_id', $star->id)
+            ->get(['id', 'orbit', 'is_homeworld'])
+            ->keyBy('orbit');
+
+        $homeworldPlanet = $insertedPlanets->first(fn ($p) => $p->is_homeworld);
+
+        if (! $homeworldPlanet) {
+            throw new \RuntimeException('Home system template has no homeworld planet.');
+        }
+
+        $depositRows = [];
 
         foreach ($template->planets as $templatePlanet) {
-            $planet = Planet::create([
-                'game_id' => $game->id,
-                'star_id' => $star->id,
-                'orbit' => $templatePlanet->orbit,
-                'type' => $templatePlanet->type->value,
-                'habitability' => $templatePlanet->habitability,
-                'is_homeworld' => $templatePlanet->is_homeworld,
-            ]);
-
-            if ($templatePlanet->is_homeworld) {
-                $homeworldPlanet = $planet;
-            }
+            $planet = $insertedPlanets->get($templatePlanet->orbit);
 
             foreach ($templatePlanet->deposits as $templateDeposit) {
-                Deposit::create([
+                $depositRows[] = [
                     'game_id' => $game->id,
                     'planet_id' => $planet->id,
                     'resource' => $templateDeposit->resource->value,
                     'yield_pct' => $templateDeposit->yield_pct,
                     'quantity_remaining' => $templateDeposit->quantity_remaining,
-                ]);
+                ];
             }
         }
 
-        if (! $homeworldPlanet) {
-            throw new \RuntimeException('Home system template has no homeworld planet.');
+        if (! empty($depositRows)) {
+            Deposit::insert($depositRows);
         }
 
         $nextQueuePosition = ($game->homeSystems()->max('queue_position') ?? 0) + 1;

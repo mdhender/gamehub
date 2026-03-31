@@ -115,14 +115,16 @@ class EmpireCreator
             'tech_level' => $colonyTemplate->tech_level,
         ]);
 
-        foreach ($colonyTemplate->items as $item) {
-            ColonyInventory::create([
-                'colony_id' => $colony->id,
-                'unit' => $item->unit,
-                'tech_level' => $item->tech_level,
-                'quantity_assembled' => $item->quantity_assembled,
-                'quantity_disassembled' => $item->quantity_disassembled,
-            ]);
+        if ($colonyTemplate->items->isNotEmpty()) {
+            ColonyInventory::insert(
+                $colonyTemplate->items->map(fn ($item) => [
+                    'colony_id' => $colony->id,
+                    'unit' => $item->unit,
+                    'tech_level' => $item->tech_level,
+                    'quantity_assembled' => $item->quantity_assembled,
+                    'quantity_disassembled' => $item->quantity_disassembled,
+                ])->all()
+            );
         }
 
         return $colony;

@@ -91,19 +91,17 @@ protected function casts(): array
 
 **Recommendation:** Define as a constant on the `HomeSystem` model (e.g., `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM = 25`) and reference it everywhere. Pass it to the frontend via the Inertia payload.
 
-### Finding 10. `HomeSystemCreator::applyTemplate()` creates planets/deposits one-by-one
+### Finding 10. ~~`HomeSystemCreator::applyTemplate()` creates planets/deposits one-by-one~~ ✅ RESOLVED
 
 **File:** `app/Services/HomeSystemCreator.php:128–176`
 
-**Problem:** Uses `Planet::create()` and `Deposit::create()` inside loops (N+1 inserts). For a typical home system template with 7–9 planets and multiple deposits each, this results in 15–30 individual INSERT queries within a transaction.
+**Resolution:** `applyTemplate()` now batch-inserts all planets via `Planet::insert()`, queries them back keyed by orbit to obtain IDs, then batch-inserts all deposits via `Deposit::insert()`. Reduces 15–30 individual INSERTs to 2–3 queries.
 
-**Recommendation:** Batch-insert planets, then batch-insert deposits (similar to how `StarGenerator`, `PlanetGenerator`, and `DepositGenerator` use `::insert()`). The only complication is needing the planet IDs for deposit FK references — this can be solved by inserting planets first, then querying them back.
-
-### Finding 11. `EmpireCreator::createColony()` also creates inventory one-by-one
+### Finding 11. ~~`EmpireCreator::createColony()` also creates inventory one-by-one~~ ✅ RESOLVED
 
 **File:** `app/Services/EmpireCreator.php:112–119`
 
-**Problem:** Same issue as #10 — `ColonyInventory::create()` inside a loop.
+**Resolution:** Colony inventory items are now batch-inserted via `ColonyInventory::insert()` after the colony record is created.
 
 ---
 
@@ -175,7 +173,7 @@ Ordered by priority (highest first). Each task is independent unless noted.
 | 4  | ~~Add clarifying comments on cascade deletes; add test assertions for empire/colony cleanup in delete step tests~~ ✅ Done                    | Medium   | S      | `GameGenerationController.php`, `GameGenerationControllerDeleteStepTest.php`                             |
 | 5  | ~~Move JSON structure validation from controller into Form Request `after()` hooks; add JSON parse error handling~~ ✅ Done                  | Medium   | S      | `UploadHomeSystemTemplateRequest.php`, `UploadColonyTemplateRequest.php`, `GameGenerationController.php` |
 | 6  | ~~Create Form Requests for `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, `reassignEmpire`~~ ✅ Done                 | Medium   | M      | New Form Request files, `GameGenerationController.php`                                                   |
-| 7  | Batch-insert planets and deposits in `HomeSystemCreator::applyTemplate()` and colony inventory in `EmpireCreator::createColony()`            | Medium   | S      | `HomeSystemCreator.php`, `EmpireCreator.php`                                                             |
+| 7  | ~~Batch-insert planets and deposits in `HomeSystemCreator::applyTemplate()` and colony inventory in `EmpireCreator::createColony()`~~ ✅ Done | Medium   | S      | `HomeSystemCreator.php`, `EmpireCreator.php`                                                             |
 | 8  | Add `lockForUpdate` to the `activate` action for concurrency consistency                                                                     | Low      | S      | `GameGenerationController.php`                                                                           |
 | 9  | Fix `GameRng::fromState()` to avoid throwaway constructor work                                                                               | Low      | S      | `GameRng.php`                                                                                            |
 | 10 | Eager-load `generationSteps` in the `show()` method                                                                                          | Low      | S      | `GameGenerationController.php`                                                                           |
