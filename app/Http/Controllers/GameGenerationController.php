@@ -11,6 +11,7 @@ use App\Models\Game;
 use App\Models\Planet;
 use App\Models\Star;
 use App\Services\DepositGenerator;
+use App\Services\HomeSystemCreator;
 use App\Services\PlanetGenerator;
 use App\Services\StarGenerator;
 use Illuminate\Http\RedirectResponse;
@@ -102,6 +103,19 @@ class GameGenerationController extends Controller
                 'capacity' => 25,
             ]);
 
+        $availableStars = null;
+        if ($game->canCreateHomeSystems()) {
+            $usedStarIds = $game->homeSystems()->pluck('star_id');
+            $availableStars = $game->stars()
+                ->whereNotIn('id', $usedStarIds)
+                ->orderBy('x')->orderBy('y')->orderBy('z')->orderBy('sequence')
+                ->get(['id', 'x', 'y', 'z', 'sequence'])
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'location' => $s->location(),
+                ]);
+        }
+
         $empiresByUserId = $game->empires()->get()->keyBy('game_user_id');
         $members = $game->players()->get()->map(fn ($player) => [
             'id' => $player->id,
@@ -149,6 +163,7 @@ class GameGenerationController extends Controller
             'starList' => $starList,
             'planetList' => $planetList,
             'homeSystems' => $homeSystems,
+            'availableStars' => $availableStars,
             'members' => $members,
         ]);
     }
@@ -202,6 +217,58 @@ class GameGenerationController extends Controller
         app(DepositGenerator::class)->generate($game);
 
         return back()->with('success', 'Deposits generated successfully.');
+    }
+
+    public function createHomeSystemRandom(Game $game): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $game->canCreateHomeSystems()) {
+            throw ValidationException::withMessages([
+                'home_system' => 'Home systems can only be created when deposits have been generated.',
+            ]);
+        }
+
+        try {
+            app(HomeSystemCreator::class)->createRandom($game);
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages([
+                'home_system' => $e->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'Home system created.');
+    }
+
+    public function createHomeSystemManual(Request $request, Game $game): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $game->canCreateHomeSystems()) {
+            throw ValidationException::withMessages([
+                'home_system' => 'Home systems can only be created when deposits have been generated.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'star_id' => ['required', 'integer', 'exists:stars,id'],
+        ]);
+
+        $star = Star::findOrFail($validated['star_id']);
+
+        if ($star->game_id !== $game->id) {
+            abort(404);
+        }
+
+        try {
+            app(HomeSystemCreator::class)->createManual($game, $star);
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages([
+                'star_id' => $e->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'Home system created.');
     }
 
     public function updateStar(Request $request, Game $game, Star $star): RedirectResponse

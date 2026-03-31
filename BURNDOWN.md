@@ -489,7 +489,7 @@ To be updated upon completion of each task.
 | 18   | Star editing                              | DONE   |
 | 19   | Planet editing                            | DONE   |
 | 20   | `HomeSystemCreator` service               | DONE   |
-| 21   | Home system creation actions              | TODO   |
+| 21   | Home system creation actions              | DONE   |
 | 22   | Activate game action                      | TODO   |
 | 23   | `EmpireCreator` service                   | TODO   |
 | 24   | Empire assignment actions and Members tab | TODO   |

@@ -82,6 +82,11 @@ type HomeSystemItem = {
     capacity: number;
 };
 
+type AvailableStar = {
+    id: number;
+    location: string;
+};
+
 type MemberItem = {
     id: number;
     name: string;
@@ -134,6 +139,7 @@ export default function GameGenerate({
     starList,
     planetList,
     homeSystems,
+    availableStars,
     members,
 }: {
     game: Game;
@@ -146,12 +152,15 @@ export default function GameGenerate({
     starList: StarItem[] | null;
     planetList: PlanetItem[] | null;
     homeSystems: HomeSystemItem[];
+    availableStars: AvailableStar[] | null;
     members: MemberItem[];
 }) {
     const seedForm = useForm({ prng_seed: game.prng_seed });
     const starsForm = useForm({ seed: game.prng_seed });
     const planetsForm = useForm({});
     const depositsForm = useForm({});
+    const homeSystemsRandomForm = useForm({});
+    const homeSystemsManualForm = useForm({ star_id: '' });
     const deleteForm = useForm({});
     const starEditForm = useForm({ x: 0, y: 0, z: 0 });
     const planetEditForm = useForm({ orbit: 1, type: 'terrestrial', habitability: 0 });
@@ -865,23 +874,76 @@ export default function GameGenerate({
                             <p className="text-sm text-muted-foreground">Not yet available.</p>
                         )}
 
-                        <div className="flex gap-3">
-                            <Button disabled={!game.can_create_home_systems}>
-                                Create Random Home System
-                            </Button>
-                            <Button variant="outline" disabled={!game.can_create_home_systems}>
-                                Create Manual Home System
-                            </Button>
-                            {homeSystems.length > 0 && (
-                                <Button
-                                    variant="destructive"
-                                    disabled={!game.can_delete_step}
-                                    onClick={() => confirmDelete('home_systems')}
+                        {game.can_create_home_systems && (
+                            <div className="space-y-3">
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        homeSystemsRandomForm.post(
+                                            GameGenerationController.createHomeSystemRandom.url(game),
+                                        );
+                                    }}
                                 >
-                                    Delete All Home Systems
-                                </Button>
-                            )}
-                        </div>
+                                    <div className="flex items-start gap-3">
+                                        <Button
+                                            type="submit"
+                                            disabled={homeSystemsRandomForm.processing}
+                                        >
+                                            {homeSystemsRandomForm.processing && <Spinner />}
+                                            Create Random Home System
+                                        </Button>
+                                    </div>
+                                    <InputError message={homeSystemsRandomForm.errors.home_system} className="mt-1" />
+                                </form>
+
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        homeSystemsManualForm.post(
+                                            GameGenerationController.createHomeSystemManual.url(game),
+                                        );
+                                    }}
+                                    className="space-y-2"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Select
+                                            value={homeSystemsManualForm.data.star_id}
+                                            onValueChange={(v) => homeSystemsManualForm.setData('star_id', v)}
+                                        >
+                                            <SelectTrigger className="w-40">
+                                                <SelectValue placeholder="Select star…" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {(availableStars ?? []).map((star) => (
+                                                    <SelectItem key={star.id} value={String(star.id)}>
+                                                        {star.location}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            type="submit"
+                                            variant="outline"
+                                            disabled={homeSystemsManualForm.processing || !homeSystemsManualForm.data.star_id}
+                                        >
+                                            {homeSystemsManualForm.processing && <Spinner />}
+                                            Create Manual Home System
+                                        </Button>
+                                    </div>
+                                    <InputError message={homeSystemsManualForm.errors.star_id} />
+                                </form>
+                            </div>
+                        )}
+
+                        {homeSystems.length > 0 && (
+                            <Button
+                                variant="destructive"
+                                disabled={!game.can_delete_step}
+                                onClick={() => confirmDelete('home_systems')}
+                            >
+                                Delete All Home Systems
+                            </Button>
+                        )}
                     </div>
                 </section>
 
