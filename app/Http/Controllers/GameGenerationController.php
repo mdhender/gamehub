@@ -611,20 +611,6 @@ class GameGenerationController extends Controller
 
         $data = json_decode(file_get_contents($request->file('template')->getRealPath()), true);
 
-        if (empty($data['planets']) || ! is_array($data['planets'])) {
-            throw ValidationException::withMessages([
-                'template' => 'Template must have at least one planet.',
-            ]);
-        }
-
-        $homeworldCount = collect($data['planets'])->filter(fn ($p) => $p['homeworld'] ?? false)->count();
-
-        if ($homeworldCount !== 1) {
-            throw ValidationException::withMessages([
-                'template' => 'Template must have exactly one homeworld planet.',
-            ]);
-        }
-
         $game->homeSystemTemplate()->delete();
 
         $template = $game->homeSystemTemplate()->create();
@@ -662,12 +648,6 @@ class GameGenerationController extends Controller
         $raw = json_decode(file_get_contents($request->file('template')->getRealPath()), true);
         $data = array_change_key_case($raw, CASE_LOWER);
         $inventory = $data['inventory'] ?? [];
-
-        if (empty($inventory) || ! is_array($inventory)) {
-            throw ValidationException::withMessages([
-                'template' => 'Template must have at least one inventory item.',
-            ]);
-        }
 
         $game->colonyTemplate()->delete();
 
