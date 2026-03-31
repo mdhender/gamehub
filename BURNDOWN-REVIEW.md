@@ -130,6 +130,34 @@ Route names are unchanged. Wayfinder regenerated. Frontend imports updated to re
 
 **Resolution:** `generate.tsx` was split into 9 focused sub-components under `resources/js/pages/games/generate/`: `types.ts` (shared types), `PrngSeedSection`, `HomeSystemTemplateSection`, `ColonyTemplateSection`, `StarsSection`, `PlanetsSection`, `DepositsSection`, `HomeSystemsSection`, `ActivateSection` (owns its own dialog), and `EmpiresSection` (owns `EmpiresTable`). The shared delete-step dialog state remains in the orchestrating `generate.tsx`, which is now ~160 lines.
 
+Split generate.tsx (1253 lines) into 10 files under resources/js/pages/games/generate/:
+
+```text
+┌───────────────────────────────┬─────────────────────────────────────────────────────────────────┐
+│             File              │                         Responsibility                          │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ types.ts                      │ All shared TypeScript types                                     │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ PrngSeedSection.tsx           │ Seed form with its own useForm state                            │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ HomeSystemTemplateSection.tsx │ Template display + upload form                                  │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ ColonyTemplateSection.tsx     │ Colony template display + upload form                           │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ StarsSection.tsx              │ Star list table with inline editing + generate/delete actions   │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ PlanetsSection.tsx            │ Planet list table with inline editing + generate/delete actions │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ DepositsSection.tsx           │ Deposits summary + generate/delete actions                      │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ HomeSystemsSection.tsx        │ Home systems table + random/manual creation forms               │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ ActivateSection.tsx           │ Activation summary + confirm dialog (owns its own dialog state) │
+├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+│ EmpiresSection.tsx            │ EmpiresTable + section wrapper                                  │
+└───────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+```
+
 ### Finding 16. ~~`generationSteps` relationship is loaded eagerly via `$game->generationSteps` in `show()`~~ ✅ RESOLVED
 
 **Resolution:** Added an explicit `$game->load('generationSteps')` call at the top of `show()`, immediately after the Gate authorization. The `$game->generationSteps` reference in the Inertia payload now uses the pre-loaded relation.
