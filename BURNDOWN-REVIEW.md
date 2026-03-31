@@ -53,7 +53,7 @@ protected function casts(): array
 
 **Resolution:** Replaced `protected $dates = ['created_at']` with a `protected function casts(): array` method returning `['created_at' => 'datetime']` on both `HomeSystem` and `GenerationStep`.
 
-### Finding 5. Controller `show()` method is excessively large — 177 lines
+### Finding 5. ~~Controller `show()` method is excessively large — 177 lines~~ ✅ RESOLVED
 
 **File:** `app/Http/Controllers/GameGenerationController.php:32–178`
 
