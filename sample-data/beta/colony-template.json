@@ -1,0 +1,48 @@
+{
+  "Kind":      1,
+  "TechLevel": 1,
+  "inventory": [
+    {
+      "unit": 1,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    },
+    {
+      "unit": 2,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    },
+    {
+      "unit": 3,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    },
+    {
+      "unit": 4,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    },
+    {
+      "unit": 17,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    },
+    {
+      "unit": 18,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    },
+    {
+      "unit": 19,
+      "TechLevel": 1,
+      "QuantityAssembled": 1000000,
+      "QuantityDisassembled": 0
+    }
+  ]
+}
