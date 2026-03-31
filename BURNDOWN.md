@@ -479,7 +479,7 @@ To be updated upon completion of each task.
 | 8    | Generation steps migration and model      | DONE   |
 | 9    | `GameGenerationController` and route      | DONE   |
 | 10   | Generate page frontend shell              | DONE   |
-| 11   | `StarGenerator` service                   | TODO   |
+| 11   | `StarGenerator` service                   | DONE   |
 | 12   | Generate stars action                     | TODO   |
 | 13   | `PlanetGenerator` service                 | TODO   |
 | 14   | Generate planets action                   | TODO   |
