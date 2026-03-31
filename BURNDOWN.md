@@ -483,7 +483,7 @@ To be updated upon completion of each task.
 | 12   | Generate stars action                     | DONE   |
 | 13   | `PlanetGenerator` service                 | DONE   |
 | 14   | Generate planets action                   | DONE   |
-| 15   | `DepositGenerator` service                | TODO   |
+| 15   | `DepositGenerator` service                | DONE   |
 | 16   | Generate deposits action                  | TODO   |
 | 17   | Delete step actions                       | TODO   |
 | 18   | Star editing                              | TODO   |
