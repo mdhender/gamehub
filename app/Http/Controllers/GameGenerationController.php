@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\GameStatus;
 use App\Enums\GenerationStepName;
+use App\Enums\PlanetType;
 use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Game;
+use App\Models\Planet;
+use App\Models\Star;
 use App\Services\DepositGenerator;
 use App\Services\PlanetGenerator;
 use App\Services\StarGenerator;
@@ -14,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -52,6 +56,38 @@ class GameGenerationController extends Controller
         $deposits = null;
         if ($game->isDepositsGenerated() || $game->isHomeSystemGenerated() || $game->isActive()) {
             $deposits = ['count' => $game->deposits()->count()];
+        }
+
+        $starList = null;
+        if ($game->isStarsGenerated()) {
+            $starList = $game->stars()
+                ->orderBy('x')->orderBy('y')->orderBy('z')->orderBy('sequence')
+                ->get(['id', 'x', 'y', 'z', 'sequence'])
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'x' => $s->x,
+                    'y' => $s->y,
+                    'z' => $s->z,
+                    'sequence' => $s->sequence,
+                    'location' => $s->location(),
+                ]);
+        }
+
+        $planetList = null;
+        if ($game->isPlanetsGenerated()) {
+            $planetList = $game->planets()
+                ->with(['star:id,x,y,z'])
+                ->orderBy('star_id')->orderBy('orbit')
+                ->get()
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'star_id' => $p->star_id,
+                    'star_location' => $p->star->location(),
+                    'orbit' => $p->orbit,
+                    'type' => $p->type->value,
+                    'habitability' => $p->habitability,
+                    'is_homeworld' => $p->is_homeworld,
+                ]);
         }
 
         $homeSystems = $game->homeSystems()
@@ -110,6 +146,8 @@ class GameGenerationController extends Controller
             'stars' => $stars,
             'planets' => $planets,
             'deposits' => $deposits,
+            'starList' => $starList,
+            'planetList' => $planetList,
             'homeSystems' => $homeSystems,
             'members' => $members,
         ]);
@@ -164,6 +202,72 @@ class GameGenerationController extends Controller
         app(DepositGenerator::class)->generate($game);
 
         return back()->with('success', 'Deposits generated successfully.');
+    }
+
+    public function updateStar(Request $request, Game $game, Star $star): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if ($star->game_id !== $game->id) {
+            abort(404);
+        }
+
+        if (! $game->isStarsGenerated()) {
+            throw ValidationException::withMessages([
+                'star' => 'Stars can only be edited when the game is in stars generated status.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'x' => ['required', 'integer', 'min:0', 'max:30'],
+            'y' => ['required', 'integer', 'min:0', 'max:30'],
+            'z' => ['required', 'integer', 'min:0', 'max:30'],
+        ]);
+
+        $x = (int) $validated['x'];
+        $y = (int) $validated['y'];
+        $z = (int) $validated['z'];
+
+        if ($x !== $star->x || $y !== $star->y || $z !== $star->z) {
+            $star->sequence = $game->stars()
+                ->where('x', $x)
+                ->where('y', $y)
+                ->where('z', $z)
+                ->where('id', '!=', $star->id)
+                ->count() + 1;
+        }
+
+        $star->x = $x;
+        $star->y = $y;
+        $star->z = $z;
+        $star->save();
+
+        return back()->with('success', 'Star updated.');
+    }
+
+    public function updatePlanet(Request $request, Game $game, Planet $planet): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if ($planet->game_id !== $game->id) {
+            abort(404);
+        }
+
+        if (! $game->isPlanetsGenerated()) {
+            throw ValidationException::withMessages([
+                'planet' => 'Planets can only be edited when the game is in planets generated status.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'orbit' => ['required', 'integer', 'min:1', 'max:11'],
+            'type' => ['required', Rule::enum(PlanetType::class)],
+            'habitability' => ['required', 'integer', 'min:0', 'max:25'],
+        ]);
+
+        $planet->update($validated);
+
+        return back()->with('success', 'Planet updated.');
     }
 
     public function deleteStep(Game $game, string $step): RedirectResponse

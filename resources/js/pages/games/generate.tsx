@@ -17,6 +17,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 
 type Game = {
@@ -85,6 +92,25 @@ type MemberItem = {
     } | null;
 };
 
+type StarItem = {
+    id: number;
+    x: number;
+    y: number;
+    z: number;
+    sequence: number;
+    location: string;
+};
+
+type PlanetItem = {
+    id: number;
+    star_id: number;
+    star_location: string;
+    orbit: number;
+    type: string;
+    habitability: number;
+    is_homeworld: boolean;
+};
+
 const planetTypeLabels: Record<string, string> = {
     terrestrial: 'Terrestrial',
     asteroid: 'Asteroid',
@@ -105,6 +131,8 @@ export default function GameGenerate({
     stars,
     planets,
     deposits,
+    starList,
+    planetList,
     homeSystems,
     members,
 }: {
@@ -115,6 +143,8 @@ export default function GameGenerate({
     stars: StarsSummary | null;
     planets: PlanetsSummary | null;
     deposits: DepositsSummary | null;
+    starList: StarItem[] | null;
+    planetList: PlanetItem[] | null;
     homeSystems: HomeSystemItem[];
     members: MemberItem[];
 }) {
@@ -123,10 +153,14 @@ export default function GameGenerate({
     const planetsForm = useForm({});
     const depositsForm = useForm({});
     const deleteForm = useForm({});
+    const starEditForm = useForm({ x: 0, y: 0, z: 0 });
+    const planetEditForm = useForm({ orbit: 1, type: 'terrestrial', habitability: 0 });
 
     const [deleteConfirm, setDeleteConfirm] = useState<
         'stars' | 'planets' | 'deposits' | 'home_systems' | null
     >(null);
+    const [editingStarId, setEditingStarId] = useState<number | null>(null);
+    const [editingPlanetId, setEditingPlanetId] = useState<number | null>(null);
 
     const deleteConfig: Record<
         'stars' | 'planets' | 'deposits' | 'home_systems',
@@ -163,6 +197,28 @@ export default function GameGenerate({
 
         deleteForm.delete(GameGenerationController.deleteStep.url({ game, step: deleteConfirm }), {
             onSuccess: () => setDeleteConfirm(null),
+        });
+    }
+
+    function startEditStar(star: StarItem) {
+        setEditingStarId(star.id);
+        starEditForm.setData({ x: star.x, y: star.y, z: star.z });
+    }
+
+    function submitStarEdit(star: StarItem) {
+        starEditForm.put(GameGenerationController.updateStar.url({ game, star }), {
+            onSuccess: () => setEditingStarId(null),
+        });
+    }
+
+    function startEditPlanet(planet: PlanetItem) {
+        setEditingPlanetId(planet.id);
+        planetEditForm.setData({ orbit: planet.orbit, type: planet.type, habitability: planet.habitability });
+    }
+
+    function submitPlanetEdit(planet: PlanetItem) {
+        planetEditForm.put(GameGenerationController.updatePlanet.url({ game, planet }), {
+            onSuccess: () => setEditingPlanetId(null),
         });
     }
 
@@ -367,6 +423,106 @@ export default function GameGenerate({
                             )
                         )}
 
+                        {starList && (
+                            <div className="overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
+                                <div className="max-h-96 overflow-y-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="sticky top-0 bg-muted/50 text-muted-foreground">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left font-medium">Location</th>
+                                                <th className="px-4 py-3 text-left font-medium">X</th>
+                                                <th className="px-4 py-3 text-left font-medium">Y</th>
+                                                <th className="px-4 py-3 text-left font-medium">Z</th>
+                                                <th className="px-4 py-3 text-left font-medium">Seq</th>
+                                                <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
+                                            {starList.map((star) =>
+                                                editingStarId === star.id ? (
+                                                    <tr key={star.id} className="bg-muted/30">
+                                                        <td className="px-4 py-2 font-mono text-muted-foreground">
+                                                            {star.location}
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input
+                                                                type="number"
+                                                                min={0}
+                                                                max={30}
+                                                                value={starEditForm.data.x}
+                                                                onChange={(e) => starEditForm.setData('x', Number(e.target.value))}
+                                                                className="h-7 w-16 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input
+                                                                type="number"
+                                                                min={0}
+                                                                max={30}
+                                                                value={starEditForm.data.y}
+                                                                onChange={(e) => starEditForm.setData('y', Number(e.target.value))}
+                                                                className="h-7 w-16 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input
+                                                                type="number"
+                                                                min={0}
+                                                                max={30}
+                                                                value={starEditForm.data.z}
+                                                                onChange={(e) => starEditForm.setData('z', Number(e.target.value))}
+                                                                className="h-7 w-16 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2 text-muted-foreground">
+                                                            {star.sequence}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => submitStarEdit(star)}
+                                                                    disabled={starEditForm.processing}
+                                                                >
+                                                                    {starEditForm.processing && <Spinner />}
+                                                                    Save
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => setEditingStarId(null)}
+                                                                    disabled={starEditForm.processing}
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    <tr key={star.id}>
+                                                        <td className="px-4 py-3 font-mono">{star.location}</td>
+                                                        <td className="px-4 py-3">{star.x}</td>
+                                                        <td className="px-4 py-3">{star.y}</td>
+                                                        <td className="px-4 py-3">{star.z}</td>
+                                                        <td className="px-4 py-3">{star.sequence}</td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => startEditStar(star)}
+                                                            >
+                                                                Edit
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
                         {game.can_generate_stars && (
                             <form
                                 onSubmit={(e) => {
@@ -454,6 +610,119 @@ export default function GameGenerate({
                             !game.can_generate_planets && (
                                 <p className="text-sm text-muted-foreground">Not yet available.</p>
                             )
+                        )}
+
+                        {planetList && (
+                            <div className="overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
+                                <div className="max-h-96 overflow-y-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="sticky top-0 bg-muted/50 text-muted-foreground">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left font-medium">Star</th>
+                                                <th className="px-4 py-3 text-left font-medium">Orbit</th>
+                                                <th className="px-4 py-3 text-left font-medium">Type</th>
+                                                <th className="px-4 py-3 text-left font-medium">Hab.</th>
+                                                <th className="px-4 py-3 text-left font-medium">HW</th>
+                                                <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
+                                            {planetList.map((planet) =>
+                                                editingPlanetId === planet.id ? (
+                                                    <tr key={planet.id} className="bg-muted/30">
+                                                        <td className="px-4 py-2 font-mono text-muted-foreground">
+                                                            {planet.star_location}
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input
+                                                                type="number"
+                                                                min={1}
+                                                                max={11}
+                                                                value={planetEditForm.data.orbit}
+                                                                onChange={(e) => planetEditForm.setData('orbit', Number(e.target.value))}
+                                                                className="h-7 w-16 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Select
+                                                                value={planetEditForm.data.type}
+                                                                onValueChange={(v) => planetEditForm.setData('type', v)}
+                                                            >
+                                                                <SelectTrigger className="h-7 w-32 text-sm">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="terrestrial">Terrestrial</SelectItem>
+                                                                    <SelectItem value="asteroid">Asteroid</SelectItem>
+                                                                    <SelectItem value="gas_giant">Gas Giant</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input
+                                                                type="number"
+                                                                min={0}
+                                                                max={25}
+                                                                value={planetEditForm.data.habitability}
+                                                                onChange={(e) => planetEditForm.setData('habitability', Number(e.target.value))}
+                                                                className="h-7 w-16 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2 text-muted-foreground">
+                                                            {planet.is_homeworld ? '✓' : '—'}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => submitPlanetEdit(planet)}
+                                                                    disabled={planetEditForm.processing}
+                                                                >
+                                                                    {planetEditForm.processing && <Spinner />}
+                                                                    Save
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => setEditingPlanetId(null)}
+                                                                    disabled={planetEditForm.processing}
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    <tr key={planet.id}>
+                                                        <td className="px-4 py-3 font-mono">{planet.star_location}</td>
+                                                        <td className="px-4 py-3">{planet.orbit}</td>
+                                                        <td className="px-4 py-3">
+                                                            {planetTypeLabels[planet.type] ?? planet.type}
+                                                        </td>
+                                                        <td className="px-4 py-3">{planet.habitability}</td>
+                                                        <td className="px-4 py-3">
+                                                            {planet.is_homeworld ? (
+                                                                <Badge variant="secondary">HW</Badge>
+                                                            ) : (
+                                                                '—'
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => startEditPlanet(planet)}
+                                                            >
+                                                                Edit
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         )}
 
                         {game.can_generate_planets ? (

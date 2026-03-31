@@ -486,8 +486,8 @@ To be updated upon completion of each task.
 | 15   | `DepositGenerator` service                | DONE   |
 | 16   | Generate deposits action                  | DONE   |
 | 17   | Delete step actions                       | DONE   |
-| 18   | Star editing                              | TODO   |
-| 19   | Planet editing                            | TODO   |
+| 18   | Star editing                              | DONE   |
+| 19   | Planet editing                            | DONE   |
 | 20   | `HomeSystemCreator` service               | TODO   |
 | 21   | Home system creation actions              | TODO   |
 | 22   | Activate game action                      | TODO   |

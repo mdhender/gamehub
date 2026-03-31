@@ -20,7 +20,9 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
         Route::post('templates/home-system', [GameGenerationController::class, 'uploadHomeSystemTemplate'])->name('templates.home-system');
         Route::post('templates/colony', [GameGenerationController::class, 'uploadColonyTemplate'])->name('templates.colony');
         Route::post('stars', [GameGenerationController::class, 'generateStars'])->name('stars');
+        Route::put('stars/{star}', [GameGenerationController::class, 'updateStar'])->name('update-star');
         Route::post('planets', [GameGenerationController::class, 'generatePlanets'])->name('planets');
+        Route::put('planets/{planet}', [GameGenerationController::class, 'updatePlanet'])->name('update-planet');
         Route::post('deposits', [GameGenerationController::class, 'generateDeposits'])->name('deposits');
         Route::delete('{step}', [GameGenerationController::class, 'deleteStep'])->name('delete-step');
     });
