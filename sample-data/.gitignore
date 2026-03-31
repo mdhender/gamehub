@@ -1,1 +1,8 @@
+*~
+*.swp
+auth.json
+cluster.json
+game.json
+homeworld-template.json
+orders.txt
 *.tgz
