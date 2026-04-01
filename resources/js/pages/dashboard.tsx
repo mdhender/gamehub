@@ -56,7 +56,7 @@ export default function Dashboard({
                             )}
                         </CardContent>
                     </Card>
-                    {totalActiveUsers !== null ? (
+                    {totalActiveUsers != null ? (
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
