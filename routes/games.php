@@ -20,6 +20,8 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
     Route::post('{game}/members', [GameMemberController::class, 'store'])->name('members.store');
     Route::delete('{game}/members/{user}', [GameMemberController::class, 'destroy'])->name('members.destroy');
     Route::post('{game}/members/{user}/restore', [GameMemberController::class, 'restore'])->name('members.restore');
+    Route::post('{game}/members/{user}/promote', [GameMemberController::class, 'promote'])->name('members.promote');
+    Route::delete('{game}/members/{user}/remove', [GameMemberController::class, 'remove'])->name('members.remove');
 
     Route::prefix('{game}/generate')->name('generate.')->group(function () {
         Route::get('/', [GameGenerationController::class, 'show'])->name('show');

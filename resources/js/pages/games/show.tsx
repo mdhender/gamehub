@@ -65,6 +65,7 @@ export default function GameShow({
     const { auth } = usePage().props;
     const isAdmin = auth.user?.is_admin;
     const [deactivatingMember, setDeactivatingMember] = useState<Member | null>(null);
+    const [removingMember, setRemovingMember] = useState<Member | null>(null);
     const [activeTab, setActiveTab] = useState<Tab>('members');
 
     const editForm = useForm({
@@ -234,21 +235,51 @@ export default function GameShow({
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        {(isAdmin ||
-                                                            member.role === 'player') && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="text-destructive hover:text-destructive"
-                                                                onClick={() =>
-                                                                    setDeactivatingMember(
-                                                                        member,
-                                                                    )
-                                                                }
-                                                            >
-                                                                Deactivate
-                                                            </Button>
-                                                        )}
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            {isAdmin && member.role === 'player' && !member.has_empire && (
+                                                                <Link
+                                                                    href={GameMemberController.promote.url({
+                                                                        game,
+                                                                        user: member,
+                                                                    })}
+                                                                    method="post"
+                                                                    as="button"
+                                                                    preserveScroll
+                                                                    className="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:underline"
+                                                                >
+                                                                    Promote to GM
+                                                                </Link>
+                                                            )}
+                                                            {(isAdmin ||
+                                                                member.role === 'player') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        setDeactivatingMember(
+                                                                            member,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Deactivate
+                                                                </Button>
+                                                            )}
+                                                            {member.role === 'player' && !member.has_empire && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-destructive hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        setRemovingMember(
+                                                                            member,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Remove
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -441,6 +472,43 @@ export default function GameShow({
                                 className="inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-destructive/90"
                             >
                                 Deactivate
+                            </Link>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={removingMember !== null}
+                onOpenChange={(open) => {
+                    if (!open) setRemovingMember(null);
+                }}
+            >
+                <DialogContent>
+                    <DialogTitle>Remove member</DialogTitle>
+                    <DialogDescription>
+                        Remove{' '}
+                        <strong>{removingMember?.name}</strong> from this game?
+                        This will permanently delete them from the game. This
+                        action cannot be undone.
+                    </DialogDescription>
+                    <DialogFooter className="gap-2">
+                        <DialogClose asChild>
+                            <Button variant="secondary">Cancel</Button>
+                        </DialogClose>
+                        {removingMember && (
+                            <Link
+                                href={GameMemberController.remove.url({
+                                    game,
+                                    user: removingMember,
+                                })}
+                                method="delete"
+                                as="button"
+                                preserveScroll
+                                onSuccess={() => setRemovingMember(null)}
+                                className="inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-destructive/90"
+                            >
+                                Remove
                             </Link>
                         )}
                     </DialogFooter>

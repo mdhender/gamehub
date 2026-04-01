@@ -64,4 +64,54 @@ class GameMemberController extends Controller
 
         return back()->with('success', 'Member reactivated.');
     }
+
+    public function promote(Request $request, Game $game, User $user): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Only admins can promote members to GM.');
+        }
+
+        $player = $game->playerRecords()->where('user_id', $user->id)->first();
+
+        if (! $player) {
+            abort(404);
+        }
+
+        if ($player->role === GameRole::Gm) {
+            abort(422, 'Member is already a GM.');
+        }
+
+        if ($player->empire()->exists()) {
+            abort(422, 'Cannot promote a player who has an empire.');
+        }
+
+        $game->users()->updateExistingPivot($user->id, ['role' => GameRole::Gm->value]);
+
+        return back()->with('success', 'Member promoted to GM.');
+    }
+
+    public function remove(Request $request, Game $game, User $user): RedirectResponse
+    {
+        Gate::authorize('update', $game);
+
+        $player = $game->playerRecords()->where('user_id', $user->id)->first();
+
+        if (! $player) {
+            abort(404);
+        }
+
+        if ($player->role === GameRole::Gm) {
+            abort(403, 'Cannot remove a GM.');
+        }
+
+        if ($player->empire()->exists()) {
+            abort(422, 'Cannot remove a player who has an empire.');
+        }
+
+        $game->users()->detach($user->id);
+
+        return back()->with('success', 'Member removed.');
+    }
 }

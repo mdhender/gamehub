@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\GameRole;
+use App\Models\Empire;
 use App\Models\Game;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -286,6 +287,140 @@ class GameMemberControllerTest extends TestCase
 
         $this->actingAs($gm)
             ->post("/games/{$game->id}/members/{$otherGm->id}/restore")
+            ->assertForbidden();
+    }
+
+    // --- promote (promote player to GM) ---
+
+    #[Test]
+    public function admin_can_promote_a_player_to_gm(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->post("/games/{$game->id}/members/{$player->id}/promote")
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('players', ['game_id' => $game->id, 'user_id' => $player->id, 'role' => 'gm']);
+    }
+
+    #[Test]
+    public function cannot_promote_a_player_who_has_an_empire(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+        $playerRecord = $game->playerRecords()->where('user_id', $player->id)->first();
+        Empire::factory()->create(['game_id' => $game->id, 'player_id' => $playerRecord->id]);
+
+        $this->actingAs($admin)
+            ->post("/games/{$game->id}/members/{$player->id}/promote")
+            ->assertStatus(422);
+    }
+
+    #[Test]
+    public function cannot_promote_a_member_who_is_already_a_gm(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $gm = User::factory()->create();
+        $game->users()->attach($gm, ['role' => GameRole::Gm->value, 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->post("/games/{$game->id}/members/{$gm->id}/promote")
+            ->assertStatus(422);
+    }
+
+    #[Test]
+    public function gm_cannot_promote_a_player(): void
+    {
+        $gm = User::factory()->create();
+        $game = Game::factory()->create();
+        $game->users()->attach($gm, ['role' => GameRole::Gm->value, 'is_active' => true]);
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+
+        $this->actingAs($gm)
+            ->post("/games/{$game->id}/members/{$player->id}/promote")
+            ->assertForbidden();
+    }
+
+    // --- remove (permanently remove member) ---
+
+    #[Test]
+    public function admin_can_remove_a_player_without_empire(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->delete("/games/{$game->id}/members/{$player->id}/remove")
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('players', ['game_id' => $game->id, 'user_id' => $player->id]);
+    }
+
+    #[Test]
+    public function gm_can_remove_a_player_without_empire(): void
+    {
+        $gm = User::factory()->create();
+        $game = Game::factory()->create();
+        $game->users()->attach($gm, ['role' => GameRole::Gm->value, 'is_active' => true]);
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+
+        $this->actingAs($gm)
+            ->delete("/games/{$game->id}/members/{$player->id}/remove")
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('players', ['game_id' => $game->id, 'user_id' => $player->id]);
+    }
+
+    #[Test]
+    public function cannot_remove_a_gm(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $gm = User::factory()->create();
+        $game->users()->attach($gm, ['role' => GameRole::Gm->value, 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->delete("/games/{$game->id}/members/{$gm->id}/remove")
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function cannot_remove_a_player_with_an_empire(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $game = Game::factory()->create();
+        $player = User::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+        $playerRecord = $game->playerRecords()->where('user_id', $player->id)->first();
+        Empire::factory()->create(['game_id' => $game->id, 'player_id' => $playerRecord->id]);
+
+        $this->actingAs($admin)
+            ->delete("/games/{$game->id}/members/{$player->id}/remove")
+            ->assertStatus(422);
+    }
+
+    #[Test]
+    public function non_gm_cannot_remove_members(): void
+    {
+        $player = User::factory()->create();
+        $game = Game::factory()->create();
+        $game->users()->attach($player, ['role' => GameRole::Player->value, 'is_active' => true]);
+        $other = User::factory()->create();
+        $game->users()->attach($other, ['role' => GameRole::Player->value, 'is_active' => true]);
+
+        $this->actingAs($player)
+            ->delete("/games/{$game->id}/members/{$other->id}/remove")
             ->assertForbidden();
     }
 }
