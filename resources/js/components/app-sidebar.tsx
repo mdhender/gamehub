@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, MailPlus, Swords, Users } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, MailPlus, Rss, Swords, Users } from 'lucide-react';
 import InvitationController from '@/actions/App/Http/Controllers/Admin/InvitationController';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import GameController from '@/actions/App/Http/Controllers/GameController';
@@ -58,6 +58,11 @@ const footerNavItems: NavItem[] = [
         title: 'Documentation',
         href: 'https://docs.damned.dev',
         icon: BookOpen,
+    },
+    {
+        title: 'Blog',
+        href: 'https://docs.damned.dev/blog/',
+        icon: Rss,
     },
 ];
 
