@@ -1,4 +1,4 @@
-import { Deferred, Head, useForm } from '@inertiajs/react';
+import { Deferred, Head, setLayoutProps, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
 import GenerationStepController from '@/actions/App/Http/Controllers/GameGeneration/GenerationStepController';
@@ -88,6 +88,14 @@ export default function GameGenerate({
     availableStars: AvailableStar[] | null;
     members: MemberItem[];
 }) {
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Games', href: GameController.index.url() },
+            { title: 'Game', href: GameController.show.url(game) },
+            { title: 'Generate', href: '#' },
+        ],
+    });
+
     const deleteForm = useForm({});
     const [deleteConfirm, setDeleteConfirm] = useState<DeleteStep | null>(null);
 
@@ -207,19 +215,4 @@ export default function GameGenerate({
     );
 }
 
-GameGenerate.layout = {
-    breadcrumbs: [
-        {
-            title: 'Games',
-            href: GameController.index.url(),
-        },
-        {
-            title: 'Game',
-            href: ({ game }: { game: Game }) => GameController.show.url(game),
-        },
-        {
-            title: 'Generate',
-            href: '#',
-        },
-    ],
-};
+GameGenerate.layout = {};
