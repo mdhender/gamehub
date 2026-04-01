@@ -207,6 +207,18 @@ class InvitationTest extends TestCase
     }
 
     #[Test]
+    public function invitation_email_contains_recipient_email_notice(): void
+    {
+        $invitation = Invitation::factory()->create(['email' => 'specific@example.com']);
+        $mail = new InvitationMail($invitation);
+
+        $rendered = $mail->render();
+
+        $this->assertStringContainsString('specific@example.com', $rendered);
+        $this->assertStringContainsString('must register using', $rendered);
+    }
+
+    #[Test]
     public function non_admin_cannot_resend_invitation(): void
     {
         Mail::fake();

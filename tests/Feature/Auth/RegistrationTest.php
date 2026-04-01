@@ -25,6 +25,32 @@ class RegistrationTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_registration_screen_passes_invitation_email_for_valid_token(): void
+    {
+        $invitation = Invitation::factory()->create(['email' => 'invited@example.com']);
+
+        $response = $this->get(route('register', ['token' => $invitation->token]));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('auth/register')
+            ->where('invitationEmail', 'invited@example.com')
+            ->where('invitationToken', $invitation->token)
+        );
+    }
+
+    public function test_registration_screen_does_not_pass_email_for_invalid_token(): void
+    {
+        $response = $this->get(route('register', ['token' => 'invalid-token']));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('auth/register')
+            ->where('invitationEmail', null)
+            ->where('invitationToken', 'invalid-token')
+        );
+    }
+
     public function test_new_users_can_register_with_valid_invitation(): void
     {
         $invitation = Invitation::factory()->create([

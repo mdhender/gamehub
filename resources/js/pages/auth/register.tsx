@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
-export default function Register({ invitationToken }: { invitationToken: string }) {
+export default function Register({ invitationToken, invitationEmail }: { invitationToken: string; invitationEmail?: string }) {
     return (
         <>
             <Head title="Register" />
@@ -54,7 +54,15 @@ export default function Register({ invitationToken }: { invitationToken: string 
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    defaultValue={invitationEmail ?? ''}
+                                    readOnly={!!invitationEmail}
+                                    className={invitationEmail ? 'bg-muted' : ''}
                                 />
+                                {invitationEmail && (
+                                    <p className="text-xs text-muted-foreground">
+                                        This email is linked to your invitation and cannot be changed.
+                                    </p>
+                                )}
                                 <InputError message={errors.email} />
                             </div>
 
