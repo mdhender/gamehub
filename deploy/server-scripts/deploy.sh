@@ -4,6 +4,8 @@
 
 set -e
 
+export PATH="/home/deploy/.bun/bin:$PATH"
+
 cd /var/www/gamehub
 
 # Pull latest changes
