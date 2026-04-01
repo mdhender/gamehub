@@ -4,7 +4,9 @@
 
 set -e
 
-export PATH="/home/deploy/.bun/bin:$PATH"
+# bun must be in the path
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
 
 cd /var/www/gamehub
 
