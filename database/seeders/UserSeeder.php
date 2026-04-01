@@ -18,14 +18,27 @@ class UserSeeder extends Seeder
 
         $count = min(max($count, 1), 250);
 
+        $created = 0;
+        $skipped = 0;
+
         for ($i = 1; $i <= $count; $i++) {
+            $email = "user{$i}@gamehub.test";
+
+            if (User::where('email', $email)->exists()) {
+                $skipped++;
+
+                continue;
+            }
+
             User::factory()->create([
                 'name' => "User {$i}",
-                'email' => "user{$i}@gamehub.test",
+                'email' => $email,
                 'password' => 'happy.cat.happy.nap',
             ]);
+
+            $created++;
         }
 
-        $this->command?->info("Created {$count} user(s).");
+        $this->command?->info("Created {$created} user(s), skipped {$skipped} existing.");
     }
 }

@@ -16,7 +16,7 @@ class SeedUsersTest extends TestCase
     {
         $this->artisan('app:seed-users')
             ->assertSuccessful()
-            ->expectsOutputToContain('Created 1 user(s).');
+            ->expectsOutputToContain('Created 1 user(s), skipped 0 existing.');
 
         $user = User::where('email', 'user1@gamehub.test')->first();
 
@@ -30,7 +30,7 @@ class SeedUsersTest extends TestCase
     {
         $this->artisan('app:seed-users', ['count' => 5])
             ->assertSuccessful()
-            ->expectsOutputToContain('Created 5 user(s).');
+            ->expectsOutputToContain('Created 5 user(s), skipped 0 existing.');
 
         $this->assertSame(5, User::count());
 
@@ -39,6 +39,19 @@ class SeedUsersTest extends TestCase
             $this->assertNotNull($user);
             $this->assertSame("User {$i}", $user->name);
         }
+    }
+
+    #[Test]
+    public function it_skips_existing_users_on_second_run()
+    {
+        $this->artisan('app:seed-users', ['count' => 3])->assertSuccessful();
+        $this->assertSame(3, User::count());
+
+        $this->artisan('app:seed-users', ['count' => 5])
+            ->assertSuccessful()
+            ->expectsOutputToContain('Created 2 user(s), skipped 3 existing.');
+
+        $this->assertSame(5, User::count());
     }
 
     #[Test]

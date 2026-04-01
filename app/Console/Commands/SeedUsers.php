@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
 
-#[Signature('app:seed-users {count=1 : The number of users to create (max 250)}')]
+#[Signature('app:seed-users {count=1 : Ensure this many deterministic users exist (max 250)}')]
 #[Description('Seed deterministic test users in non-production environments')]
 class SeedUsers extends Command
 {
