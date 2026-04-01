@@ -6,6 +6,15 @@ import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -24,15 +33,29 @@ function EmpiresTable({
     homeSystems: HomeSystemItem[];
     game: Game;
 }) {
-    const hasCapacity = homeSystems.some((hs) => hs.empire_count < hs.capacity);
+    const availableHomeSystems = homeSystems.filter((hs) => hs.empire_count < hs.capacity);
+    const hasCapacity = availableHomeSystems.length > 0;
     const assignForm = useForm({ player_id: '', home_system_id: '' });
     const reassignForm = useForm({ home_system_id: '' });
     const [reassigningEmpireId, setReassigningEmpireId] = useState<number | null>(null);
+    const [assigningMember, setAssigningMember] = useState<MemberItem | null>(null);
 
-    function submitAssign(memberId: number) {
-        assignForm.setData('player_id', String(memberId));
+    function openAssignDialog(member: MemberItem) {
+        const defaultHomeSystem = availableHomeSystems[0];
+        assignForm.setData({
+            player_id: String(member.id),
+            home_system_id: defaultHomeSystem ? String(defaultHomeSystem.id) : '',
+        });
+        assignForm.clearErrors();
+        setAssigningMember(member);
+    }
+
+    function submitAssign() {
         assignForm.post(EmpireController.store.url(game), {
-            onSuccess: () => assignForm.reset(),
+            onSuccess: () => {
+                assignForm.reset();
+                setAssigningMember(null);
+            },
         });
     }
 
@@ -50,7 +73,6 @@ function EmpiresTable({
                     All home systems are at capacity. Create a new home system to assign more empires.
                 </p>
             )}
-            <InputError message={assignForm.errors.empire} />
             <div className="overflow-hidden rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-muted-foreground">
@@ -132,10 +154,9 @@ function EmpiresTable({
                                         ) : (
                                             <Button
                                                 size="sm"
-                                                disabled={!hasCapacity || assignForm.processing}
-                                                onClick={() => submitAssign(member.id)}
+                                                disabled={!hasCapacity}
+                                                onClick={() => openAssignDialog(member)}
                                             >
-                                                {assignForm.processing && assignForm.data.player_id === String(member.id) && <Spinner />}
                                                 Assign Empire
                                             </Button>
                                         )}
@@ -146,6 +167,53 @@ function EmpiresTable({
                     </tbody>
                 </table>
             </div>
+
+            <Dialog open={assigningMember !== null} onOpenChange={(open) => { if (!open) setAssigningMember(null); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign Empire</DialogTitle>
+                        <DialogDescription>
+                            Assign an empire to <strong>{assigningMember?.name}</strong> with the selected home world.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="text-sm font-medium">Home World</label>
+                            <Select
+                                value={assignForm.data.home_system_id}
+                                onValueChange={(v) => assignForm.setData('home_system_id', v)}
+                            >
+                                <SelectTrigger className="mt-1 w-full">
+                                    <SelectValue placeholder="Select a home world…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableHomeSystems.map((hs) => (
+                                        <SelectItem key={hs.id} value={String(hs.id)}>
+                                            {hs.star_location} (queue #{hs.queue_position})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={assignForm.errors.home_system_id} />
+                        </div>
+                        <InputError message={assignForm.errors.empire} />
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline" disabled={assignForm.processing}>Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            onClick={submitAssign}
+                            disabled={assignForm.processing || !assignForm.data.home_system_id}
+                        >
+                            {assignForm.processing && <Spinner />}
+                            Assign
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

@@ -70,6 +70,51 @@ class GameGenerationControllerEmpireTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // generate page — assign button data
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function generate_page_has_no_available_home_systems_when_queue_is_empty(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Active]);
+        $gm = $this->gmUser($game);
+        $this->playerUser($game);
+
+        $this->actingAs($gm)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('homeSystems', 0)
+            );
+    }
+
+    #[Test]
+    public function generate_page_shows_full_capacity_when_home_system_has_25_empires(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $gm = $this->gmUser($game);
+        $this->playerUser($game);
+        $homeSystem = $game->homeSystems()->first();
+
+        for ($i = 0; $i < 25; $i++) {
+            Empire::factory()->create([
+                'game_id' => $game->id,
+                'player_id' => null,
+                'home_system_id' => $homeSystem->id,
+            ]);
+        }
+
+        $this->actingAs($gm)
+            ->get("/games/{$game->id}/generate")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('homeSystems', 1)
+                ->where('homeSystems.0.empire_count', 25)
+                ->where('homeSystems.0.capacity', 25)
+            );
+    }
+
+    // -------------------------------------------------------------------------
     // createEmpire
     // -------------------------------------------------------------------------
 
