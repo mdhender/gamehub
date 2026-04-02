@@ -432,7 +432,7 @@ php artisan test --compact tests/Feature/Database/Migrations/CreateColonyPopulat
 ---
 
 ### Task A5 — Create `colony_template_population` table
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1, A2
 
