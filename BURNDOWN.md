@@ -210,7 +210,7 @@ php artisan test --compact tests/Unit/Enums/LayerOneEnumsTest.php
 ---
 
 ### Task A2 — Rebuild migration: `colony_inventory`, `colony_template_items`, `colony_templates`
-**Status:** TODO
+**Status:** DONE
 **Effort:** M
 **Depends on:** A1
 
