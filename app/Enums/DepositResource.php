@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum DepositResource: string
 {
-    case Gold = 'gold';
-    case Fuel = 'fuel';
-    case Metallics = 'metallics';
-    case NonMetallics = 'non_metallics';
+    case Gold = 'GOLD';
+    case Fuel = 'FUEL';
+    case Metallics = 'METS';
+    case NonMetallics = 'NMTS';
 }
