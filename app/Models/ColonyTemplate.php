@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ColonyKind;
 use Database\Factories\ColonyTemplateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,16 @@ class ColonyTemplate extends Model
 {
     /** @use HasFactory<ColonyTemplateFactory> */
     use HasFactory;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'kind' => ColonyKind::class,
+        ];
+    }
 
     /** @return BelongsTo<Game, $this> */
     public function game(): BelongsTo

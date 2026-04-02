@@ -218,7 +218,7 @@ Do not rely on `ColonyInventory::factory()` or `Colony::factory()` defaults; cre
 ---
 
 ### Task B9 — Update `ColonyTemplate` model
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1, A2
 
