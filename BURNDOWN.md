@@ -280,7 +280,7 @@ Do not rely on `ColonyTemplate::factory()` defaults; create rows manually with s
 ---
 
 ### Task B10 — Update `ColonyTemplateItem` model
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1, A2
 

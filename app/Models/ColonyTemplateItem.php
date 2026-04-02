@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UnitCode;
 use Database\Factories\ColonyTemplateItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,16 @@ class ColonyTemplateItem extends Model
     use HasFactory;
 
     public $timestamps = false;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'unit' => UnitCode::class,
+        ];
+    }
 
     /** @return BelongsTo<ColonyTemplate, $this> */
     public function colonyTemplate(): BelongsTo
