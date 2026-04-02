@@ -690,9 +690,9 @@ Tasks are grouped by dependency. Groups must be completed in order; tasks within
 
 | # | Task | Effort |
 |---|---|---|
-| 18 | Update `sample-data/beta/colony-template.json` — string unit codes, string kind, population section | S |
-| 19 | Update `UploadColonyTemplateRequest` — validate population section and string unit codes | M |
-| 20 | Update `TemplateController::uploadColony()` — parse and store population section | S |
+| 18 | Update `sample-data/beta/colony-template.json` — string unit codes with embedded tech level (`ASW-1`), string kind, population section | S |
+| 19 | Update `UploadColonyTemplateRequest` — validate population section; validate unit codes use `CODE-TL` format (e.g., `FCT-1`) for units with tech levels and plain codes (e.g., `FUEL`) for consumables | M |
+| 20 | Update `TemplateController::uploadColony()` — parse `CODE-TL` unit format and store population section | S |
 
 #### E. Business logic extensions
 
@@ -773,14 +773,24 @@ These will be added to the colony template JSON format. The colony template uplo
 
 There are four SORC types, with colonies and ships using separate tables:
 
-| Code | Name | Table |
-|---|---|---|
-| `COPN` | Open Surface Colony | `colonies` |
-| `CENC` | Enclosed Surface Colony | `colonies` |
-| `CORB` | Orbiting Colony | `colonies` |
-| `SHIP` | Ship | `ships` |
+| Code | Name | Table | Placement |
+|---|---|---|---|
+| `COPN` | Open Surface Colony | `colonies` | Homeworld surface |
+| `CENC` | Enclosed Surface Colony | `colonies` | Homeworld surface |
+| `CORB` | Orbiting Colony | `colonies` | Homeworld orbit |
+| `SHIP` | Ship | `ships` | — |
 
 The existing integer `1` in `colonies.kind` maps to `COPN`. This is the only value currently in use.
+
+**Placement constraint:** An empire can have at most one colony of each kind per planet (max 3 colonies per planet: one COPN, one CENC, one CORB). Placement is deterministic — `kind` alone determines whether the colony is on the surface or in orbit. The `EmpireCreator` and colony template upload must enforce no duplicate kinds.
+
+### 2a. Multi-colony templates
+
+The colony template JSON is an **array** of colony definitions. Each entry in the array becomes a separate `colony_templates` row for the game. When an empire is created, the `EmpireCreator` creates one colony per template entry, all attached to the empire's homeworld.
+
+The `colony_templates.game_id` unique constraint must be dropped to allow multiple templates per game. Upload replaces all templates for the game (delete-and-recreate).
+
+The template upload must reject duplicate `kind` values in the array, since only one colony of each kind can exist per planet.
 
 ### 3. Unit codes — migrate to strings
 
