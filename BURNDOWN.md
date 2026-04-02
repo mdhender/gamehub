@@ -166,7 +166,7 @@ unmapped values.
 ---
 
 ### Task A1 — Create enums
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** none
 
