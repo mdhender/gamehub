@@ -610,6 +610,27 @@ All targeted tests must pass and Pint must report no formatting issues.
 
 ---
 
+## Pre-existing Test Failures
+
+These tests were failing before Group B work began and need to be fixed:
+
+### `EmpireCreatorTest` — integer vs string type mismatches
+
+- `create_creates_starting_colony` — `assertSame(1, $colony->kind)` fails because `kind` is now a string (`'1'`). Needs updating to use `ColonyKind` enum.
+- `create_applies_colony_template_inventory` — `assertSame(10, $inventory->first()->unit)` fails because `unit` is now a string (`'10'`). Needs updating to use `UnitCode` enum.
+
+**File:** `tests/Feature/EmpireCreatorTest.php`
+
+### `GameGenerationControllerTest` — factory and enum issues
+
+- `generate_creates_empires_for_active_players` — `Undefined array key "kind"` in `GameFactory.php:77`. The `ColonyTemplate` creation in the factory expects a `kind` key that is missing from the input data.
+- `upload_home_system_template_creates_template_and_children` — `"gold" is not a valid backing value for enum DepositResource`. The `TemplateController` passes a raw string (`gold`) that doesn't match the `DepositResource` enum's backing values.
+- `upload_colony_template_creates_template_and_items` — same `Undefined array key "kind"` in `GameFactory.php:77`.
+
+**File:** `tests/Feature/GameGenerationControllerTest.php`, `database/factories/GameFactory.php`, `app/Http/Controllers/GameGeneration/TemplateController.php`
+
+---
+
 ## Out of Scope for Group B
 
 Do **not** pull these into this burndown:

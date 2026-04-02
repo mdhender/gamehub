@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\GameRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,5 +33,16 @@ class UserController extends Controller
         return Inertia::render('admin/users/show', [
             'user' => $user->only('id', 'name', 'email', 'is_admin', 'email_verified_at', 'created_at', 'updated_at'),
         ]);
+    }
+
+    public function sendPasswordResetLink(User $user): RedirectResponse
+    {
+        Gate::authorize('view', $user);
+
+        $status = Password::sendResetLink(['email' => $user->email]);
+
+        return $status === Password::ResetLinkSent
+            ? back()->with('success', __($status))
+            : back()->withErrors(['email' => __($status)]);
     }
 }
