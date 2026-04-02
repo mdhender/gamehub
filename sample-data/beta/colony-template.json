@@ -1,48 +1,113 @@
 {
-  "Kind":      1,
-  "TechLevel": 1,
-  "inventory": [
-    {
-      "unit": 1,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
+    "kind":      "COPN",
+    "tech-level": 1,
+    "inventory": {
+        "stored": [
+            {
+                "unit": "FUEL",
+                "quantity": 2000000
+            },
+            {
+                "unit": "GOLD",
+                "quantity": 50000
+            },
+            {
+                "unit": "METS",
+                "quantity": 4000000
+            },
+            {
+                "unit": "NMTS",
+                "quantity": 4000000
+            },
+            {
+                "unit": "CNGD",
+                "quantity": 500000
+            },
+            {
+                "unit": "FOOD",
+                "quantity": 3000000
+            },
+            {
+                "unit": "ASW",
+                "tech-level": 1,
+                "quantity": 400000
+            },
+            {
+                "unit": "ASC",
+                "tech-level": 1,
+                "quantity": 160000
+            },
+            {
+                "unit": "AMSL",
+                "tech-level": 1,
+                "quantity": 100000
+            },
+            {
+                "unit": "STR",
+                "quantity": 600000
+            },
+            {
+                "unit": "MSUP",
+                "quantity": 5000000
+            },
+            {
+                "unit": "MSSL",
+                "tech-level": 1,
+                "quantity": 100000
+            }
+        ],
+        "operational": [
+            {
+                "unit": "missiles",
+                "tech-level": 1,
+                "quantity": 32000
+            },
+            {
+                "unit": "transports",
+                "tech-level": 1,
+                "quantity": 10000
+            },
+            {
+                "unit": "farms",
+                "tech-level": 1,
+                "quantity": 100000
+            },
+            {
+                "unit": "factories",
+                "tech-level": 1,
+                "quantity": 300000
+            },
+            {
+                "unit": "mines",
+                "tech-level": 1,
+                "quantity": 200000
+            },
+            {
+                "unit": "STUN",
+                "quantity": 35000000
+            }
+        ]
     },
-    {
-      "unit": 2,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
-    },
-    {
-      "unit": 3,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
-    },
-    {
-      "unit": 4,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
-    },
-    {
-      "unit": 17,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
-    },
-    {
-      "unit": 18,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
-    },
-    {
-      "unit": 19,
-      "TechLevel": 1,
-      "QuantityAssembled": 1000000,
-      "QuantityDisassembled": 0
-    }
-  ]
+    "population": [
+        {
+            "population_code": "UEM",
+            "quantity": 3500000,
+            "pay_rate": 0.0
+        },
+        {
+            "population_code": "USK",
+            "quantity": 3750000,
+            "pay_rate": 0.125
+        },
+        {
+            "population_code": "PRO",
+            "quantity": 1000000,
+            "pay_rate": 0.375
+        },
+        {
+            "population_code": "SLD",
+            "quantity": 1500000,
+            "pay_rate": 0.25
+        }
+    ]
 }

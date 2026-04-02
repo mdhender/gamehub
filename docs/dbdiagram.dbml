@@ -1,0 +1,336 @@
+// GameHub Database Schema
+// Import this file at https://dbdiagram.io
+
+// ============================================================
+// Domain Tables
+// ============================================================
+
+Table users {
+  id integer [pk, increment]
+  name varchar [not null]
+  email varchar [not null, unique]
+  email_verified_at datetime
+  password varchar [not null]
+  remember_token varchar
+  created_at datetime
+  updated_at datetime
+  two_factor_secret text
+  two_factor_recovery_codes text
+  two_factor_confirmed_at datetime
+  is_admin "tinyint(1)" [not null, default: 0]
+}
+
+Table games {
+  id integer [pk, increment]
+  name varchar [not null]
+  created_at datetime
+  updated_at datetime
+  is_active "tinyint(1)" [not null, default: 1]
+  prng_seed varchar [not null, default: '']
+  prng_state text
+  status varchar [not null, default: 'setup']
+  min_home_system_distance float [not null, default: 9]
+}
+
+Table players {
+  id integer [pk, increment]
+  game_id integer [not null]
+  user_id integer [not null]
+  role varchar [not null]
+  is_active "tinyint(1)" [not null, default: 1]
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (game_id, user_id) [unique]
+    user_id
+  }
+}
+
+Table empires {
+  id integer [pk, increment]
+  game_id integer [not null]
+  player_id integer
+  name varchar [not null]
+  home_system_id integer [not null]
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (game_id, player_id) [unique]
+  }
+}
+
+Table stars {
+  id integer [pk, increment]
+  game_id integer [not null]
+  x integer [not null]
+  y integer [not null]
+  z integer [not null]
+  sequence integer [not null]
+
+  indexes {
+    (game_id, x, y, z, sequence) [unique]
+  }
+}
+
+Table planets {
+  id integer [pk, increment]
+  game_id integer [not null]
+  star_id integer [not null]
+  orbit integer [not null]
+  type varchar [not null]
+  habitability integer [not null]
+  is_homeworld "tinyint(1)" [not null, default: 0]
+}
+
+Table deposits {
+  id integer [pk, increment]
+  game_id integer [not null]
+  planet_id integer [not null]
+  resource varchar [not null]
+  yield_pct integer [not null]
+  quantity_remaining integer [not null]
+}
+
+Table colonies {
+  id integer [pk, increment]
+  empire_id integer [not null]
+  planet_id integer [not null]
+  kind integer [not null]
+  tech_level integer [not null]
+}
+
+Table colony_inventory {
+  id integer [pk, increment]
+  colony_id integer [not null]
+  unit integer [not null]
+  tech_level integer [not null]
+  quantity_assembled integer [not null]
+  quantity_disassembled integer [not null]
+}
+
+Table home_systems {
+  id integer [pk, increment]
+  game_id integer [not null]
+  star_id integer [not null, unique]
+  homeworld_planet_id integer [not null]
+  queue_position integer [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (game_id, queue_position) [unique]
+  }
+}
+
+// ============================================================
+// Template Tables
+// ============================================================
+
+Table colony_templates {
+  id integer [pk, increment]
+  game_id integer [not null, unique]
+  kind integer [not null]
+  tech_level integer [not null]
+  created_at datetime
+  updated_at datetime
+}
+
+Table colony_template_items {
+  id integer [pk, increment]
+  colony_template_id integer [not null]
+  unit integer [not null]
+  tech_level integer [not null]
+  quantity_assembled integer [not null]
+  quantity_disassembled integer [not null]
+}
+
+Table home_system_templates {
+  id integer [pk, increment]
+  game_id integer [not null, unique]
+  created_at datetime
+  updated_at datetime
+}
+
+Table home_system_template_planets {
+  id integer [pk, increment]
+  home_system_template_id integer [not null]
+  orbit integer [not null]
+  type varchar [not null]
+  habitability integer [not null]
+  is_homeworld "tinyint(1)" [not null, default: 0]
+}
+
+Table home_system_template_deposits {
+  id integer [pk, increment]
+  home_system_template_planet_id integer [not null]
+  resource varchar [not null]
+  yield_pct integer [not null]
+  quantity_remaining integer [not null]
+}
+
+// ============================================================
+// Generation / Audit
+// ============================================================
+
+Table generation_steps {
+  id integer [pk, increment]
+  game_id integer [not null]
+  step varchar [not null]
+  sequence integer [not null]
+  input_state text [not null]
+  output_state text [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table invitations {
+  id integer [pk, increment]
+  email varchar [not null]
+  token varchar [not null, unique]
+  expires_at datetime [not null]
+  registered_at datetime
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    email
+  }
+}
+
+// ============================================================
+// Laravel Infrastructure
+// ============================================================
+
+Table sessions {
+  id varchar [pk]
+  user_id integer
+  ip_address varchar
+  user_agent text
+  payload text [not null]
+  last_activity integer [not null]
+
+  indexes {
+    user_id
+    last_activity
+  }
+}
+
+Table cache {
+  key varchar [pk]
+  value text [not null]
+  expiration integer [not null]
+
+  indexes {
+    expiration
+  }
+}
+
+Table cache_locks {
+  key varchar [pk]
+  owner varchar [not null]
+  expiration integer [not null]
+
+  indexes {
+    expiration
+  }
+}
+
+Table jobs {
+  id integer [pk, increment]
+  queue varchar [not null]
+  payload text [not null]
+  attempts integer [not null]
+  reserved_at integer
+  available_at integer [not null]
+  created_at integer [not null]
+
+  indexes {
+    queue
+  }
+}
+
+Table job_batches {
+  id varchar [pk]
+  name varchar [not null]
+  total_jobs integer [not null]
+  pending_jobs integer [not null]
+  failed_jobs integer [not null]
+  failed_job_ids text [not null]
+  options text
+  cancelled_at integer
+  created_at integer [not null]
+  finished_at integer
+}
+
+Table failed_jobs {
+  id integer [pk, increment]
+  uuid varchar [not null, unique]
+  connection text [not null]
+  queue text [not null]
+  payload text [not null]
+  exception text [not null]
+  failed_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table password_reset_tokens {
+  email varchar [pk]
+  token varchar [not null]
+  created_at datetime
+}
+
+// ============================================================
+// Relationships
+// ============================================================
+
+// Players join users to games
+Ref: players.game_id > games.id [delete: cascade]
+Ref: players.user_id > users.id [delete: cascade]
+
+// Empires belong to a game, optionally a player, and a home system
+Ref: empires.game_id > games.id [delete: cascade]
+Ref: empires.player_id > players.id [delete: set null]
+Ref: empires.home_system_id > home_systems.id [delete: cascade]
+
+// Stars belong to a game
+Ref: stars.game_id > games.id [delete: cascade]
+
+// Planets belong to a game and orbit a star
+Ref: planets.game_id > games.id [delete: cascade]
+Ref: planets.star_id > stars.id [delete: cascade]
+
+// Deposits are on a planet within a game
+Ref: deposits.game_id > games.id [delete: cascade]
+Ref: deposits.planet_id > planets.id [delete: cascade]
+
+// Colonies belong to an empire on a planet
+Ref: colonies.empire_id > empires.id [delete: cascade]
+Ref: colonies.planet_id > planets.id [delete: cascade]
+
+// Colony inventory belongs to a colony
+Ref: colony_inventory.colony_id > colonies.id [delete: cascade]
+
+// Home systems link a game, star, and homeworld planet
+Ref: home_systems.game_id > games.id [delete: cascade]
+Ref: home_systems.star_id > stars.id [delete: cascade]
+Ref: home_systems.homeworld_planet_id > planets.id [delete: cascade]
+
+// Colony templates belong to a game
+Ref: colony_templates.game_id > games.id [delete: cascade]
+
+// Colony template items belong to a colony template
+Ref: colony_template_items.colony_template_id > colony_templates.id [delete: cascade]
+
+// Home system templates belong to a game
+Ref: home_system_templates.game_id > games.id [delete: cascade]
+
+// Home system template planets belong to a template
+Ref: home_system_template_planets.home_system_template_id > home_system_templates.id [delete: cascade]
+
+// Home system template deposits belong to a template planet
+Ref: home_system_template_deposits.home_system_template_planet_id > home_system_template_planets.id [delete: cascade]
+
+// Generation steps belong to a game
+Ref: generation_steps.game_id > games.id [delete: cascade]
+
+// Sessions optionally belong to a user
+Ref: sessions.user_id > users.id

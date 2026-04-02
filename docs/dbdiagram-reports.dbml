@@ -1,0 +1,409 @@
+// GameHub — Proposed Reporting & Population Tables
+// Import this file at https://dbdiagram.io
+//
+// These tables are described in docs/SETUP_REPORT.md.
+// Existing tables (games, empires, colonies, etc.) are in docs/dbdiagram.dbml.
+
+// ============================================================
+// Live Data Extensions
+// ============================================================
+
+Table colonies {
+  id integer [pk, increment]
+  empire_id integer [not null]
+  planet_id integer [not null]
+  kind varchar [not null, note: 'ColonyKind enum: COPN, CENC, CORB']
+  tech_level integer [not null]
+  name varchar [not null, default: 'Not Named']
+  is_on_surface boolean [not null, default: true]
+  rations float [not null, default: 1.0]
+  sol float [not null, default: 0.0]
+  birth_rate float [not null, default: 0.0]
+  death_rate float [not null, default: 0.0]
+}
+
+Table colony_population {
+  id integer [pk, increment]
+  colony_id integer [not null]
+  population_code varchar [not null, note: 'PopulationClass enum: UEM, USK, PRO, SLD, CNW, SPY, PLC, SAG, TRN']
+  quantity integer [not null]
+  pay_rate float [not null]
+  rebel_quantity integer [not null, default: 0]
+
+  indexes {
+    (colony_id, population_code) [unique]
+  }
+}
+
+Table colony_template_population {
+  id integer [pk, increment]
+  colony_template_id integer [not null]
+  population_code varchar [not null]
+  quantity integer [not null]
+  pay_rate float [not null]
+
+  indexes {
+    (colony_template_id, population_code) [unique]
+  }
+}
+
+Ref: colony_population.colony_id > colonies.id [delete: cascade]
+Ref: colony_template_population.colony_template_id > colony_templates.id [delete: cascade]
+
+// ============================================================
+// Turn Lifecycle
+// ============================================================
+
+Table turns {
+  id integer [pk, increment]
+  game_id integer [not null]
+  number integer [not null, note: '0 = setup, 1+ = subsequent']
+  status varchar [not null, default: 'pending', note: 'TurnStatus enum: pending, generating, completed, closed']
+  reports_locked_at datetime
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (game_id, number) [unique]
+  }
+}
+
+Ref: turns.game_id > games.id [delete: cascade]
+
+// ============================================================
+// Layer 1 — Setup Report Tables
+// ============================================================
+
+Table turn_reports {
+  id integer [pk, increment]
+  game_id integer [not null, note: 'Denormalized for fast scoping']
+  turn_id integer [not null]
+  empire_id integer [not null]
+  generated_at datetime [not null]
+
+  indexes {
+    (turn_id, empire_id) [unique]
+  }
+}
+
+Ref: turn_reports.game_id > games.id [delete: cascade]
+Ref: turn_reports.turn_id > turns.id [delete: cascade]
+Ref: turn_reports.empire_id > empires.id [delete: cascade]
+
+// --- Colony snapshots ---
+
+Table turn_report_colonies {
+  id integer [pk, increment]
+  turn_report_id integer [not null]
+  source_colony_id integer [note: 'Plain integer, not FK — survives colony deletion']
+  name varchar [not null]
+  kind varchar [not null, note: 'COPN, CENC, CORB']
+  tech_level integer [not null]
+  planet_id integer [note: 'Plain integer, not FK — snapshot survives planet changes']
+  orbit integer [not null]
+  star_x integer [not null]
+  star_y integer [not null]
+  star_z integer [not null]
+  star_sequence integer [not null]
+  is_on_surface boolean [not null]
+  rations float [not null]
+  sol float [not null]
+  birth_rate float [not null]
+  death_rate float [not null]
+}
+
+Ref: turn_report_colonies.turn_report_id > turn_reports.id [delete: cascade]
+
+Table turn_report_colony_inventory {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  unit_code varchar [not null, note: 'UnitCode enum']
+  tech_level integer [not null]
+  quantity_assembled integer [not null]
+  quantity_disassembled integer [not null]
+}
+
+Ref: turn_report_colony_inventory.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+Table turn_report_colony_population {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  population_code varchar [not null, note: 'PopulationClass enum']
+  quantity integer [not null]
+  pay_rate float [not null]
+  rebel_quantity integer [not null]
+}
+
+Ref: turn_report_colony_population.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+// --- Survey snapshots ---
+
+Table turn_report_surveys {
+  id integer [pk, increment]
+  turn_report_id integer [not null]
+  planet_id integer [note: 'Plain integer, not FK']
+  orbit integer [not null]
+  star_x integer [not null]
+  star_y integer [not null]
+  star_z integer [not null]
+  star_sequence integer [not null]
+  planet_type varchar [not null, note: 'terrestrial, asteroid, gas_giant']
+  habitability integer [not null]
+}
+
+Ref: turn_report_surveys.turn_report_id > turn_reports.id [delete: cascade]
+
+Table turn_report_survey_deposits {
+  id integer [pk, increment]
+  turn_report_survey_id integer [not null]
+  deposit_no integer [not null, note: '1-based sequence within planet']
+  resource varchar [not null, note: 'gold, fuel, metallics, non_metallics']
+  yield_pct integer [not null]
+  quantity_remaining integer [not null]
+}
+
+Ref: turn_report_survey_deposits.turn_report_survey_id > turn_report_surveys.id [delete: cascade]
+
+// ============================================================
+// Layer 2 — Production & Intelligence Report Tables (future)
+// ============================================================
+
+// --- Ship snapshots ---
+
+Table turn_report_ships {
+  id integer [pk, increment]
+  turn_report_id integer [not null]
+  source_ship_id integer [note: 'Plain integer, not FK']
+  name varchar [not null]
+  kind varchar [not null]
+  tech_level integer [not null]
+  orbit_id integer [note: 'Null if in transit']
+  star_x integer [not null]
+  star_y integer [not null]
+  star_z integer [not null]
+  star_sequence integer [not null]
+  is_on_surface boolean [not null]
+  rations float [not null]
+  sol float [not null]
+  birth_rate float [not null]
+  death_rate float [not null]
+}
+
+Ref: turn_report_ships.turn_report_id > turn_reports.id [delete: cascade]
+
+Table turn_report_ship_inventory {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  unit_code varchar [not null]
+  tech_level integer [not null]
+  quantity_assembled integer [not null]
+  quantity_disassembled integer [not null]
+}
+
+Ref: turn_report_ship_inventory.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+Table turn_report_ship_population {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  population_code varchar [not null]
+  quantity integer [not null]
+  pay_rate float [not null]
+  rebel_quantity integer [not null]
+}
+
+Ref: turn_report_ship_population.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+// --- Mining groups (colony only) ---
+
+Table turn_report_mining_groups {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  group_no integer [not null, note: '1–35']
+  deposit_id integer [note: 'Plain integer, not FK']
+  deposit_no integer [not null]
+  deposit_resource varchar [not null]
+  deposit_yield_pct integer [not null]
+  deposit_qty_remaining integer [not null]
+  unit_code varchar [not null, note: 'Always MIN for now']
+  tech_level integer [not null]
+  nbr_of_units integer [not null]
+}
+
+Ref: turn_report_mining_groups.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+// --- Factory groups ---
+
+Table turn_report_colony_factory_groups {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  group_no integer [not null, note: '1–30']
+  unit_code varchar [not null, note: 'FCT']
+  tech_level integer [not null]
+  nbr_of_units integer [not null]
+  orders_code varchar [not null]
+  orders_tech_level integer [not null]
+  wip_25pct_qty integer [not null]
+  wip_50pct_qty integer [not null]
+  wip_75pct_qty integer [not null]
+}
+
+Ref: turn_report_colony_factory_groups.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+Table turn_report_ship_factory_groups {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  group_no integer [not null]
+  unit_code varchar [not null]
+  tech_level integer [not null]
+  nbr_of_units integer [not null]
+  orders_code varchar [not null]
+  orders_tech_level integer [not null]
+  wip_25pct_qty integer [not null]
+  wip_50pct_qty integer [not null]
+  wip_75pct_qty integer [not null]
+}
+
+Ref: turn_report_ship_factory_groups.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+// --- Farm groups ---
+
+Table turn_report_colony_farm_groups {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  group_no integer [not null, note: '1–30']
+  unit_code varchar [not null, note: 'FRM']
+  tech_level integer [not null]
+  nbr_of_units integer [not null]
+}
+
+Ref: turn_report_colony_farm_groups.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+Table turn_report_ship_farm_groups {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  group_no integer [not null]
+  unit_code varchar [not null]
+  tech_level integer [not null]
+  nbr_of_units integer [not null]
+}
+
+Ref: turn_report_ship_farm_groups.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+// --- Production inputs ---
+
+Table turn_report_colony_production_inputs {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  category varchar [not null, note: 'farming, mining, manufacturing']
+  fuel integer [not null]
+  gold integer [not null]
+  metals integer [not null]
+  non_metals integer [not null]
+}
+
+Ref: turn_report_colony_production_inputs.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+Table turn_report_ship_production_inputs {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  category varchar [not null]
+  fuel integer [not null]
+  gold integer [not null]
+  metals integer [not null]
+  non_metals integer [not null]
+}
+
+Ref: turn_report_ship_production_inputs.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+// --- Production outputs ---
+
+Table turn_report_colony_production_outputs {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  category varchar [not null]
+  unit_code varchar [not null]
+  tech_level integer [not null]
+  quantity_farmed integer [not null]
+  quantity_mined integer [not null]
+  quantity_manufactured integer [not null]
+}
+
+Ref: turn_report_colony_production_outputs.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+Table turn_report_ship_production_outputs {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  category varchar [not null]
+  unit_code varchar [not null]
+  tech_level integer [not null]
+  quantity_farmed integer [not null]
+  quantity_mined integer [not null]
+  quantity_manufactured integer [not null]
+}
+
+Ref: turn_report_ship_production_outputs.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+// --- Probes ---
+
+Table turn_report_probes {
+  id integer [pk, increment]
+  turn_report_id integer [not null]
+  orbit_id integer [not null]
+  star_x integer [not null]
+  star_y integer [not null]
+  star_z integer [not null]
+  habitability integer [not null]
+  fuel_qty integer [not null]
+  gold_qty integer [not null]
+  metals_qty integer [not null]
+  non_metals_qty integer [not null]
+}
+
+Ref: turn_report_probes.turn_report_id > turn_reports.id [delete: cascade]
+
+Table turn_report_probe_sorcs {
+  id integer [pk, increment]
+  turn_report_probe_id integer [not null]
+  empire_id integer [not null]
+  sorc_type varchar [not null, note: 'Colony or ship']
+  sorc_name varchar [not null]
+  sorc_mass integer [not null]
+}
+
+Ref: turn_report_probe_sorcs.turn_report_probe_id > turn_report_probes.id [delete: cascade]
+
+// --- Spies ---
+
+Table turn_report_colony_spies {
+  id integer [pk, increment]
+  turn_report_colony_id integer [not null]
+  spy_type varchar [not null, note: 'A, B, C, D, E, F, G']
+  quantity integer [not null]
+}
+
+Ref: turn_report_colony_spies.turn_report_colony_id > turn_report_colonies.id [delete: cascade]
+
+Table turn_report_ship_spies {
+  id integer [pk, increment]
+  turn_report_ship_id integer [not null]
+  spy_type varchar [not null]
+  quantity integer [not null]
+}
+
+Ref: turn_report_ship_spies.turn_report_ship_id > turn_report_ships.id [delete: cascade]
+
+// ============================================================
+// Reference tables (defined in docs/dbdiagram.dbml)
+// ============================================================
+
+Table games {
+  id integer [pk, increment]
+}
+
+Table empires {
+  id integer [pk, increment]
+}
+
+Table colony_templates {
+  id integer [pk, increment]
+}
