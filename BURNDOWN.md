@@ -1,744 +1,613 @@
-# Game Generation Workflow
+# Layer 1 / Group A — Enums and Live-Schema Migrations
 
-## Design
+## Scope
 
-The application has three distinct phases for a game's lifecycle, and it is important not to conflate them:
+This burndown covers **Layer 1, Group A** from `docs/SETUP_REPORT.md`: the foundational enums and schema migrations
+needed by all subsequent groups.
 
-1. **Game creation** — an admin creates the game record and configures its name and PRNG seed. *(Done.)*
-2. **Member management** — the GM adds players and assigns roles (GM / Player). *(Done.)*
-3. **Game generation** — the GM generates the universe step by step, creates home systems, and assigns empires to players.
+1. Create `TurnStatus`, `PopulationClass`, `UnitCode`, `ColonyKind` enums
+2. Rebuild migration: `colony_inventory.unit` int→string; `colony_template_items.unit` int→string;
+   `colony_templates.kind` int→string; drop unique on `colony_templates.game_id`
+3. Rebuild migration: `colonies.kind` int→string; add `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`,
+   `death_rate`
+4. Migration: `colony_population`
+5. Migration: `colony_template_population`
+6. Migration: `turns`
 
-This burndown covers phase 3.
+---
 
-### State Machine
+## Global Guardrails
 
-The `games` table carries a `status` column that gates what actions are available:
+- **Order is fixed:** do tasks A1 → A6.
+- **Use PHPUnit only** (not Pest).
+- **Use feature tests** unless purely unit-level.
+- **Run after every PHP task:** `vendor/bin/pint --dirty --format agent`
+- **SQLite only:** no `->change()`, no DBAL, no `ALTER COLUMN`.
+- **Do not update models, factories, or controllers in this group.** Those belong to Group B and later. For Group A
+  tests, create rows manually or override attributes explicitly with string values.
+- **Do not touch `sample-data/beta/colony-template.json`** — it is already updated.
 
-| Status                  | Meaning                                                                                                          |
-|-------------------------|------------------------------------------------------------------------------------------------------------------|
-| `setup`                 | Initial state. Templates can be edited. No cluster data exists.                                                  |
-| `stars_generated`       | 100 stars placed in the coordinate cube. GM may review, edit star data, or delete this step.                     |
-| `planets_generated`     | Planets generated for all stars. GM may review, edit planet data, or delete this step.                           |
-| `deposits_generated`    | Deposits generated for all planets. GM may review or delete this step.                                           |
-| `home_system_generated` | At least one home system has been created. GM may add more, delete all home systems, or activate the game.       |
-| `active`                | Game is live. GM can assign empires and add home systems, but cannot modify or delete cluster data or templates. |
+---
 
-Transitions are forward: `setup → stars_generated → planets_generated → deposits_generated → home_system_generated → active`.
+## Canonical Enum Values
 
-Before activation, the GM can **delete** a step, which cascades to all downstream data and reverts the status:
+### `app/Enums/TurnStatus.php`
 
-- Deleting home systems → reverts to `deposits_generated`
-- Deleting deposits → also deletes home systems, empires, colonies → reverts to `planets_generated`
-- Deleting planets → also deletes deposits, home systems, empires, colonies → reverts to `stars_generated`
-- Deleting stars → deletes everything → reverts to `setup` (PRNG resets to initial seed)
+```php
+enum TurnStatus: string
+{
+    case Pending = 'pending';
+    case Generating = 'generating';
+    case Completed = 'completed';
+    case Closed = 'closed';
+}
+```
 
-Once `active`, no steps can be deleted and no cluster data can be modified.
+### `app/Enums/PopulationClass.php`
 
-### Data Model
+```php
+enum PopulationClass: string
+{
+    case Unemployable = 'UEM';
+    case Unskilled = 'USK';
+    case Professional = 'PRO';
+    case Soldier = 'SLD';
+    case ConstructionWorker = 'CNW';
+    case Spy = 'SPY';
+    case Police = 'PLC';
+    case SpecialAgent = 'SAG';
+    case Trainee = 'TRN';
+}
+```
 
-Cluster entities are stored as relational tables, not JSON blobs. The game engine (a future, separate body of work) will rely on this schema for turn adjudication.
+### `app/Enums/UnitCode.php`
 
-Hierarchy: **Game → Stars → Planets → Deposits**
+```php
+enum UnitCode: string
+{
+    // Assembly (operational units)
+    case Automation = 'AUT';
+    case EnergyShields = 'ESH';
+    case EnergyWeapons = 'EWP';
+    case Factories = 'FCT';
+    case Farms = 'FRM';
+    case HyperEngines = 'HEN';
+    case Laboratories = 'LAB';
+    case LifeSupports = 'LFS';
+    case Mines = 'MIN';
+    case MissileLaunchers = 'MSL';
+    case PowerPlants = 'PWP';
+    case Sensors = 'SEN';
+    case LightStructure = 'SLS';
+    case SpaceDrives = 'SPD';
+    case Structure = 'STU';
 
-Stars carry their coordinates (`x`, `y`, `z`) directly. Stars sharing coordinates form a system group, distinguished by a `sequence` number within the group. There is no separate `systems` table.
+    // Vehicles
+    case AntiMissiles = 'ANM';
+    case AssaultCraft = 'ASC';
+    case AssaultWeapons = 'ASW';
+    case Missiles = 'MSS';
+    case Transports = 'TPT';
 
-Home systems are an explicit entity linking a star to the home system template's planetary data. They form an ordered queue consumed by empire assignment.
+    // Bots
+    case MilitaryRobots = 'MTBT';
+    case RobotProbes = 'RPV';
 
-Empires are created after the game is `active` and are linked to both the game and the `game_user` pivot record. Linking to `game_user` (not directly to `users`) preserves per-game context: if a player leaves the game, their empire continues independently and their `game_user` record is deactivated. The player cannot re-join the same game as a new empire. They can resume control of the existing empire later.
+    // Consumables
+    case ConsumerGoods = 'CNGD';
+    case Food = 'FOOD';
+    case Fuel = 'FUEL';
+    case Gold = 'GOLD';
+    case Metals = 'METS';
+    case MilitarySupplies = 'MTSP';
+    case NonMetals = 'NMTS';
+    case Research = 'RSCH';
+}
+```
 
-### Templates
+### `app/Enums/ColonyKind.php`
 
-Templates are uploaded as JSON files and stored relationally (not as JSON columns on `games`). There is one **home system template** and one **colony template** per game. All home systems use the same template; all empires use the same colony template.
+```php
+enum ColonyKind: string
+{
+    case OpenSurface = 'COPN';
+    case Enclosed = 'CENC';
+    case Orbital = 'CORB';
+}
+```
 
-The **home system template** defines the complete set of planets for a home system star — typically 7–9 planets, exactly one marked `homeworld: true`. When applied to a star, it replaces all existing planetary and deposit data on that star (kill-and-fill, not merge).
+---
 
-The **colony template** defines the starting colony and inventory for each new empire.
+## Legacy Unit Mapping for Rebuild Migrations
 
-Templates are editable by the GM before the game becomes `active`. Once `active`, templates are locked.
+The rebuild migrations must use an explicit CASE mapping and **fail fast** on any unknown integer. Never silently coerce
+unmapped values.
 
-### PRNG and Generation Steps
+| Old int | New code |
+|---------|----------|
+| 1       | AUT      |
+| 2       | ESH      |
+| 3       | EWP      |
+| 4       | FCT      |
+| 5       | FRM      |
+| 6       | HEN      |
+| 7       | LAB      |
+| 8       | LFS      |
+| 9       | MIN      |
+| 10      | MSL      |
+| 11      | PWP      |
+| 12      | SEN      |
+| 13      | SLS      |
+| 14      | SPD      |
+| 15      | STU      |
+| 16      | ANM      |
+| 17      | ASC      |
+| 18      | ASW      |
+| 19      | MSS      |
+| 20      | TPT      |
+| 21      | MTBT     |
+| 22      | RPV      |
+| 23      | CNGD     |
+| 24      | FOOD     |
+| 25      | FUEL     |
+| 26      | GOLD     |
+| 27      | METS     |
+| 28      | MTSP     |
+| 29      | NMTS     |
+| 30      | RSCH     |
 
-The `games` table has two PRNG columns: `prng_seed` (the master seed string) and `prng_state` (the serialized engine state, updated as generation steps run).
-
-Four things consume the PRNG:
-1. **Star generation** — initializes `GameRng` from `prng_seed` (or GM override), places 100 stars, saves the resulting engine state to `prng_state`.
-2. **Planet generation** — picks up `prng_state` from star generation, creates planets for each star, saves new `prng_state`.
-3. **Deposit generation** — picks up `prng_state` from planet generation, creates deposits for each planet, saves new `prng_state`.
-4. **Random home system selection** — picks up current `prng_state`, selects a star satisfying the minimum distance constraint, saves new `prng_state`. Only when the GM requests random selection; manual selection does not consume the PRNG.
-
-**Empire assignment is deterministic logic** — assign to the first home system in the queue with capacity — and does not consume the PRNG.
-
-Each PRNG-consuming event writes a `generation_steps` record capturing the input state, output state, and the step name. These records track the current pipeline state — they are deleted when their step is deleted (they are not an append-only audit log). When a step is deleted, `game->prng_state` is restored to that step's `input_state`.
-
-### Generate Page
-
-A dedicated page at `/games/{game}/generate`. The Generate tab on the game detail page navigates here. The page is state-driven: each section is rendered based on `game.status`. Sections after the current step are disabled until their prerequisites are met.
-
-### GM Editing Between Steps
-
-The GM can edit star and planet attributes between steps:
-- Star coordinates/attributes are editable at `stars_generated` (before planets exist).
-- Planet attributes are editable at `planets_generated` (before deposits exist).
-- Deposits are not directly editable — delete and re-run deposit generation to change.
-
-To edit data after a downstream step exists, the GM must first delete the downstream step.
-
-### Members Tab Integration
-
-Player members without an assigned empire show a visual indicator on the Members tab. A direct link to the generate page is provided per-member so the GM can quickly jump to assign them.
-
-### Empire Assignment
-
-The GM determines the order in which empires are assigned. There is no fixed sequence. The GM can either assign an empire to a specific home system or let the system pick the first available (ordered by home system creation order, first not-full). "Full" means 25 empires on that home system's homeworld planet — this is a fixed game-wide constant. Maximum 250 empires per game.
-
-The GM may reassign an existing empire to a different home system without creating a new empire.
-
-### Home System Capacity and the GM's Responsibility
-
-Empire assignment will fail if no home system has remaining capacity. The system does not silently create a new home system — the GM must explicitly create one. The GM can create home systems at any time after deposits are generated, including after the game is `active`.
-
-### Concurrency
-
-Only one generation process may run for a given game at a time. This prevents double-click and concurrent GM session issues. Use a database-level lock on the game row for the duration of each generation action.
+**Fail-fast rule:** if `colony_inventory.unit` or `colony_template_items.unit` contains any value outside 1–30, throw a
+`RuntimeException` with a clear message identifying the table and column.
 
 ---
 
 ## Tasks
 
-### 1 — Add `status` to the `games` table
-
-Create a migration adding a `status` string column (default `setup`) to `games`. The existing `is_active` boolean column is retained. Create a `GameStatus` enum with cases: `Setup`, `StarsGenerated`, `PlanetsGenerated`, `DepositsGenerated`, `HomeSystemGenerated`, `Active`. Add the cast to the `Game` model.
-
-Add status helper methods to the `Game` model:
-- `isSetup()`, `isStarsGenerated()`, `isPlanetsGenerated()`, `isDepositsGenerated()`, `isHomeSystemGenerated()`, `isActive()`
-
-Add capability helpers:
-- `canEditTemplates()` — true when not `active`
-- `canGenerateStars()` — true at `setup`
-- `canGeneratePlanets()` — true at `stars_generated`
-- `canGenerateDeposits()` — true at `planets_generated`
-- `canCreateHomeSystems()` — true at `deposits_generated`, `home_system_generated`, or `active`
-- `canDeleteStep()` — true when not `setup` and not `active`
-- `canActivate()` — true at `home_system_generated`
-- `canAssignEmpires()` — true at `active`
-
-Also add `min_home_system_distance` (float, default `9`) to this migration — this is the per-game minimum Euclidean distance between home system stars used during random selection.
-
 ---
 
-### 2 — Relational template schema
-
-Create migrations and models for relational template storage. Templates are per-game.
-
-**`home_system_templates`** — `id`, `game_id` (unique FK), `created_at`, `updated_at`
-
-**`home_system_template_planets`** — `id`, `home_system_template_id`, `orbit` (integer), `type` (enum: `terrestrial`, `asteroid`, `gas_giant`), `habitability` (integer 0–25), `is_homeworld` (boolean, default false)
-
-**`home_system_template_deposits`** — `id`, `home_system_template_planet_id`, `resource` (enum: `gold`, `fuel`, `metallics`, `non_metallics`), `yield_pct` (integer), `quantity_remaining` (integer)
-
-**`colony_templates`** — `id`, `game_id` (unique FK), `kind` (integer), `tech_level` (integer), `created_at`, `updated_at`
-
-**`colony_template_items`** — `id`, `colony_template_id`, `unit` (integer), `tech_level` (integer), `quantity_assembled` (integer), `quantity_disassembled` (integer)
-
-Relationships: `Game` hasOne `HomeSystemTemplate`, `Game` hasOne `ColonyTemplate`. Templates have their child rows.
-
-Validation rules:
-- Home system template must have at least one planet.
-- Exactly one planet must have `is_homeworld = true`.
-- Colony template must have at least one inventory item.
-
----
-
-### 3 — Template upload and management
-
-Add `GameGenerationController::uploadHomeSystemTemplate` (`POST /games/{game}/generate/templates/home-system`). Accepts a JSON file upload. Validates the JSON structure, deletes any existing home system template for the game, and creates the relational records. Reject if `active`.
-
-Add `GameGenerationController::uploadColonyTemplate` (`POST /games/{game}/generate/templates/colony`). Same pattern for colony templates.
-
-Seed default templates from `sample-data/beta/home-system-template.json` and `sample-data/beta/colony-template.json` in the factory and/or a database seeder.
-
-Wire in the generate page: show a summary of the current template (planet count, homeworld orbit, deposit summary for home system; unit count for colony). Provide upload buttons for each. Disabled once `active`.
-
----
-
-### 4 — Star migration and model
-
-Create migration and Eloquent model for stars. Stars carry coordinates directly — there is no separate `systems` table.
-
-**`stars`** — `id`, `game_id`, `x` (integer 0–30), `y` (integer 0–30), `z` (integer 0–30), `sequence` (integer, 1-based position within the system group at that coordinate). Star attributes are coordinates, sequence, and their planets (via the `planets` relationship).
-
-The display string for a star's location is formatted as `"XX-YY-ZZ"` (zero-padded). The combination of (`game_id`, `x`, `y`, `z`, `sequence`) is unique.
-
-Relationships: `Game` hasMany `Star`. `Star` hasMany `Planet`.
-
----
-
-### 5 — Planet and deposit migrations and models
-
-**`planets`** — `id`, `game_id`, `star_id`, `orbit` (1–11), `type` (enum: `terrestrial`, `asteroid`, `gas_giant`), `habitability` (integer 0–25), `is_homeworld` (boolean, default false)
-
-**`deposits`** — `id`, `game_id`, `planet_id`, `resource` (enum: `gold`, `fuel`, `metallics`, `non_metallics`), `yield_pct` (integer), `quantity_remaining` (integer)
-
-Each entity carries `game_id` directly for fast scoping and bulk deletion.
-
-Relationships: `Star` hasMany `Planet`. `Planet` hasMany `Deposit`. `Game` hasMany of each.
-
----
-
-### 6 — Home system migration and model
-
-Create a **`home_systems`** table to track which stars have been designated as home systems and in what order:
-
-**`home_systems`** — `id`, `game_id`, `star_id` (unique FK — a star can only be a home system once), `homeworld_planet_id` (FK to `planets` — the planet marked `homeworld: true` after template application), `queue_position` (integer — creation order within the game), `created_at`
-
-The combination of (`game_id`, `queue_position`) is unique.
-
-Relationships: `Game` hasMany `HomeSystem` (ordered by `queue_position`). `HomeSystem` belongsTo `Star`. `HomeSystem` belongsTo `Planet` (the homeworld).
-
-This table is populated when the GM creates a home system (task 16). It is deleted when home systems are deleted as part of step deletion (task 15).
-
----
-
-### 7 — Empire and colony migrations and models
-
-**`empires`** — `id`, `game_id`, `game_user_id` (FK to `game_user` pivot, unique within `game_id`), `name`, `home_system_id` (FK to `home_systems`)
-
-**`colonies`** — `id`, `empire_id`, `planet_id`, `kind` (integer), `tech_level` (integer)
-
-**`colony_inventory`** — `id`, `colony_id`, `unit` (integer), `tech_level` (integer), `quantity_assembled` (integer), `quantity_disassembled` (integer)
-
-Relationships: `Game` hasMany `Empire`. `Empire` belongsTo the `game_user` pivot and belongsTo `HomeSystem`. `Empire` hasMany `Colony`. `Colony` hasMany `ColonyInventory`.
-
----
-
-### 8 — Generation steps migration and model
-
-Create a **`generation_steps`** table:
-
-**`generation_steps`** — `id`, `game_id`, `step` (enum: `stars`, `planets`, `deposits`, `home_system`), `sequence` (integer, monotonically increasing within a game), `input_state` (text — serialized PRNG state), `output_state` (text — serialized PRNG state after step), `created_at`
-
-This table tracks the current generation pipeline state. Records are **not** append-only — they are deleted when a step is deleted or when upstream steps are deleted.
-
-Add a `GenerationStep` model with a `game` relationship. Add a `generationSteps` hasMany to `Game` (ordered by `sequence`). No `updated_at` column needed.
-
-Manual home system creation does not write a step record.
-
----
-
-### 9 — `GameGenerationController` and route
-
-Create `GameGenerationController` with a `show` action. Register `GET /games/{game}/generate` → `GameGenerationController::show` named `games.generate`. Authorize with `GamePolicy::update`.
-
-Pass to the Inertia view:
-- `game` (with `status`, `min_home_system_distance`, `prng_seed`)
-- `homeSystemTemplate` (summary of current template, if any)
-- `colonyTemplate` (summary of current template, if any)
-- `generationSteps` (ordered by `sequence`)
-- `stars` (count and summary when they exist)
-- `planets` (count and summary when they exist)
-- `deposits` (count when they exist)
-- `homeSystems` (list with queue position, star location, empire count, capacity)
-- `members` (players only, each with their empire if one exists)
-
-Update the Generate tab to navigate to this route.
-
----
-
-### 10 — Generate page frontend shell
-
-Create `resources/js/pages/games/generate.tsx`. Render sections for each generation phase. Sections are shells with correct enabled/disabled states based on `game.status` — no actions wired yet:
-
-- **Templates** — upload/view home system and colony templates (enabled while not `active`)
-- **Stars** — generate stars, review/edit, delete step (enabled at `setup`)
-- **Planets** — generate planets, review/edit, delete step (enabled at `stars_generated`)
-- **Deposits** — generate deposits, review, delete step (enabled at `planets_generated`)
-- **Home Systems** — create home systems (random or manual), view queue, delete all (enabled at `deposits_generated` or later)
-- **Activate Game** — set game to `active` (enabled at `home_system_generated`)
-- **Empires** — assign empires to players, view assignments (enabled at `active`)
-
----
-
-### 11 — `StarGenerator` service
-
-Create `App\Services\StarGenerator`. Accepts a `Game` and an optional seed override string.
-
-Uses `GameRng` (from the provided seed or `game->prng_seed`) to place 100 stars within a 31×31×31 coordinate cube. Stars at the same coordinates form a system group; each gets a unique `sequence` number within the group.
-
-Before writing, delete all existing stars for the game (cascading to planets, deposits, home systems, empires, colonies). Acquire a database lock on the game row before starting.
-
-After writing:
-- Save the resulting PRNG engine state to `game->prng_state`
-- Write a `generation_steps` record (`step: stars`, `input_state`: the serialized initial PRNG state, `output_state`: the resulting state)
-- Set `game->status` to `stars_generated`
-
-Cover with unit tests using a fixed seed to assert deterministic output.
-
----
-
-### 12 — Generate stars action
-
-Add `GameGenerationController::generateStars` (`POST /games/{game}/generate/stars`). Authorize `update`. Reject if status is not `setup`. Accept an optional `seed` override in the request (falls back to `game->prng_seed`). Dispatch `StarGenerator`. Redirect back.
-
-Wire the Stars section: seed input field (pre-filled with `game.prng_seed`, editable), "Generate Stars" button with loading state. After generation, display a summary (star count, system group count).
-
----
-
-### 13 — `PlanetGenerator` service
-
-Create `App\Services\PlanetGenerator`. Accepts a `Game` (must be at `stars_generated`).
-
-Uses `GameRng::fromState($game->prng_state)` to generate planets for each star. Up to 11 orbits per star. Determines planet type, habitability, and orbital position.
-
-Before writing, delete all existing planets for the game (cascading to deposits, home systems, empires, colonies). Acquire a database lock on the game row.
-
-After writing:
-- Save the resulting PRNG state to `game->prng_state`
-- Write a `generation_steps` record (`step: planets`)
-- Set `game->status` to `planets_generated`
-
-Cover with unit tests using a fixed seed.
-
----
-
-### 14 — Generate planets action
-
-Add `GameGenerationController::generatePlanets` (`POST /games/{game}/generate/planets`). Authorize `update`. Reject if status is not `stars_generated`. Dispatch `PlanetGenerator`. Redirect back.
-
-Wire the Planets section: "Generate Planets" button. After generation, display a summary (planet count by type).
-
----
-
-### 15 — `DepositGenerator` service
-
-Create `App\Services\DepositGenerator`. Accepts a `Game` (must be at `planets_generated`).
-
-Uses `GameRng::fromState($game->prng_state)` to generate deposits for each planet. Up to 40 deposits per planet. Resources: Gold, Fuel, Metallics, Non-metallics.
-
-Before writing, delete all existing deposits for the game (cascading to home systems, empires, colonies). Acquire a database lock on the game row.
-
-After writing:
-- Save the resulting PRNG state to `game->prng_state`
-- Write a `generation_steps` record (`step: deposits`)
-- Set `game->status` to `deposits_generated`
-
-Cover with unit tests using a fixed seed.
-
----
-
-### 16 — Generate deposits action
-
-Add `GameGenerationController::generateDeposits` (`POST /games/{game}/generate/deposits`). Authorize `update`. Reject if status is not `planets_generated`. Dispatch `DepositGenerator`. Redirect back.
-
-Wire the Deposits section: "Generate Deposits" button. After generation, display a deposit count summary.
-
----
-
-### 17 — Delete step actions
-
-Add `GameGenerationController::deleteStep` (`DELETE /games/{game}/generate/{step}`). The `step` parameter is one of: `stars`, `planets`, `deposits`, `home_systems`. Authorize `update`. Reject if `active`.
-
-For each step, cascade deletion follows these rules:
-
-| Deleting       | Also deletes                                      | Status reverts to    | PRNG state restored to                          |
-|----------------|---------------------------------------------------|----------------------|-------------------------------------------------|
-| `home_systems` | Home systems, empires, colonies, colony inventory | `deposits_generated` | Deposit step's `output_state`                   |
-| `deposits`     | Deposits + everything above                       | `planets_generated`  | Planet step's `output_state`                    |
-| `planets`      | Planets + everything above                        | `stars_generated`    | Star step's `output_state`                      |
-| `stars`        | Everything                                        | `setup`              | Cleared (next run initializes from `prng_seed`) |
-
-Delete the corresponding `generation_steps` records (and all downstream records).
-
-Each action must require confirmation from the frontend (confirmation dialog stating what will be destroyed).
-
----
-
-### 18 — Star editing
-
-Add `GameGenerationController::updateStar` (`PUT /games/{game}/generate/stars/{star}`). Authorize `update`. Reject if status is not `stars_generated`. Validate and update the star's attributes.
-
-Wire in the Stars section: when stars exist and status is `stars_generated`, show a table/list of stars with editable fields. Provide a "Delete Stars" button that calls the delete step action (task 17) with confirmation.
-
----
-
-### 19 — Planet editing
-
-Add `GameGenerationController::updatePlanet` (`PUT /games/{game}/generate/planets/{planet}`). Authorize `update`. Reject if status is not `planets_generated`. Validate and update the planet's attributes.
-
-Wire in the Planets section: when planets exist and status is `planets_generated`, show a table/list of planets with editable fields. Provide a "Delete Planets" button with confirmation.
-
----
-
-### 20 — `HomeSystemCreator` service
-
-Create `App\Services\HomeSystemCreator`. Supports two modes:
-
-**Random selection** (`createRandom`):
-- Accepts `Game` and acquires a database lock on the game row.
-- Picks up `game->prng_state`.
-- Selects a star that is at least `game->min_home_system_distance` units (Euclidean distance) from every existing home system star.
-- Deletes all existing planets and deposits on the selected star.
-- Creates new planets and deposits from `game->homeSystemTemplate` (kill-and-fill).
-- Marks the template's homeworld planet with `is_homeworld = true`.
-- Creates a `HomeSystem` record with the next `queue_position`.
-- Saves the updated `prng_state`.
-- Writes a `generation_steps` record (`step: home_system`).
-- Sets status to `home_system_generated` if not already `active`.
-
-**Manual selection** (`createManual`):
-- Accepts `Game` and a specific `Star` (identified by coordinates + sequence).
-- No distance constraint is enforced.
-- Same kill-and-fill of planetary data from the template.
-- Creates a `HomeSystem` record with the next `queue_position`.
-- Does **not** consume the PRNG or write a step record.
-- Sets status to `home_system_generated` if not already `active`.
-
-Guards:
-- A star cannot be designated as a home system more than once.
-- The game must have a home system template.
-
-Cover with feature tests for both modes, distance constraint enforcement, duplicate star rejection.
-
----
-
-### 21 — Home system creation actions
-
-Add `GameGenerationController::createHomeSystemRandom` (`POST /games/{game}/generate/home-systems/random`). Authorize `update`. Reject if status is before `deposits_generated`. Dispatch `HomeSystemCreator::createRandom`. Redirect back.
-
-Add `GameGenerationController::createHomeSystemManual` (`POST /games/{game}/generate/home-systems/manual`). Accepts star identification (coordinates + sequence, or star ID). Authorize `update`. Reject if status is before `deposits_generated`. Dispatch `HomeSystemCreator::createManual`. Redirect back.
-
-Wire in the Home Systems section:
-- Show the current home system queue (star location, queue position, empire count / 25 capacity).
-- "Create Random Home System" button (available at `deposits_generated`, `home_system_generated`, or `active`).
-- Star selector for manual creation (dropdown or coordinate + sequence input).
-- "Delete All Home Systems" button with confirmation (only before `active`).
-
----
-
-### 22 — Activate game action
-
-Add `GameGenerationController::activate` (`POST /games/{game}/generate/activate`). Authorize `update`. Reject if status is not `home_system_generated`. Set `game->status` to `active`. Redirect back.
-
-Wire in the Activate section: show a summary of the game state (star count, planet count, deposit count, home system count and total capacity). "Activate Game" button with confirmation dialog — activation locks templates and cluster data permanently. The GM can still add home systems and assign empires after activation.
-
----
-
-### 23 — `EmpireCreator` service
-
-Create `App\Services\EmpireCreator`. Accepts a `Game` (must be `active`), a `GameUser` pivot record, and an optional target `HomeSystem`.
-
-Logic:
-1. If a target home system is provided, assign to it (if not full).
-2. Otherwise, assign to the first home system in the queue (ordered by `queue_position`) that is not full (< 25 empires on its homeworld planet).
-3. If no home system has capacity, throw an exception. The GM must create a new home system before retrying.
-4. Reject if the game already has 250 empires.
-5. Reject if the `GameUser` already has an empire in this game.
-6. Reject if the `GameUser` is deactivated.
-7. Create the `Empire` record linked to the game, the `game_user` pivot, and the home system.
-8. Create the starting `Colony` on the homeworld planet and its `ColonyInventory` from the game's colony template.
-
-No PRNG is consumed. No step record is written.
-
-Cover with feature tests: happy path (specific home system, first available), full home system rejection, 250-cap rejection, duplicate empire guard, deactivated member guard, colony template application.
-
----
-
-### 24 — Empire assignment actions and Members tab
-
-**Generate page (Empires section):** Show the current home system status (how many home systems exist, total capacity, total empires assigned) and the player member list. Each member row displays their name and either their empire name + home system location, or an "Assign Empire" button.
-
-The "Assign Empire" button allows the GM to either pick a specific home system or use "first available." When all home systems are at capacity, the "Assign Empire" buttons are disabled and a message directs the GM to create a new home system.
-
-Add `GameGenerationController::createEmpire` (`POST /games/{game}/generate/empires`). Accepts `game_user_id` and optional `home_system_id`. Authorize `update`. Reject if not `active`. Dispatch `EmpireCreator`. Return a validation error (not an exception) if no home system has capacity — the UI should surface this clearly.
-
-Add `GameGenerationController::reassignEmpire` (`PUT /games/{game}/generate/empires/{empire}`). Accepts a new `home_system_id`. Authorize `update`. Reject if not `active`. Update the empire's home system and move its colony to the new homeworld planet.
-
-**Members tab:** Player rows without an assigned empire show a visual indicator (e.g. a muted badge "No empire"). Include a link to the generate page so the GM can jump directly to assign them.
-
----
-
-### 25 — Cluster JSON download
-
-Add `GameGenerationController::download` (`GET /games/{game}/generate/download`). Returns the cluster data as a JSON file download (stars, planets, deposits — structured for readability). The GM uses this for local analysis. Only available when status is `stars_generated` or later.
-
-Wire a "Download JSON" link in the generate page, visible whenever cluster data exists.
-
----
-
-## Task Status
-
-| Task | Description                               | Status |
-|------|-------------------------------------------|--------|
-| 1    | Add `status` to the `games` table         | DONE   |
-| 2    | Relational template schema                | DONE   |
-| 3    | Template upload and management            | DONE   |
-| 4    | Star migration and model                  | DONE   |
-| 5    | Planet and deposit migrations and models  | DONE   |
-| 6    | Home system migration and model           | DONE   |
-| 7    | Empire and colony migrations and models   | DONE   |
-| 8    | Generation steps migration and model      | DONE   |
-| 9    | `GameGenerationController` and route      | DONE   |
-| 10   | Generate page frontend shell              | DONE   |
-| 11   | `StarGenerator` service                   | DONE   |
-| 12   | Generate stars action                     | DONE   |
-| 13   | `PlanetGenerator` service                 | DONE   |
-| 14   | Generate planets action                   | DONE   |
-| 15   | `DepositGenerator` service                | DONE   |
-| 16   | Generate deposits action                  | DONE   |
-| 17   | Delete step actions                       | DONE   |
-| 18   | Star editing                              | DONE   |
-| 19   | Planet editing                            | DONE   |
-| 20   | `HomeSystemCreator` service               | DONE   |
-| 21   | Home system creation actions              | DONE   |
-| 22   | Activate game action                      | DONE   |
-| 23   | `EmpireCreator` service                   | DONE   |
-| 24   | Empire assignment actions and Members tab | DONE   |
-| 25   | Cluster JSON download                     | DONE   |
-
----
-
-## Exit Criteria
-
-- [x] Game status transitions correctly through `setup → stars_generated → planets_generated → deposits_generated → home_system_generated → active`
-- [x] Before `active`, the GM can delete any step, which cascades to all downstream data and reverts the status
-- [x] Once `active`, no steps can be deleted and no cluster/template data can be modified
-- [x] GM can upload home system and colony templates as JSON files; templates are stored relationally
-- [x] Templates are locked once the game is `active`
-- [x] GM can generate stars with a seed (defaulting to `game.prng_seed`) and see a summary
-- [x] GM can override the seed at star generation without permanently changing `game.prng_seed`
-- [x] GM can generate planets and deposits as separate steps, each chaining PRNG state from the prior step
-- [x] GM can edit star attributes at `stars_generated` (before planets exist)
-- [x] GM can edit planet attributes at `planets_generated` (before deposits exist)
-- [x] GM can create home systems by random selection (consumes PRNG, respects minimum distance) or manual selection (no PRNG)
-- [x] Random home system selection enforces minimum Euclidean distance N (per-game, default 9) from existing home systems
-- [x] Manual home system selection allows any star with no distance constraint
-- [x] Home system creation replaces all planetary/deposit data on the selected star (kill-and-fill from template)
-- [x] A star cannot be designated as a home system more than once
-- [x] Home systems form an ordered queue by creation order
-- [x] GM can activate the game once at least one home system exists
-- [x] After activation, the GM can still create home systems and assign empires
-- [x] GM can assign empires to a specific home system or use first-available queue order
-- [x] Empire assignment finds the first home system in the queue with capacity; it fails with a clear error if no home system has capacity — no silent generation
-- [x] "Full" means 25 empires on the home system's homeworld planet (fixed game-wide constant)
-- [x] Maximum 250 empires per game
-- [x] GM can reassign an existing empire to a different home system
-- [x] A player member cannot be assigned more than one empire per game
-- [x] A deactivated member's empire persists; the member cannot be assigned a new empire
-- [x] Player members without an empire are indicated on the Members tab with a link to the generate page
-- [x] Generation steps are recorded for each PRNG-consuming event and deleted when their step is deleted
-- [x] Each generator is deterministic: the same input state always produces the same output (proven by tests with fixed seeds)
-- [x] Only one generation process can run per game at a time (database-level concurrency guard)
-- [x] All controller actions are covered by feature tests; generator services are covered by unit/feature tests
-
----
-
-## Code Review
-
-Review of commits `be1f5f2..051757e` covering Tasks 1–25.
-
-The implementation is solid overall. The state machine, PRNG pipeline, service-layer architecture, and test coverage are well done. The issues below are a mix of bugs, Laravel best-practice violations, and code smells — none are catastrophic, but several could cause subtle production problems.
-
----
-
-## Critical Findings
-
-### Finding 1. ~~`game_user_id` is not a real FK — empire lookups use `user_id` as if it were `game_user_id`~~ ✅ RESOLVED
-
-**Resolution:** The `game_user` pivot table was promoted to a first-class `players` table with its own auto-increment `id`. The `empires.game_user_id` column was renamed to `player_id` with a proper FK constraint (`nullable`, `nullOnDelete`) to `players.id`. A new `Player` model was created as the domain entity representing a User's membership in a Game. The `Empire` model now has a `player()` BelongsTo relationship. The `Game` model's `players()` BelongsToMany was renamed to `activePlayers()`, and a new `playerRecords()` HasMany was added. `EmpireCreator` looks up the Player record by `(game_id, user_id)` and stores `player->id`. Three incremental alter migrations on the old pivot were deleted and baked into the create migration. All 146 tests updated and passing.
-
-### Finding 2. ~~Delete cascade does not explicitly delete empires/colonies (relies on DB FK cascade)~~ ✅ RESOLVED
-
-**Files:** `app/Http/Controllers/GameGenerationController.php:512–576`
-
-**Observation:** The `performDelete*` methods delete `homeSystems`, `deposits`, `planets`, `stars` but never explicitly delete `empires`, `colonies`, or `colony_inventory`. This works because:
-- `empires.home_system_id` → `cascadeOnDelete()`
-- `colonies.empire_id` → `cascadeOnDelete()`
-- `colony_inventory.colony_id` → `cascadeOnDelete()`
-
-**Verdict:** This is correct and the DB-level cascade is reliable. However, a clarifying comment should be added, and the existing tests should verify empire/colony cleanup (the delete step tests currently don't assert empires/colonies are removed).
-
-**Resolution:** Added a three-line comment block above each `performDelete*` call in `GenerationStepController` documenting the FK cascade chain (`home_systems → empires → colonies → colony_inventory`). Added a dedicated test `delete_stars_cascades_to_empires_and_colonies` in `GameGenerationControllerDeleteStepTest` that creates a full empire+colony fixture, deletes the stars step, and asserts both `Empire` and `Colony` records are missing.
-
-### Finding 3. ~~`prng_state` is not in `$fillable` — direct assignment works but it's inconsistent~~ ✅ RESOLVED
-
-**File:** `app/Models/Game.php:15`
-
-**Problem:** The `Game` model marks `['name', 'is_active', 'prng_seed', 'status', 'min_home_system_distance']` as fillable but not `prng_state`. The services set `$game->prng_state` directly (which bypasses fillable), so this works. But it's an inconsistency — every other mutable column is in `$fillable`.
-
-**Resolution:** Added `prng_state` to the `#[Fillable]` attribute on `Game`, making it consistent with every other mutable column.
-
----
-
-## Medium Findings
-
-### Finding 4. ~~Deprecated `$dates` property used on two models~~ ✅ RESOLVED
-
-**Files:** `app/Models/HomeSystem.php:20`, `app/Models/GenerationStep.php:20`
-
-**Problem:** `protected $dates` was deprecated in Laravel 10 and removed in later versions. These models should use the `casts()` method instead:
-```php
-protected function casts(): array
-{
-    return ['created_at' => 'datetime'];
-}
+### Task A1 — Create enums
+**Status:** TODO
+**Effort:** S
+**Depends on:** none
+
+#### Files to create
+
+- `app/Enums/TurnStatus.php`
+- `app/Enums/PopulationClass.php`
+- `app/Enums/UnitCode.php`
+- `app/Enums/ColonyKind.php`
+- `tests/Unit/Enums/LayerOneEnumsTest.php`
+
+#### Commands
+
+```bash
+# No make:enum in Laravel — create enum files manually
+php artisan make:test --unit --phpunit Enums/LayerOneEnumsTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Unit/Enums/LayerOneEnumsTest.php
 ```
 
-**Resolution:** Replaced `protected $dates = ['created_at']` with a `protected function casts(): array` method returning `['created_at' => 'datetime']` on both `HomeSystem` and `GenerationStep`.
+#### Implementation checklist
 
-### Finding 5. ~~Controller `show()` method is excessively large — 177 lines~~ ✅ RESOLVED
+- Create the 4 string-backed enums under `App\Enums` using the exact values from the "Canonical Enum Values" section
+  above.
+- Match naming style with existing enums (`GameStatus`, `DepositResource`).
 
-**File:** `app/Http/Controllers/GameGenerationController.php:32–178`
+#### Test requirements — `tests/Unit/Enums/LayerOneEnumsTest.php`
 
-**Problem:** The `show` method performs ~10 separate queries, builds ~10 data structures, and assembles a massive Inertia payload. This is hard to test, hard to maintain, and violates the "methods under 10 lines" guideline. The star/planet list queries also load every row for display — at scale (100 stars × 11 planets = 1100 rows), this is a lot of data passed to the frontend on every page load.
+- Assert `TurnStatus::cases()` contains exactly `Pending`, `Generating`, `Completed`, `Closed` with values `pending`,
+  `generating`, `completed`, `closed`.
+- Assert `ColonyKind::cases()` contains exactly `OpenSurface`, `Enclosed`, `Orbital` with values `COPN`, `CENC`, `CORB`.
+- Assert `PopulationClass::cases()` contains exactly 9 cases: `UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`,
+  `TRN`.
+- Assert `UnitCode::cases()` contains exactly 30 cases with the values from the mapping table.
 
-**Recommendation:** Extract data preparation into private methods or a dedicated resource/DTO class. Consider using Inertia deferred/optional props for the star list and planet list so they don't block initial page render.
+#### Done when
 
-**Resolution:** Extracted all data preparation from `show()` into nine focused private methods (`gamePayload`, `homeSystemTemplateSummary`, `colonyTemplateSummary`, `starsSummary`, `planetsSummary`, `depositsSummary`, `starList`, `planetList`, `homeSystemsList`, `availableStarsList`, `membersList`), reducing `show()` to ~25 lines. `starList` and `planetList` are now wrapped in `Inertia::defer()` so they load asynchronously after the initial page render. On the frontend, both sections are wrapped in `<Deferred>` with a `Skeleton` fallback. Four new tests cover the deferred prop behaviour using `loadDeferredProps()`.
-
-### Finding 6. ~~`GameGenerationController` is a 667-line mega-controller~~ ✅ RESOLVED
-
-**Resolution:** Split into 7 single-responsibility controllers under `app/Http/Controllers/GameGeneration/`:
-- `GameGenerationController` — `show`, `download`, `activate` (3 methods)
-- `GameGeneration/GenerationStepController` — `generateStars`, `generatePlanets`, `generateDeposits`, `deleteStep`
-- `GameGeneration/HomeSystemController` — `createRandom`, `createManual`
-- `GameGeneration/EmpireController` — `store`, `reassign`
-- `GameGeneration/TemplateController` — `uploadHomeSystem`, `uploadColony`
-- `GameGeneration/StarController` — `update`
-- `GameGeneration/PlanetController` — `update`
-
-Route names are unchanged. Wayfinder regenerated. Frontend imports updated to reference the new controller modules.
-
-### Finding 7. ~~Template upload does manual JSON validation instead of using Form Request rules~~ ✅ RESOLVED
-
-**Files:** `app/Http/Controllers/GameGenerationController.php:578–666`, `app/Http/Requests/UploadHomeSystemTemplateRequest.php`, `app/Http/Requests/UploadColonyTemplateRequest.php`
-
-**Resolution:** Both Form Requests now implement `after()` hooks that handle JSON parse error detection and structural validation (non-empty `planets` array, exactly one homeworld for home system template; non-empty `inventory` array for colony template). The controller's manual `if` validation blocks were removed.
-
-### Finding 8. ~~Inline validation in controller actions instead of Form Requests~~ ✅ RESOLVED
-
-**Files:** `app/Http/Controllers/GameGenerationController.php:238–239, 326–328, 357–359, 397–398, 432–436, 473–477`
-
-**Resolution:** Created dedicated Form Request classes for all five actions: `UpdateStarRequest`, `UpdatePlanetRequest`, `CreateHomeSystemManualRequest`, `CreateEmpireRequest`, and `ReassignEmpireRequest`. Inline `$request->validate()` calls replaced with `$request->validated()`. Unused `PlanetType` and `Rule` imports removed from the controller.
-
-### Finding 9. ~~Hardcoded capacity constant (25 empires per home system) scattered across codebase~~ ✅ RESOLVED
-
-**Files:** `app/Services/EmpireCreator.php:43,50,82`, `app/Http/Controllers/GameGenerationController.php:107`, `resources/js/pages/games/generate.tsx:129`
-
-**Problem:** The number `25` appears as a magic number in three separate files. If this value ever changes, it must be updated in all locations.
-
-**Recommendation:** Define as a constant on the `HomeSystem` model (e.g., `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM = 25`) and reference it everywhere. Pass it to the frontend via the Inertia payload.
-
-**Resolution:** Defined `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM = 25` and `HomeSystem::MAX_EMPIRES_PER_GAME = 250` as typed `public const int` on the `HomeSystem` model. All three magic-number references in `EmpireCreator` were replaced with the constant. The Inertia payload already passed `capacity` per home system item; that value is now populated from `HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM` in the controller, so the frontend reads the constant indirectly without needing a separate prop.
-
-### Finding 10. ~~`HomeSystemCreator::applyTemplate()` creates planets/deposits one-by-one~~ ✅ RESOLVED
-
-**File:** `app/Services/HomeSystemCreator.php:128–176`
-
-**Resolution:** `applyTemplate()` now batch-inserts all planets via `Planet::insert()`, queries them back keyed by orbit to obtain IDs, then batch-inserts all deposits via `Deposit::insert()`. Reduces 15–30 individual INSERTs to 2–3 queries.
-
-### Finding 11. ~~`EmpireCreator::createColony()` also creates inventory one-by-one~~ ✅ RESOLVED
-
-**File:** `app/Services/EmpireCreator.php:112–119`
-
-**Resolution:** Colony inventory items are now batch-inserted via `ColonyInventory::insert()` after the colony record is created.
+- All 4 enum files exist with exact values.
+- Enum test passes.
 
 ---
 
-## Low Findings
+### Task A2 — Rebuild migration: `colony_inventory`, `colony_template_items`, `colony_templates`
+**Status:** TODO
+**Effort:** M
+**Depends on:** A1
 
-### Finding 12. ~~`GameRng::fromState()` creates a throwaway RNG instance~~ ✅ RESOLVED
+#### Files to create
 
-**Resolution:** The public constructor was made private and replaced with two named static factories: `GameRng::fromSeed(string $seed)` and `GameRng::fromState(string $serialized)`. `fromState()` no longer hashes a seed or constructs a throwaway engine. Call sites in `StarGenerator` and `GameRngTest` were updated to use `GameRng::fromSeed()`.
+- Migration: `rebuild_colony_inventory_colony_template_items_and_colony_templates_for_string_codes`
+- `tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php`
 
-### Finding 13. ~~`Star` model missing `homeSystem` relationship~~ ✅ RESOLVED
+#### Commands
 
-**File:** `app/Models/Star.php`
-
-**Problem:** `HomeSystem` belongsTo `Star`, but `Star` doesn't define a `hasOne HomeSystem` inverse. This isn't currently needed but is an incomplete relationship mapping.
-
-**Resolution:** Added `homeSystem(): HasOne` to `Star`, completing the inverse of `HomeSystem::star()`. Two tests in `StarModelTest` verify the relationship loads correctly and returns `null` when no home system is assigned.
-
-### Finding 14. ~~`Empire` model missing `gameUser` relationship~~ ✅ RESOLVED
-
-**Resolution:** The `Empire` model now has a `player()` BelongsTo relationship to the `Player` model, with a proper FK on `player_id`. Resolved as part of finding #1.
-
-### Finding 15. ~~Frontend page component is 1246 lines~~ ✅ RESOLVED
-
-**Resolution:** `generate.tsx` was split into 9 focused sub-components under `resources/js/pages/games/generate/`: `types.ts` (shared types), `PrngSeedSection`, `HomeSystemTemplateSection`, `ColonyTemplateSection`, `StarsSection`, `PlanetsSection`, `DepositsSection`, `HomeSystemsSection`, `ActivateSection` (owns its own dialog), and `EmpiresSection` (owns `EmpiresTable`). The shared delete-step dialog state remains in the orchestrating `generate.tsx`, which is now ~160 lines.
-
-Split generate.tsx (1253 lines) into 10 files under resources/js/pages/games/generate/:
-
-```text
-┌───────────────────────────────┬─────────────────────────────────────────────────────────────────┐
-│             File              │                         Responsibility                          │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ types.ts                      │ All shared TypeScript types                                     │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ PrngSeedSection.tsx           │ Seed form with its own useForm state                            │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ HomeSystemTemplateSection.tsx │ Template display + upload form                                  │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ ColonyTemplateSection.tsx     │ Colony template display + upload form                           │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ StarsSection.tsx              │ Star list table with inline editing + generate/delete actions   │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ PlanetsSection.tsx            │ Planet list table with inline editing + generate/delete actions │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ DepositsSection.tsx           │ Deposits summary + generate/delete actions                      │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ HomeSystemsSection.tsx        │ Home systems table + random/manual creation forms               │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ ActivateSection.tsx           │ Activation summary + confirm dialog (owns its own dialog state) │
-├───────────────────────────────┼─────────────────────────────────────────────────────────────────┤
-│ EmpiresSection.tsx            │ EmpiresTable + section wrapper                                  │
-└───────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+```bash
+php artisan make:migration rebuild_colony_inventory_colony_template_items_and_colony_templates_for_string_codes
+php artisan make:test --phpunit Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php
 ```
 
-### Finding 16. ~~`generationSteps` relationship is loaded eagerly via `$game->generationSteps` in `show()`~~ ✅ RESOLVED
+#### Existing schemas
 
-**Resolution:** Added an explicit `$game->load('generationSteps')` call at the top of `show()`, immediately after the Gate authorization. The `$game->generationSteps` reference in the Inertia payload now uses the pre-loaded relation.
+**`colony_inventory`** — `id`(PK), `colony_id`(FK→colonies, cascade), `unit`(integer), `tech_level`(integer),
+`quantity_assembled`(integer), `quantity_disassembled`(integer). No timestamps.
 
-### Finding 17. ~~Missing `game_user` pivot `id` column~~ ✅ RESOLVED
+**`colony_template_items`** — `id`(PK), `colony_template_id`(FK→colony_templates, cascade), `unit`(integer),
+`tech_level`(integer), `quantity_assembled`(integer), `quantity_disassembled`(integer). No timestamps.
 
-**Resolution:** The `game_user` pivot was promoted to a first-class `players` table with its own auto-increment `id` column. Resolved as part of finding #1.
+**`colony_templates`** — `id`(PK), `game_id`(FK→games, cascade, **currently unique**), `kind`(integer), `tech_level`(
+integer), `created_at`, `updated_at`.
 
-### Finding 18. ~~`activate` action doesn't use a DB lock~~ ✅ RESOLVED
+#### Target schemas after rebuild
 
-**Resolution:** The `activate` action now wraps its read-check-save sequence in a `DB::transaction()` with `Game::lockForUpdate()->findOrFail($game->id)`, consistent with all other state-changing actions in the controller.
+- `colony_inventory.unit` → string (was integer)
+- `colony_template_items.unit` → string (was integer)
+- `colony_templates.kind` → string (was integer)
+- `colony_templates.game_id` — **drop unique constraint** (multi-colony templates per game)
+
+#### SQLite rebuild pattern
+
+Wrap the entire migration in `Schema::disableForeignKeyConstraints()` / `Schema::enableForeignKeyConstraints()`.
+
+**Preflight validation (before any copy):**
+
+1. Check `colony_inventory.unit` — all values must be in 1–30. If not, throw `RuntimeException`.
+2. Check `colony_template_items.unit` — all values must be in 1–30. If not, throw `RuntimeException`.
+3. Check `colony_templates.kind` — all values must be `1`. If not, throw `RuntimeException`.
+
+**For each table:**
+
+1. Create temp table with target schema (string `unit`/`kind` column).
+2. Copy data using `INSERT INTO temp SELECT ... CASE unit WHEN 1 THEN 'AUT' ... END ...` — use the full 30-value CASE
+   mapping from the table above.
+3. For `colony_templates.kind`: `CASE kind WHEN 1 THEN 'COPN' END`.
+4. Drop original table.
+5. Rename temp → original name.
+
+**Foreign keys to recreate:**
+
+- `colony_inventory`: FK `colony_id` → `colonies.id` cascade delete
+- `colony_template_items`: FK `colony_template_id` → `colony_templates.id` cascade delete
+- `colony_templates`: FK `game_id` → `games.id` cascade delete — **no unique index on `game_id`**
+
+#### Test requirements — `tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php`
+
+Since `RefreshDatabase` runs all migrations (including this one), these tests verify the post-migration state:
+
+1. **migrates known unit ints to string codes in `colony_inventory`** — seed legacy int values before migration, verify
+   string values after
+2. **migrates known unit ints to string codes in `colony_template_items`** — same pattern
+3. **migrates `colony_templates.kind` from 1 to COPN**
+4. **drops unique constraint on `colony_templates.game_id`** — insert 2 templates for the same game_id; assert no
+   exception
+5. **preserves foreign keys** — use `PRAGMA foreign_key_list(...)` to verify FK relationships on all 3 tables
+6. **fails fast on unknown unit integer** — seed `unit = 99`, assert `RuntimeException`
+7. **fails fast on unknown template kind** — seed `kind = 2`, assert `RuntimeException`
+
+#### Done when
+
+- All three tables are rebuilt via temp-table pattern.
+- `unit`/`kind` columns are string-based.
+- `colony_templates.game_id` is no longer unique.
+- Unknown legacy ints fail loudly.
+- Migration test passes.
 
 ---
 
-## Positive Observations
+### Task A3 — Rebuild migration: `colonies`
+**Status:** TODO
+**Effort:** M
+**Depends on:** A1 (ideally after A2)
 
-- **PRNG pipeline** is well-designed: deterministic, state-chained, with step records for rollback.
-- **Service layer separation** is clean: generators and creators each own their domain logic.
-- **Database locking** (`lockForUpdate`) is correctly applied in all generator services.
-- **Test coverage** is excellent: 11 test files with ~2500 lines covering happy paths, error paths, and edge cases.
-- **Factories** are well-structured with useful states like `withDefaultTemplates()`.
-- **Migration FK cascades** are correctly configured for the full hierarchy.
-- **Frontend** correctly uses Wayfinder for route generation, Inertia forms with loading states, and confirmation dialogs.
+#### Files to create
+
+- Migration: `rebuild_colonies_for_string_kind_and_setup_report_columns`
+- `tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php`
+
+#### Commands
+
+```bash
+php artisan make:migration rebuild_colonies_for_string_kind_and_setup_report_columns
+php artisan make:test --phpunit Database/Migrations/RebuildColoniesTableMigrationTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php
+```
+
+#### Existing schema
+
+**`colonies`** — `id`(PK), `empire_id`(FK→empires, cascade), `planet_id`(FK→planets, cascade), `kind`(integer),
+`tech_level`(integer). No timestamps.
+
+#### Target schema after rebuild
+
+- `id` — integer PK
+- `empire_id` — FK → empires.id cascade delete
+- `planet_id` — FK → planets.id cascade delete
+- `kind` — string (was integer)
+- `tech_level` — integer
+- `name` — string, default `'Not Named'`
+- `is_on_surface` — boolean, default `true`
+- `rations` — float, default `1.0`
+- `sol` — float, default `0.0`
+- `birth_rate` — float, default `0.0`
+- `death_rate` — float, default `0.0`
+
+#### SQLite rebuild pattern
+
+Wrap in `Schema::disableForeignKeyConstraints()` / `Schema::enableForeignKeyConstraints()`.
+
+**Preflight validation:**
+
+- All `colonies.kind` values must be `1`. Otherwise throw `RuntimeException`.
+
+**Data copy mapping:**
+
+- `kind`: `CASE kind WHEN 1 THEN 'COPN' END`
+- `name`: `'Not Named'` (literal default for all existing rows)
+- `is_on_surface`: `1` (true)
+- `rations`: `1.0`
+- `sol`: `0.0`
+- `birth_rate`: `0.0`
+- `death_rate`: `0.0`
+
+**Rebuild steps:**
+
+1. Create `colonies_temp` with target schema.
+2. Copy from old table with CASE mapping and literal defaults.
+3. Drop `colonies`.
+4. Rename `colonies_temp` → `colonies`.
+
+**Foreign keys to recreate:**
+
+- FK `empire_id` → `empires.id` cascade delete
+- FK `planet_id` → `planets.id` cascade delete
+
+#### Test requirements — `tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php`
+
+1. **migrates legacy `kind=1` to `COPN`**
+2. **adds all six new columns with correct defaults** — verify `name='Not Named'`, `is_on_surface=1`, `rations=1.0`,
+   `sol=0.0`, `birth_rate=0.0`, `death_rate=0.0`
+3. **preserves `empire_id`, `planet_id`, `tech_level`, and primary key**
+4. **preserves both foreign keys** — use `PRAGMA foreign_key_list('colonies')`
+5. **fails fast on unknown legacy `kind`** — seed `kind = 2`, assert `RuntimeException`
+
+#### Done when
+
+- `colonies.kind` is string-based.
+- Six new columns exist with correct defaults.
+- Existing data is preserved and converted.
+- Unknown legacy kinds fail loudly.
+- Migration test passes.
 
 ---
 
-## Remediation Plan
+### Task A4 — Create `colony_population` table
+**Status:** TODO
+**Effort:** S
+**Depends on:** A1, A3
 
-Ordered by priority (highest first). Each task is independent unless noted.
+#### Files to create
 
-| #  | Task                                                                                                                                         | Severity | Effort | Files                                                                                                    |
-|----|----------------------------------------------------------------------------------------------------------------------------------------------|----------|--------|----------------------------------------------------------------------------------------------------------|
-| 1  | ~~Resolve `game_user_id` semantics~~ ✅ Promoted `game_user` pivot to `players` table; `empires.player_id` now has proper FK                  | Critical | M      | Done                                                                                                     |
-| 2  | ~~Replace `$dates` with `casts()` on `HomeSystem` and `GenerationStep`~~ ✅ Done                                                              | Medium   | S      | `HomeSystem.php`, `GenerationStep.php`                                                                   |
-| 3  | ~~Extract a constant for home system capacity (25) and empire cap (250)~~ ✅ Done                                                             | Medium   | S      | `HomeSystem.php`, `EmpireCreator.php`, `GameGenerationController.php`, `generate.tsx`                    |
-| 4  | ~~Add clarifying comments on cascade deletes; add test assertions for empire/colony cleanup in delete step tests~~ ✅ Done                    | Medium   | S      | `GameGenerationController.php`, `GameGenerationControllerDeleteStepTest.php`                             |
-| 5  | ~~Move JSON structure validation from controller into Form Request `after()` hooks; add JSON parse error handling~~ ✅ Done                  | Medium   | S      | `UploadHomeSystemTemplateRequest.php`, `UploadColonyTemplateRequest.php`, `GameGenerationController.php` |
-| 6  | ~~Create Form Requests for `updateStar`, `updatePlanet`, `createHomeSystemManual`, `createEmpire`, `reassignEmpire`~~ ✅ Done                 | Medium   | M      | New Form Request files, `GameGenerationController.php`                                                   |
-| 7  | ~~Batch-insert planets and deposits in `HomeSystemCreator::applyTemplate()` and colony inventory in `EmpireCreator::createColony()`~~ ✅ Done | Medium   | S      | `HomeSystemCreator.php`, `EmpireCreator.php`                                                             |
-| 8  | ~~Add `lockForUpdate` to the `activate` action for concurrency consistency~~ ✅ Done                                                          | Low      | S      | `GameGenerationController.php`                                                                           |
-| 9  | ~~Fix `GameRng::fromState()` to avoid throwaway constructor work~~ ✅ Done                                                                    | Low      | S      | `GameRng.php`, `StarGenerator.php`, `GameRngTest.php`                                                   |
-| 10 | ~~Eager-load `generationSteps` in the `show()` method~~ ✅ Done                                                                               | Low      | S      | `GameGenerationController.php`                                                                           |
-| 11 | ~~Split `GameGenerationController` into smaller controllers~~ ✅ Done                                                                        | Low      | L      | `GameGeneration/` subdirectory (6 new controllers), `routes/games.php`, `generate.tsx`                  |
-| 12 | ~~Extract frontend sections into sub-components~~ ✅ Done                                                                                    | Low      | M      | `generate/` subdirectory (9 new files), `generate.tsx`                                                  |
-| 13 | ~~Extract `show()` data preparation into private methods or use Inertia deferred props for star/planet lists~~ ✅ Done                        | Low      | M      | `GameGenerationController.php`, `generate.tsx`                                                           |
-| 14 | ~~Investigate OOM (out-of-memory) issue when running the full test suite~~ ✅ Done                                                           | Medium   | M      | `phpunit.xml`, `Game.php`, `GameController.php`, `games/index.tsx`                                       |
-| 15 | ~~Add `homeSystem` inverse relationship to `Star` model~~ ✅ Done                                                                            | Low      | S      | `Star.php`, `StarModelTest.php`                                                                          |
+- Migration: `create_colony_population_table`
+- `tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php`
 
-**Effort key:** S = < 1 hour, M = 1–3 hours, L = 3+ hours
+#### Commands
+
+```bash
+php artisan make:migration create_colony_population_table --create=colony_population
+php artisan make:test --phpunit Database/Migrations/CreateColonyPopulationTableMigrationTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php
+```
+
+#### Target schema
+
+| Column            | Type                     | Notes                                       |
+|-------------------|--------------------------|---------------------------------------------|
+| `id`              | integer PK               |                                             |
+| `colony_id`       | integer FK → colonies.id | cascadeOnDelete                             |
+| `population_code` | string                   | UEM, USK, PRO, SLD, CNW, SPY, PLC, SAG, TRN |
+| `quantity`        | integer                  |                                             |
+| `pay_rate`        | float                    |                                             |
+| `rebel_quantity`  | integer                  | default 0                                   |
+
+**Unique constraint:** `(colony_id, population_code)`
+**No timestamps.**
+
+#### Test requirements — `tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php`
+
+1. **table has expected columns** — use `Schema::hasColumns()`
+2. **`rebel_quantity` defaults to 0**
+3. **composite unique prevents duplicate `population_code` per colony** — insert same code twice for same colony, assert
+   exception
+4. **same `population_code` may exist on different colonies**
+5. **deleting a colony cascades to population rows**
+
+#### Done when
+
+- Table exists exactly as spec'd.
+- Unique and FK cascade behavior covered by tests.
+
+---
+
+### Task A5 — Create `colony_template_population` table
+**Status:** TODO
+**Effort:** S
+**Depends on:** A1, A2
+
+#### Files to create
+
+- Migration: `create_colony_template_population_table`
+- `tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php`
+
+#### Commands
+
+```bash
+php artisan make:migration create_colony_template_population_table --create=colony_template_population
+php artisan make:test --phpunit Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php
+```
+
+#### Target schema
+
+| Column               | Type                             | Notes           |
+|----------------------|----------------------------------|-----------------|
+| `id`                 | integer PK                       |                 |
+| `colony_template_id` | integer FK → colony_templates.id | cascadeOnDelete |
+| `population_code`    | string                           |                 |
+| `quantity`           | integer                          |                 |
+| `pay_rate`           | float                            |                 |
+
+**Unique constraint:** `(colony_template_id, population_code)`
+**No timestamps.**
+
+#### Test requirements — `tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php`
+
+1. **table has expected columns**
+2. **composite unique prevents duplicate `population_code` per template**
+3. **same `population_code` may exist on different templates**
+4. **deleting a template cascades to population rows**
+5. **multiple templates can exist for one game** — confirms `colony_templates.game_id` unique was dropped in A2
+
+#### Done when
+
+- Table exists exactly as spec'd.
+- Uniqueness and cascade behavior covered.
+
+---
+
+### Task A6 — Create `turns` table
+**Status:** TODO
+**Effort:** S
+**Depends on:** A1
+
+#### Files to create
+
+- Migration: `create_turns_table`
+- `tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php`
+
+#### Commands
+
+```bash
+php artisan make:migration create_turns_table --create=turns
+php artisan make:test --phpunit Database/Migrations/CreateTurnsTableMigrationTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php
+```
+
+#### Target schema
+
+| Column              | Type                  | Notes                          |
+|---------------------|-----------------------|--------------------------------|
+| `id`                | integer PK            |                                |
+| `game_id`           | integer FK → games.id | cascadeOnDelete                |
+| `number`            | integer               | 0 for setup, 1+ for subsequent |
+| `status`            | string                | default `'pending'`            |
+| `reports_locked_at` | datetime              | nullable                       |
+| `created_at`        | datetime              |                                |
+| `updated_at`        | datetime              |                                |
+
+**Unique constraint:** `(game_id, number)`
+
+#### Implementation notes
+
+- Use `$table->string('status')->default('pending')` (or `TurnStatus::Pending->value`).
+- Use `$table->dateTime('reports_locked_at')->nullable()`.
+- Use `$table->timestamps()`.
+- Add `$table->unique(['game_id', 'number'])`.
+
+#### Test requirements — `tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php`
+
+1. **table has expected columns**
+2. **default `status` is `pending`**
+3. **composite unique prevents duplicate turn number in same game**
+4. **same turn number may exist in different games**
+5. **deleting a game cascades to turns**
+6. **`reports_locked_at` is nullable**
+
+#### Done when
+
+- `turns` table exists with lifecycle fields and uniqueness constraint.
+- Defaults and FK cascade covered by tests.
+
+---
+
+## Execution Order
+
+```
+A1 (enums) → A2 (rebuild inventory/templates) → A3 (rebuild colonies) → A4 (colony_population) → A5 (colony_template_population) → A6 (turns)
+```
+
+Each task is a separate commit boundary.
+
+---
+
+## Group A Acceptance Criteria
+
+Group A is complete when all of the following are true:
+
+### Enums
+
+- [ ] `app/Enums/TurnStatus.php` exists with values: `pending`, `generating`, `completed`, `closed`
+- [ ] `app/Enums/PopulationClass.php` exists with 9 cases: `UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`, `TRN`
+- [ ] `app/Enums/UnitCode.php` exists with the exact 30 codes from the mapping table
+- [ ] `app/Enums/ColonyKind.php` exists with values: `COPN`, `CENC`, `CORB`
+
+### Rebuild Migrations
+
+- [ ] `colony_inventory.unit` is string (was integer)
+- [ ] `colony_template_items.unit` is string (was integer)
+- [ ] `colony_templates.kind` is string (was integer)
+- [ ] `colony_templates.game_id` is **not unique** (multi-colony templates per game)
+- [ ] `colonies.kind` is string (was integer)
+- [ ] `colonies` has new columns: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
+- [ ] Both rebuild migrations use the SQLite temp-table copy/rename pattern
+- [ ] No rebuild uses `->change()`
+- [ ] Unknown legacy integer values fail loudly with `RuntimeException`
+
+### New Tables
+
+- [ ] `colony_population` exists with unique `(colony_id, population_code)` and cascade delete
+- [ ] `colony_template_population` exists with unique `(colony_template_id, population_code)` and cascade delete
+- [ ] `turns` exists with unique `(game_id, number)`, cascade delete, nullable `reports_locked_at`
+
+### Foreign Keys / Cascades
+
+- [ ] Rebuilt tables retain correct cascade FKs
+- [ ] New tables have correct cascade FKs
+- [ ] `turns.game_id` cascades on game delete
+
+### Test Coverage
+
+- [ ] Every task has its own PHPUnit test file
+- [ ] Rebuild migrations are tested with explicit data verification
+- [ ] Additive tables are tested with schema, uniqueness, and cascade assertions
+
+### Quality Gate
+
+```bash
+php artisan test --compact tests/Unit/Enums/LayerOneEnumsTest.php
+php artisan test --compact tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php
+php artisan test --compact tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php
+php artisan test --compact tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php
+php artisan test --compact tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php
+php artisan test --compact tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php
+vendor/bin/pint --dirty --format agent
+```
+
+All tests must pass and Pint must report no formatting issues.
+
+---
+
+## Out of Scope for Group A
+
+Do **not** pull these into this burndown:
+
+- Model casts / relationships (Group B)
+- Factory updates (Group B)
+- `EmpireCreator` changes (Group E)
+- `TemplateController` / request validation changes (Group D)
+- Turn 0 creation on activation (Group E)
+- Report tables / generator / controller work (Groups F–I)
