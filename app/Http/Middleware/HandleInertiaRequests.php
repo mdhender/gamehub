@@ -39,7 +39,10 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         if ($user) {
-            $user->loadExists(['games as is_gm' => fn ($query) => $query->wherePivot('role', GameRole::Gm)->wherePivot('is_active', true)]);
+            $user->loadExists([
+                'games as is_gm' => fn ($query) => $query->where('players.role', GameRole::Gm)->where('players.is_active', true),
+                'games as has_active_games' => fn ($query) => $query->where('players.is_active', true),
+            ]);
         }
 
         return [

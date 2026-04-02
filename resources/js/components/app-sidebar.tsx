@@ -85,7 +85,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
-                {(auth.user?.is_admin || auth.user?.is_gm) && (
+                {(auth.user?.is_admin || auth.user?.has_active_games) && (
                     <NavMain items={gamesNavItems} label="Games" />
                 )}
                 {auth.user?.is_admin && (
