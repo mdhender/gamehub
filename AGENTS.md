@@ -128,6 +128,11 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
+## SQLite FK Constraints in Tests
+
+- **`Schema::disableForeignKeyConstraints()` is a no-op inside a transaction.** Laravel wraps each test in a database transaction, and SQLite ignores `PRAGMA foreign_keys = OFF` changes made inside an active transaction.
+- When you need FK enforcement suppressed inside a test (e.g. inserting rows without parent records, or calling a migration directly), use `DB::statement('PRAGMA defer_foreign_keys = ON')` instead. This pragma *can* be set inside a transaction; it defers FK checking until the outermost `COMMIT`. Since tests roll back rather than commit, FK constraints are never evaluated.
+
 === inertia-laravel/core rules ===
 
 # Inertia
