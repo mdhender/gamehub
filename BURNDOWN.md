@@ -296,7 +296,7 @@ Since `RefreshDatabase` runs all migrations (including this one), these tests ve
 ---
 
 ### Task A3 — Rebuild migration: `colonies`
-**Status:** TODO
+**Status:** DONE
 **Effort:** M
 **Depends on:** A1 (ideally after A2)
 
