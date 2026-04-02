@@ -1,163 +1,81 @@
-# Layer 1 / Group A — Enums and Live-Schema Migrations
+# Layer 1 / Group B — Update Existing Models and Factories
 
 ## Scope
 
-This burndown covers **Layer 1, Group A** from `docs/SETUP_REPORT.md`: the foundational enums and schema migrations
-needed by all subsequent groups.
+This burndown covers **Layer 1, Group B** from `docs/SETUP_REPORT.md`: updating existing Eloquent models and factories
+to use the string-backed enum casts and new column definitions introduced in Group A's migrations.
 
-1. Create `TurnStatus`, `PopulationClass`, `UnitCode`, `ColonyKind` enums
-2. Rebuild migration: `colony_inventory.unit` int→string; `colony_template_items.unit` int→string;
-   `colony_templates.kind` int→string; drop unique on `colony_templates.game_id`
-3. Rebuild migration: `colonies.kind` int→string; add `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`,
-   `death_rate`
-4. Migration: `colony_population`
-5. Migration: `colony_template_population`
-6. Migration: `turns`
+1. Update `Colony` model — add `ColonyKind` cast, new fillable columns
+2. Update `ColonyInventory` model — cast `unit` with `UnitCode` enum
+3. Update `ColonyTemplate` model — cast `kind` with `ColonyKind` enum
+4. Update `ColonyTemplateItem` model — cast `unit` with `UnitCode` enum
+5. Update `ColonyFactory` — use `ColonyKind` enum, add defaults for new columns
+6. Update `ColonyTemplateFactory` — use `ColonyKind` enum *(gap fix — omitted from SETUP_REPORT)*
+7. Update `ColonyInventoryFactory` — use `UnitCode` enum values
+8. Update `ColonyTemplateItemFactory` — use `UnitCode` enum values
 
 ---
 
 ## Global Guardrails
 
-- **Order is fixed:** do tasks A1 → A6.
+- **Order is fixed:** do tasks B7 → B13.
 - **Use PHPUnit only** (not Pest).
-- **Use feature tests** unless purely unit-level.
+- **Use feature tests** for all Group B work.
+- Match existing repo conventions:
+  - `#[Fillable([...])]` attribute for mass assignment
+  - `/** @use HasFactory<XxxFactory> */` PHPDoc on the trait
+  - Explicit relationship PHPDoc return types: `/** @return BelongsTo<X, $this> */`
+  - Casts via `protected function casts(): array` (see `Game` model for the pattern)
+- **Assume Group A migrations have been applied.** Tests use `RefreshDatabase` which runs migrations fresh.
+  New tests must assert **string enum values in the database**, not legacy integers.
+- **Do not create stub `ColonyPopulation` or `ColonyTemplatePopulation` models in this group.** Those belong to Group C.
+- **Defer `population()` relationships to Group C task 14** — the `ColonyPopulation` model does not exist yet.
+- Until the relevant factory task is complete, do **not** rely on `Colony::factory()` or `ColonyTemplate::factory()`
+  defaults in model tests — create records manually or override attributes explicitly with enum values.
+- When writing to casted attributes through Eloquent, use **enum cases** (`ColonyKind::OpenSurface`,
+  `UnitCode::Factories`).
+- When asserting raw stored values with `assertDatabaseHas()`, use **`->value`** to compare the backing string.
 - **Run after every PHP task:** `vendor/bin/pint --dirty --format agent`
-- **SQLite only:** no `->change()`, no DBAL, no `ALTER COLUMN`.
-- **Do not update models, factories, or controllers in this group.** Those belong to Group B and later. For Group A
-  tests, create rows manually or override attributes explicitly with string values.
-- **Do not touch `sample-data/beta/colony-template.json`** — it is already updated.
+- **Do not try to make the full suite green in this group.** Legacy tests that assume integer `kind` / `unit` values
+  are addressed later in Layer 1 task 34.
 
 ---
 
-## Canonical Enum Values
+## Design Decisions
 
-### `app/Enums/TurnStatus.php`
+### 1. `population()` relationships are deferred to Group C
 
-```php
-enum TurnStatus: string
-{
-    case Pending = 'pending';
-    case Generating = 'generating';
-    case Completed = 'completed';
-    case Closed = 'closed';
-}
-```
+Both `Colony::population()` and `ColonyTemplate::population()` reference models that do not exist yet
+(`ColonyPopulation`, `ColonyTemplatePopulation`). Adding relationship methods now would create a broken intermediate
+state. Group C task 14 creates those models and adds the relationships in one atomic step.
 
-### `app/Enums/PopulationClass.php`
+### 2. `Game::colonyTemplates()` is tracked but not in this group
 
-```php
-enum PopulationClass: string
-{
-    case Unemployable = 'UEM';
-    case Unskilled = 'USK';
-    case Professional = 'PRO';
-    case Soldier = 'SLD';
-    case ConstructionWorker = 'CNW';
-    case Spy = 'SPY';
-    case Police = 'PLC';
-    case SpecialAgent = 'SAG';
-    case Trainee = 'TRN';
-}
-```
-
-### `app/Enums/UnitCode.php`
-
-```php
-enum UnitCode: string
-{
-    // Assembly (operational units)
-    case Automation = 'AUT';
-    case EnergyShields = 'ESH';
-    case EnergyWeapons = 'EWP';
-    case Factories = 'FCT';
-    case Farms = 'FRM';
-    case HyperEngines = 'HEN';
-    case Laboratories = 'LAB';
-    case LifeSupports = 'LFS';
-    case Mines = 'MIN';
-    case MissileLaunchers = 'MSL';
-    case PowerPlants = 'PWP';
-    case Sensors = 'SEN';
-    case LightStructure = 'SLS';
-    case SpaceDrives = 'SPD';
-    case Structure = 'STU';
-
-    // Vehicles
-    case AntiMissiles = 'ANM';
-    case AssaultCraft = 'ASC';
-    case AssaultWeapons = 'ASW';
-    case Missiles = 'MSS';
-    case Transports = 'TPT';
-
-    // Bots
-    case MilitaryRobots = 'MTBT';
-    case RobotProbes = 'RPV';
-
-    // Consumables
-    case ConsumerGoods = 'CNGD';
-    case Food = 'FOOD';
-    case Fuel = 'FUEL';
-    case Gold = 'GOLD';
-    case Metals = 'METS';
-    case MilitarySupplies = 'MTSP';
-    case NonMetals = 'NMTS';
-    case Research = 'RSCH';
-}
-```
-
-### `app/Enums/ColonyKind.php`
-
-```php
-enum ColonyKind: string
-{
-    case OpenSurface = 'COPN';
-    case Enclosed = 'CENC';
-    case Orbital = 'CORB';
-}
-```
+Group A dropped the unique constraint on `colony_templates.game_id` (multi-colony templates per game). The existing
+`Game::colonyTemplate(): HasOne` should eventually become `colonyTemplates(): HasMany`. This change affects downstream
+consumers (`EmpireCreator`, template upload flow, existing tests) and is best handled as a separate existing-model gap
+task immediately before or during Group D/E when multi-template consumers are updated.
 
 ---
 
-## Legacy Unit Mapping for Rebuild Migrations
+## Current File State (Post–Group A)
 
-The rebuild migrations must use an explicit CASE mapping and **fail fast** on any unknown integer. Never silently coerce
-unmapped values.
+### Database columns (after Group A migrations run)
 
-| Old int | New code |
-|---------|----------|
-| 1       | AUT      |
-| 2       | ESH      |
-| 3       | EWP      |
-| 4       | FCT      |
-| 5       | FRM      |
-| 6       | HEN      |
-| 7       | LAB      |
-| 8       | LFS      |
-| 9       | MIN      |
-| 10      | MSL      |
-| 11      | PWP      |
-| 12      | SEN      |
-| 13      | SLS      |
-| 14      | SPD      |
-| 15      | STU      |
-| 16      | ANM      |
-| 17      | ASC      |
-| 18      | ASW      |
-| 19      | MSS      |
-| 20      | TPT      |
-| 21      | MTBT     |
-| 22      | RPV      |
-| 23      | CNGD     |
-| 24      | FOOD     |
-| 25      | FUEL     |
-| 26      | GOLD     |
-| 27      | METS     |
-| 28      | MTSP     |
-| 29      | NMTS     |
-| 30      | RSCH     |
+- **`colonies`:** `id`, `empire_id`, `planet_id`, `kind` (varchar), `tech_level`, `name` (default `'Not Named'`),
+  `is_on_surface` (default `1`), `rations` (default `1.0`), `sol` (default `0.0`), `birth_rate` (default `0.0`),
+  `death_rate` (default `0.0`)
+- **`colony_inventory`:** `id`, `colony_id`, `unit` (varchar), `tech_level`, `quantity_assembled`,
+  `quantity_disassembled`
+- **`colony_template_items`:** `id`, `colony_template_id`, `unit` (varchar), `tech_level`, `quantity_assembled`,
+  `quantity_disassembled`
+- **`colony_templates`:** `id`, `game_id` (NOT unique), `kind` (varchar), `tech_level`, `created_at`, `updated_at`
 
-**Fail-fast rule:** if `colony_inventory.unit` or `colony_template_items.unit` contains any value outside 1–30, throw a
-`RuntimeException` with a clear message identifying the table and column.
+### Enums (created in Group A)
+
+- `ColonyKind`: `OpenSurface='COPN'`, `Enclosed='CENC'`, `Orbital='CORB'`
+- `UnitCode`: 30 cases (`AUT`, `ESH`, `EWP`, `FCT`, `FRM`, … `RSCH`)
+- `PopulationClass`: 9 cases (`UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`, `TRN`)
 
 ---
 
@@ -165,449 +83,543 @@ unmapped values.
 
 ---
 
-### Task A1 — Create enums
-**Status:** DONE
+### Task B7 — Update `Colony` model
+**Status:** TODO
 **Effort:** S
-**Depends on:** none
+**Depends on:** A1, A3
+
+#### Files to modify
+
+- `app/Models/Colony.php`
 
 #### Files to create
 
-- `app/Enums/TurnStatus.php`
-- `app/Enums/PopulationClass.php`
-- `app/Enums/UnitCode.php`
-- `app/Enums/ColonyKind.php`
-- `tests/Unit/Enums/LayerOneEnumsTest.php`
+- `tests/Feature/Models/ColonyModelTest.php`
 
 #### Commands
 
 ```bash
-# No make:enum in Laravel — create enum files manually
-php artisan make:test --unit --phpunit Enums/LayerOneEnumsTest
+php artisan make:test --phpunit Models/ColonyModelTest
 vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Unit/Enums/LayerOneEnumsTest.php
+php artisan test --compact tests/Feature/Models/ColonyModelTest.php
 ```
 
 #### Implementation checklist
 
-- Create the 4 string-backed enums under `App\Enums` using the exact values from the "Canonical Enum Values" section
-  above.
-- Match naming style with existing enums (`GameStatus`, `DepositResource`).
+- Import `App\Enums\ColonyKind`.
+- Expand the `#[Fillable([...])]` attribute to include the new columns:
 
-#### Test requirements — `tests/Unit/Enums/LayerOneEnumsTest.php`
-
-- Assert `TurnStatus::cases()` contains exactly `Pending`, `Generating`, `Completed`, `Closed` with values `pending`,
-  `generating`, `completed`, `closed`.
-- Assert `ColonyKind::cases()` contains exactly `OpenSurface`, `Enclosed`, `Orbital` with values `COPN`, `CENC`, `CORB`.
-- Assert `PopulationClass::cases()` contains exactly 9 cases: `UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`,
-  `TRN`.
-- Assert `UnitCode::cases()` contains exactly 30 cases with the values from the mapping table.
-
-#### Done when
-
-- All 4 enum files exist with exact values.
-- Enum test passes.
-
----
-
-### Task A2 — Rebuild migration: `colony_inventory`, `colony_template_items`, `colony_templates`
-**Status:** DONE
-**Effort:** M
-**Depends on:** A1
-
-#### Files to create
-
-- Migration: `rebuild_colony_inventory_colony_template_items_and_colony_templates_for_string_codes`
-- `tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php`
-
-#### Commands
-
-```bash
-php artisan make:migration rebuild_colony_inventory_colony_template_items_and_colony_templates_for_string_codes
-php artisan make:test --phpunit Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php
+```php
+#[Fillable(['empire_id', 'planet_id', 'kind', 'tech_level', 'name', 'is_on_surface', 'rations', 'sol', 'birth_rate', 'death_rate'])]
 ```
 
-#### Existing schemas
+- Add a `casts()` method following the `Game` model pattern:
 
-**`colony_inventory`** — `id`(PK), `colony_id`(FK→colonies, cascade), `unit`(integer), `tech_level`(integer),
-`quantity_assembled`(integer), `quantity_disassembled`(integer). No timestamps.
-
-**`colony_template_items`** — `id`(PK), `colony_template_id`(FK→colony_templates, cascade), `unit`(integer),
-`tech_level`(integer), `quantity_assembled`(integer), `quantity_disassembled`(integer). No timestamps.
-
-**`colony_templates`** — `id`(PK), `game_id`(FK→games, cascade, **currently unique**), `kind`(integer), `tech_level`(
-integer), `created_at`, `updated_at`.
-
-#### Target schemas after rebuild
-
-- `colony_inventory.unit` → string (was integer)
-- `colony_template_items.unit` → string (was integer)
-- `colony_templates.kind` → string (was integer)
-- `colony_templates.game_id` — **drop unique constraint** (multi-colony templates per game)
-
-#### SQLite rebuild pattern
-
-Wrap the entire migration in `Schema::disableForeignKeyConstraints()` / `Schema::enableForeignKeyConstraints()`.
-
-**Preflight validation (before any copy):**
-
-1. Check `colony_inventory.unit` — all values must be in 1–30. If not, throw `RuntimeException`.
-2. Check `colony_template_items.unit` — all values must be in 1–30. If not, throw `RuntimeException`.
-3. Check `colony_templates.kind` — all values must be `1`. If not, throw `RuntimeException`.
-
-**For each table:**
-
-1. Create temp table with target schema (string `unit`/`kind` column).
-2. Copy data using `INSERT INTO temp SELECT ... CASE unit WHEN 1 THEN 'AUT' ... END ...` — use the full 30-value CASE
-   mapping from the table above.
-3. For `colony_templates.kind`: `CASE kind WHEN 1 THEN 'COPN' END`.
-4. Drop original table.
-5. Rename temp → original name.
-
-**Foreign keys to recreate:**
-
-- `colony_inventory`: FK `colony_id` → `colonies.id` cascade delete
-- `colony_template_items`: FK `colony_template_id` → `colony_templates.id` cascade delete
-- `colony_templates`: FK `game_id` → `games.id` cascade delete — **no unique index on `game_id`**
-
-#### Test requirements — `tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php`
-
-Since `RefreshDatabase` runs all migrations (including this one), these tests verify the post-migration state:
-
-1. **migrates known unit ints to string codes in `colony_inventory`** — seed legacy int values before migration, verify
-   string values after
-2. **migrates known unit ints to string codes in `colony_template_items`** — same pattern
-3. **migrates `colony_templates.kind` from 1 to COPN**
-4. **drops unique constraint on `colony_templates.game_id`** — insert 2 templates for the same game_id; assert no
-   exception
-5. **preserves foreign keys** — use `PRAGMA foreign_key_list(...)` to verify FK relationships on all 3 tables
-6. **fails fast on unknown unit integer** — seed `unit = 99`, assert `RuntimeException`
-7. **fails fast on unknown template kind** — seed `kind = 2`, assert `RuntimeException`
-
-#### Done when
-
-- All three tables are rebuilt via temp-table pattern.
-- `unit`/`kind` columns are string-based.
-- `colony_templates.game_id` is no longer unique.
-- Unknown legacy ints fail loudly.
-- Migration test passes.
-
----
-
-### Task A3 — Rebuild migration: `colonies`
-**Status:** DONE
-**Effort:** M
-**Depends on:** A1 (ideally after A2)
-
-#### Files to create
-
-- Migration: `rebuild_colonies_for_string_kind_and_setup_report_columns`
-- `tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php`
-
-#### Commands
-
-```bash
-php artisan make:migration rebuild_colonies_for_string_kind_and_setup_report_columns
-php artisan make:test --phpunit Database/Migrations/RebuildColoniesTableMigrationTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php
+```php
+/**
+ * @return array<string, string>
+ */
+protected function casts(): array
+{
+    return [
+        'kind' => ColonyKind::class,
+        'is_on_surface' => 'boolean',
+        'rations' => 'float',
+        'sol' => 'float',
+        'birth_rate' => 'float',
+        'death_rate' => 'float',
+    ];
+}
 ```
 
-#### Existing schema
+- Keep `public $timestamps = false;` unchanged.
+- Keep existing `empire()`, `planet()`, and `inventory()` relationships unchanged.
+- **Do not add `population()` in this task.** That relationship is deferred to Group C task 14.
 
-**`colonies`** — `id`(PK), `empire_id`(FK→empires, cascade), `planet_id`(FK→planets, cascade), `kind`(integer),
-`tech_level`(integer). No timestamps.
+#### Test requirements — `tests/Feature/Models/ColonyModelTest.php`
 
-#### Target schema after rebuild
+1. **casts `kind` to `ColonyKind`** — create a colony with `kind => ColonyKind::Enclosed`, assert
+   `$colony->fresh()->kind === ColonyKind::Enclosed`
+2. **mass assignment accepts new fillable columns** — create via `Colony::query()->create([...])` including `name`,
+   `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`; assert all values persist
+3. **primitive casts round-trip correctly** — assert `is_on_surface` is `bool`, `rations`/`sol`/`birth_rate`/`death_rate`
+   are `float`
+4. **raw database stores the enum backing value** — `assertDatabaseHas('colonies', ['kind' => 'CENC'])`
+5. **existing relationships still work** — assert `$colony->empire` and `$colony->planet` resolve
 
-- `id` — integer PK
-- `empire_id` — FK → empires.id cascade delete
-- `planet_id` — FK → planets.id cascade delete
-- `kind` — string (was integer)
-- `tech_level` — integer
-- `name` — string, default `'Not Named'`
-- `is_on_surface` — boolean, default `true`
-- `rations` — float, default `1.0`
-- `sol` — float, default `0.0`
-- `birth_rate` — float, default `0.0`
-- `death_rate` — float, default `0.0`
-
-#### SQLite rebuild pattern
-
-Wrap in `Schema::disableForeignKeyConstraints()` / `Schema::enableForeignKeyConstraints()`.
-
-**Preflight validation:**
-
-- All `colonies.kind` values must be `1`. Otherwise throw `RuntimeException`.
-
-**Data copy mapping:**
-
-- `kind`: `CASE kind WHEN 1 THEN 'COPN' END`
-- `name`: `'Not Named'` (literal default for all existing rows)
-- `is_on_surface`: `1` (true)
-- `rations`: `1.0`
-- `sol`: `0.0`
-- `birth_rate`: `0.0`
-- `death_rate`: `0.0`
-
-**Rebuild steps:**
-
-1. Create `colonies_temp` with target schema.
-2. Copy from old table with CASE mapping and literal defaults.
-3. Drop `colonies`.
-4. Rename `colonies_temp` → `colonies`.
-
-**Foreign keys to recreate:**
-
-- FK `empire_id` → `empires.id` cascade delete
-- FK `planet_id` → `planets.id` cascade delete
-
-#### Test requirements — `tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php`
-
-1. **migrates legacy `kind=1` to `COPN`**
-2. **adds all six new columns with correct defaults** — verify `name='Not Named'`, `is_on_surface=1`, `rations=1.0`,
-   `sol=0.0`, `birth_rate=0.0`, `death_rate=0.0`
-3. **preserves `empire_id`, `planet_id`, `tech_level`, and primary key**
-4. **preserves both foreign keys** — use `PRAGMA foreign_key_list('colonies')`
-5. **fails fast on unknown legacy `kind`** — seed `kind = 2`, assert `RuntimeException`
+Do not use `Colony::factory()` defaults in this test; create an `Empire` and `Planet` explicitly and pass attributes
+with enum values.
 
 #### Done when
 
-- `colonies.kind` is string-based.
-- Six new columns exist with correct defaults.
-- Existing data is preserved and converted.
-- Unknown legacy kinds fail loudly.
-- Migration test passes.
+- `Colony` casts `kind` to `ColonyKind`
+- New live-schema columns are fillable and cast correctly
+- No missing-class `population()` relationship has been introduced
+- Targeted test passes
 
 ---
 
-### Task A4 — Create `colony_population` table
-**Status:** DONE
-**Effort:** S
-**Depends on:** A1, A3
-
-#### Files to create
-
-- Migration: `create_colony_population_table`
-- `tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php`
-
-#### Commands
-
-```bash
-php artisan make:migration create_colony_population_table --create=colony_population
-php artisan make:test --phpunit Database/Migrations/CreateColonyPopulationTableMigrationTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php
-```
-
-#### Target schema
-
-| Column            | Type                     | Notes                                       |
-|-------------------|--------------------------|---------------------------------------------|
-| `id`              | integer PK               |                                             |
-| `colony_id`       | integer FK → colonies.id | cascadeOnDelete                             |
-| `population_code` | string                   | UEM, USK, PRO, SLD, CNW, SPY, PLC, SAG, TRN |
-| `quantity`        | integer                  |                                             |
-| `pay_rate`        | float                    |                                             |
-| `rebel_quantity`  | integer                  | default 0                                   |
-
-**Unique constraint:** `(colony_id, population_code)`
-**No timestamps.**
-
-#### Test requirements — `tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php`
-
-1. **table has expected columns** — use `Schema::hasColumns()`
-2. **`rebel_quantity` defaults to 0**
-3. **composite unique prevents duplicate `population_code` per colony** — insert same code twice for same colony, assert
-   exception
-4. **same `population_code` may exist on different colonies**
-5. **deleting a colony cascades to population rows**
-
-#### Done when
-
-- Table exists exactly as spec'd.
-- Unique and FK cascade behavior covered by tests.
-
----
-
-### Task A5 — Create `colony_template_population` table
-**Status:** DONE
+### Task B8 — Update `ColonyInventory` model
+**Status:** TODO
 **Effort:** S
 **Depends on:** A1, A2
 
+#### Files to modify
+
+- `app/Models/ColonyInventory.php`
+
 #### Files to create
 
-- Migration: `create_colony_template_population_table`
-- `tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php`
+- `tests/Feature/Models/ColonyInventoryModelTest.php`
 
 #### Commands
 
 ```bash
-php artisan make:migration create_colony_template_population_table --create=colony_template_population
-php artisan make:test --phpunit Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest
+php artisan make:test --phpunit Models/ColonyInventoryModelTest
 vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php
+php artisan test --compact tests/Feature/Models/ColonyInventoryModelTest.php
 ```
 
-#### Target schema
+#### Implementation checklist
 
-| Column               | Type                             | Notes           |
-|----------------------|----------------------------------|-----------------|
-| `id`                 | integer PK                       |                 |
-| `colony_template_id` | integer FK → colony_templates.id | cascadeOnDelete |
-| `population_code`    | string                           |                 |
-| `quantity`           | integer                          |                 |
-| `pay_rate`           | float                            |                 |
+- Import `App\Enums\UnitCode`.
+- Add a `casts()` method:
 
-**Unique constraint:** `(colony_template_id, population_code)`
-**No timestamps.**
+```php
+/**
+ * @return array<string, string>
+ */
+protected function casts(): array
+{
+    return [
+        'unit' => UnitCode::class,
+    ];
+}
+```
 
-#### Test requirements — `tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php`
+- Keep `protected $table = 'colony_inventory';`, `public $timestamps = false;`, and `colony()` relationship unchanged.
 
-1. **table has expected columns**
-2. **composite unique prevents duplicate `population_code` per template**
-3. **same `population_code` may exist on different templates**
-4. **deleting a template cascades to population rows**
-5. **multiple templates can exist for one game** — confirms `colony_templates.game_id` unique was dropped in A2
+#### Test requirements — `tests/Feature/Models/ColonyInventoryModelTest.php`
+
+1. **casts `unit` to `UnitCode`** — create a row with `unit => UnitCode::Factories`, assert
+   `$inventory->fresh()->unit === UnitCode::Factories`
+2. **stores enum backing value in database** — `assertDatabaseHas('colony_inventory', ['unit' => 'FCT'])`
+3. **relationship to colony still works** — assert `$inventory->colony` resolves correctly
+
+Do not rely on `ColonyInventory::factory()` or `Colony::factory()` defaults; create the colony explicitly with string
+`kind` and pass `unit` as a `UnitCode` enum case.
 
 #### Done when
 
-- Table exists exactly as spec'd.
-- Uniqueness and cascade behavior covered.
+- `ColonyInventory` casts `unit` to `UnitCode`
+- Raw DB value is the string code, not an integer
+- Targeted test passes
 
 ---
 
-### Task A6 — Create `turns` table
-**Status:** DONE
+### Task B9 — Update `ColonyTemplate` model
+**Status:** TODO
 **Effort:** S
-**Depends on:** A1
+**Depends on:** A1, A2
+
+#### Files to modify
+
+- `app/Models/ColonyTemplate.php`
 
 #### Files to create
 
-- Migration: `create_turns_table`
-- `tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php`
+- `tests/Feature/Models/ColonyTemplateModelTest.php`
 
 #### Commands
 
 ```bash
-php artisan make:migration create_turns_table --create=turns
-php artisan make:test --phpunit Database/Migrations/CreateTurnsTableMigrationTest
+php artisan make:test --phpunit Models/ColonyTemplateModelTest
 vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php
+php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php
 ```
 
-#### Target schema
+#### Implementation checklist
 
-| Column              | Type                  | Notes                          |
-|---------------------|-----------------------|--------------------------------|
-| `id`                | integer PK            |                                |
-| `game_id`           | integer FK → games.id | cascadeOnDelete                |
-| `number`            | integer               | 0 for setup, 1+ for subsequent |
-| `status`            | string                | default `'pending'`            |
-| `reports_locked_at` | datetime              | nullable                       |
-| `created_at`        | datetime              |                                |
-| `updated_at`        | datetime              |                                |
+- Import `App\Enums\ColonyKind`.
+- Add a `casts()` method:
 
-**Unique constraint:** `(game_id, number)`
+```php
+/**
+ * @return array<string, string>
+ */
+protected function casts(): array
+{
+    return [
+        'kind' => ColonyKind::class,
+    ];
+}
+```
 
-#### Implementation notes
+- Keep existing `game()` and `items()` relationships unchanged.
+- **Do not add `population()` in this task.** That relationship is deferred to Group C task 14.
 
-- Use `$table->string('status')->default('pending')` (or `TurnStatus::Pending->value`).
-- Use `$table->dateTime('reports_locked_at')->nullable()`.
-- Use `$table->timestamps()`.
-- Add `$table->unique(['game_id', 'number'])`.
+#### Test requirements — `tests/Feature/Models/ColonyTemplateModelTest.php`
 
-#### Test requirements — `tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php`
+1. **casts `kind` to `ColonyKind`** — create a template with `kind => ColonyKind::Orbital`, assert
+   `$template->fresh()->kind === ColonyKind::Orbital`
+2. **stores enum backing value** — `assertDatabaseHas('colony_templates', ['kind' => 'CORB'])`
+3. **existing relationships still work** — verify `$template->game` resolves; create a child item and verify
+   `$template->items` contains it
+4. **multiple templates per game** — create two templates for the same game, assert both persist (confirms unique
+   constraint was dropped in A2)
 
-1. **table has expected columns**
-2. **default `status` is `pending`**
-3. **composite unique prevents duplicate turn number in same game**
-4. **same turn number may exist in different games**
-5. **deleting a game cascades to turns**
-6. **`reports_locked_at` is nullable**
+Do not rely on `ColonyTemplate::factory()` defaults; create rows manually with string `kind`.
 
 #### Done when
 
-- `turns` table exists with lifecycle fields and uniqueness constraint.
-- Defaults and FK cascade covered by tests.
+- `ColonyTemplate` casts `kind` to `ColonyKind`
+- Existing relationships still pass
+- No missing-class `population()` relationship has been introduced
+- Targeted test passes
+
+---
+
+### Task B10 — Update `ColonyTemplateItem` model
+**Status:** TODO
+**Effort:** S
+**Depends on:** A1, A2
+
+#### Files to modify
+
+- `app/Models/ColonyTemplateItem.php`
+
+#### Files to create
+
+- `tests/Feature/Models/ColonyTemplateItemModelTest.php`
+
+#### Commands
+
+```bash
+php artisan make:test --phpunit Models/ColonyTemplateItemModelTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Models/ColonyTemplateItemModelTest.php
+```
+
+#### Implementation checklist
+
+- Import `App\Enums\UnitCode`.
+- Add a `casts()` method:
+
+```php
+/**
+ * @return array<string, string>
+ */
+protected function casts(): array
+{
+    return [
+        'unit' => UnitCode::class,
+    ];
+}
+```
+
+- Keep `public $timestamps = false;` and `colonyTemplate()` relationship unchanged.
+
+#### Test requirements — `tests/Feature/Models/ColonyTemplateItemModelTest.php`
+
+1. **casts `unit` to `UnitCode`** — create an item with `unit => UnitCode::Food`, assert
+   `$item->fresh()->unit === UnitCode::Food`
+2. **stores enum backing value** — `assertDatabaseHas('colony_template_items', ['unit' => 'FOOD'])`
+3. **relationship to colony template still works** — assert `$item->colonyTemplate` resolves correctly
+
+Do not rely on `ColonyTemplateItem::factory()` defaults; create the parent template explicitly with string `kind`
+and pass `unit` as a `UnitCode` enum case.
+
+#### Done when
+
+- `ColonyTemplateItem` casts `unit` to `UnitCode`
+- Raw DB value is the string unit code
+- Targeted test passes
+
+---
+
+### Task B11 — Update `ColonyFactory`
+**Status:** TODO
+**Effort:** S
+**Depends on:** B7
+
+#### Files to modify
+
+- `database/factories/ColonyFactory.php`
+
+#### Files to create
+
+- `tests/Feature/Database/Factories/ColonyFactoryTest.php`
+
+#### Commands
+
+```bash
+php artisan make:test --phpunit Database/Factories/ColonyFactoryTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Factories/ColonyFactoryTest.php
+```
+
+#### Implementation checklist
+
+- Import `App\Enums\ColonyKind`.
+- Replace the legacy integer `kind` default with a deterministic enum case:
+
+```php
+'kind' => ColonyKind::OpenSurface,
+```
+
+- Add defaults for the six new `colonies` columns matching the migrated schema defaults:
+
+```php
+'name' => 'Not Named',
+'is_on_surface' => true,
+'rations' => 1.0,
+'sol' => 0.0,
+'birth_rate' => 0.0,
+'death_rate' => 0.0,
+```
+
+- Keep `empire_id`, `planet_id`, and `tech_level` unchanged.
+
+#### Test requirements — `tests/Feature/Database/Factories/ColonyFactoryTest.php`
+
+1. **factory creates a valid colony** — `Colony::factory()->create()` does not throw
+2. **default `kind` is enum-backed** — assert `$colony->fresh()->kind === ColonyKind::OpenSurface` and DB stores
+   `kind = 'COPN'`
+3. **new columns have coherent defaults** — assert `name = 'Not Named'`, `is_on_surface = true`, `rations = 1.0`,
+   `sol = 0.0`, `birth_rate = 0.0`, `death_rate = 0.0`
+4. **overrides work** — create with `kind => ColonyKind::Orbital` and `is_on_surface => false`, assert overrides
+   persist after refresh
+
+#### Done when
+
+- `Colony::factory()` no longer emits invalid integer `kind` values
+- Factory output matches the migrated schema
+- Targeted test passes
+
+---
+
+### Task B11a — Update `ColonyTemplateFactory` *(gap fix — omitted from SETUP_REPORT)*
+**Status:** TODO
+**Effort:** S
+**Depends on:** B9
+
+#### Files to modify
+
+- `database/factories/ColonyTemplateFactory.php`
+
+#### Files to create
+
+- `tests/Feature/Database/Factories/ColonyTemplateFactoryTest.php`
+
+#### Commands
+
+```bash
+php artisan make:test --phpunit Database/Factories/ColonyTemplateFactoryTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Factories/ColonyTemplateFactoryTest.php
+```
+
+#### Implementation checklist
+
+- Import `App\Enums\ColonyKind`.
+- Replace the legacy integer `kind` default with a deterministic enum case:
+
+```php
+'kind' => ColonyKind::OpenSurface,
+```
+
+- Keep `game_id` and `tech_level` behavior unchanged.
+
+#### Test requirements — `tests/Feature/Database/Factories/ColonyTemplateFactoryTest.php`
+
+1. **factory creates a valid template** — `ColonyTemplate::factory()->create()` does not throw
+2. **default `kind` is enum-backed** — assert `$template->fresh()->kind === ColonyKind::OpenSurface` and DB stores
+   `kind = 'COPN'`
+3. **multiple templates per game** — create two templates for the same game, assert both rows persist (confirms
+   unique constraint was dropped in A2)
+
+#### Done when
+
+- `ColonyTemplate::factory()` no longer emits invalid integer `kind` values
+- Factory is compatible with multi-template schema
+- Targeted test passes
+
+---
+
+### Task B12 — Update `ColonyInventoryFactory`
+**Status:** TODO
+**Effort:** S
+**Depends on:** B8, B11
+
+#### Files to modify
+
+- `database/factories/ColonyInventoryFactory.php`
+
+#### Files to create
+
+- `tests/Feature/Database/Factories/ColonyInventoryFactoryTest.php`
+
+#### Commands
+
+```bash
+php artisan make:test --phpunit Database/Factories/ColonyInventoryFactoryTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Factories/ColonyInventoryFactoryTest.php
+```
+
+#### Implementation checklist
+
+- Import `App\Enums\UnitCode`.
+- Replace the legacy integer `unit` default:
+
+```php
+'unit' => fake()->randomElement(UnitCode::cases()),
+```
+
+- Keep `colony_id`, `tech_level`, `quantity_assembled`, `quantity_disassembled` unchanged.
+
+#### Test requirements — `tests/Feature/Database/Factories/ColonyInventoryFactoryTest.php`
+
+1. **factory creates a valid row** — `ColonyInventory::factory()->create()` does not throw
+2. **default `unit` resolves as `UnitCode`** — assert `$inventory->fresh()->unit instanceof UnitCode`
+3. **raw DB value is a valid enum backing value** — compare against
+   `array_map(fn (UnitCode $code) => $code->value, UnitCode::cases())`
+4. **explicit override works** — create with `unit => UnitCode::Fuel`, assert exact enum case after refresh
+
+#### Done when
+
+- `ColonyInventory::factory()` no longer emits integers for `unit`
+- Default output is valid against the casted model
+- Targeted test passes
+
+---
+
+### Task B13 — Update `ColonyTemplateItemFactory`
+**Status:** TODO
+**Effort:** S
+**Depends on:** B10, B11a
+
+#### Files to modify
+
+- `database/factories/ColonyTemplateItemFactory.php`
+
+#### Files to create
+
+- `tests/Feature/Database/Factories/ColonyTemplateItemFactoryTest.php`
+
+#### Commands
+
+```bash
+php artisan make:test --phpunit Database/Factories/ColonyTemplateItemFactoryTest
+vendor/bin/pint --dirty --format agent
+php artisan test --compact tests/Feature/Database/Factories/ColonyTemplateItemFactoryTest.php
+```
+
+#### Implementation checklist
+
+- Import `App\Enums\UnitCode`.
+- Replace the legacy integer `unit` default:
+
+```php
+'unit' => fake()->randomElement(UnitCode::cases()),
+```
+
+- Keep `colony_template_id`, `tech_level`, `quantity_assembled`, `quantity_disassembled` unchanged.
+
+#### Test requirements — `tests/Feature/Database/Factories/ColonyTemplateItemFactoryTest.php`
+
+1. **factory creates a valid row** — `ColonyTemplateItem::factory()->create()` does not throw
+2. **default `unit` resolves as `UnitCode`** — assert `$item->fresh()->unit instanceof UnitCode`
+3. **raw DB value is a valid enum backing value**
+4. **explicit override works** — create with `unit => UnitCode::Metals`, assert exact enum case after refresh
+
+#### Done when
+
+- `ColonyTemplateItem::factory()` no longer emits integers for `unit`
+- Default output is valid against the casted model
+- Targeted test passes
 
 ---
 
 ## Execution Order
 
 ```
-A1 (enums) → A2 (rebuild inventory/templates) → A3 (rebuild colonies) → A4 (colony_population) → A5 (colony_template_population) → A6 (turns)
+B7 (Colony model) → B8 (ColonyInventory model) → B9 (ColonyTemplate model) → B10 (ColonyTemplateItem model) → B11 (ColonyFactory) → B11a (ColonyTemplateFactory) → B12 (ColonyInventoryFactory) → B13 (ColonyTemplateItemFactory)
 ```
 
 Each task is a separate commit boundary.
 
 ---
 
-## Group A Acceptance Criteria
+## Group B Acceptance Criteria
 
-Group A is complete when all of the following are true:
+Group B is complete when all of the following are true:
 
-### Enums
+### Models
 
-- [x] `app/Enums/TurnStatus.php` exists with values: `pending`, `generating`, `completed`, `closed`
-- [x] `app/Enums/PopulationClass.php` exists with 9 cases: `UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`, `TRN`
-- [x] `app/Enums/UnitCode.php` exists with the exact 30 codes from the mapping table
-- [x] `app/Enums/ColonyKind.php` exists with values: `COPN`, `CENC`, `CORB`
+- [ ] `app/Models/Colony.php` casts `kind` to `ColonyKind`
+- [ ] `Colony` `#[Fillable]` includes: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
+- [ ] `Colony` casts: `is_on_surface` → `boolean`, `rations` → `float`, `sol` → `float`, `birth_rate` → `float`,
+  `death_rate` → `float`
+- [ ] `app/Models/ColonyInventory.php` casts `unit` to `UnitCode`
+- [ ] `app/Models/ColonyTemplate.php` casts `kind` to `ColonyKind`
+- [ ] `app/Models/ColonyTemplateItem.php` casts `unit` to `UnitCode`
 
-### Rebuild Migrations
+### Factories
 
-- [x] `colony_inventory.unit` is string (was integer)
-- [x] `colony_template_items.unit` is string (was integer)
-- [x] `colony_templates.kind` is string (was integer)
-- [x] `colony_templates.game_id` is **not unique** (multi-colony templates per game)
-- [x] `colonies.kind` is string (was integer)
-- [x] `colonies` has new columns: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
-- [x] Both rebuild migrations use the SQLite temp-table copy/rename pattern
-- [x] No rebuild uses `->change()`
-- [x] Unknown legacy integer values fail loudly with `RuntimeException`
+- [ ] `database/factories/ColonyFactory.php` uses `ColonyKind`, not integers
+- [ ] `ColonyFactory` includes valid defaults for the six new colony columns
+- [ ] `database/factories/ColonyTemplateFactory.php` uses `ColonyKind`, not integers
+- [ ] `database/factories/ColonyInventoryFactory.php` uses `UnitCode` values, not integers
+- [ ] `database/factories/ColonyTemplateItemFactory.php` uses `UnitCode` values, not integers
 
-### New Tables
+### Schema Compatibility
 
-- [x] `colony_population` exists with unique `(colony_id, population_code)` and cascade delete
-- [x] `colony_template_population` exists with unique `(colony_template_id, population_code)` and cascade delete
-- [x] `turns` exists with unique `(game_id, number)`, cascade delete, nullable `reports_locked_at`
+- [ ] All new tests assert **string-backed enum values in the database**
+- [ ] No Group B code assumes the old integer `kind` / `unit` schema
+- [ ] No Group B task introduces references to missing `ColonyPopulation` / `ColonyTemplatePopulation` model classes
 
-### Foreign Keys / Cascades
+### Explicit Deferrals
 
-- [x] Rebuilt tables retain correct cascade FKs
-- [x] New tables have correct cascade FKs
-- [x] `turns.game_id` cascades on game delete
+- [ ] `Colony::population()` is deferred to Group C task 14
+- [ ] `ColonyTemplate::population()` is deferred to Group C task 14
+- [ ] `Game::colonyTemplates()` is tracked as a separate existing-model gap task for Group D/E
 
 ### Test Coverage
 
-- [x] Every task has its own PHPUnit test file
-- [x] Rebuild migrations are tested with explicit data verification
-- [x] Additive tables are tested with schema, uniqueness, and cascade assertions
+- [ ] Every Group B task has its own PHPUnit feature test file
+- [ ] Model tests verify enum casting and raw persisted values
+- [ ] Factory tests verify defaults are valid against the migrated schema
+- [ ] Pint passes on all changed files
 
 ### Quality Gate
 
 ```bash
-php artisan test --compact tests/Unit/Enums/LayerOneEnumsTest.php
-php artisan test --compact tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php
-php artisan test --compact tests/Feature/Database/Migrations/RebuildColoniesTableMigrationTest.php
-php artisan test --compact tests/Feature/Database/Migrations/CreateColonyPopulationTableMigrationTest.php
-php artisan test --compact tests/Feature/Database/Migrations/CreateColonyTemplatePopulationTableMigrationTest.php
-php artisan test --compact tests/Feature/Database/Migrations/CreateTurnsTableMigrationTest.php
+php artisan test --compact tests/Feature/Models/ColonyModelTest.php
+php artisan test --compact tests/Feature/Models/ColonyInventoryModelTest.php
+php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php
+php artisan test --compact tests/Feature/Models/ColonyTemplateItemModelTest.php
+php artisan test --compact tests/Feature/Database/Factories/ColonyFactoryTest.php
+php artisan test --compact tests/Feature/Database/Factories/ColonyTemplateFactoryTest.php
+php artisan test --compact tests/Feature/Database/Factories/ColonyInventoryFactoryTest.php
+php artisan test --compact tests/Feature/Database/Factories/ColonyTemplateItemFactoryTest.php
 vendor/bin/pint --dirty --format agent
 ```
 
-All tests must pass and Pint must report no formatting issues.
+All targeted tests must pass and Pint must report no formatting issues.
 
 ---
 
-## Out of Scope for Group A
+## Out of Scope for Group B
 
 Do **not** pull these into this burndown:
 
-- Model casts / relationships (Group B)
-- Factory updates (Group B)
-- `EmpireCreator` changes (Group E)
-- `TemplateController` / request validation changes (Group D)
-- Turn 0 creation on activation (Group E)
-- Report tables / generator / controller work (Groups F–I)
+- `ColonyPopulation` and `ColonyTemplatePopulation` model creation (Group C task 14)
+- `population()` relationships on `Colony` / `ColonyTemplate` (defer to C14)
+- `Turn` model / `Game::turns()` / `Game::currentTurn()` (Group C tasks 15–16)
+- `TurnFactory`, `ColonyPopulationFactory`, `ColonyTemplatePopulationFactory` (Group C task 17)
+- Template upload request/controller changes (Group D)
+- `EmpireCreator` updates for multi-template colonies or colony population seeding (Group E)
+- Report generation / turn report tables / controllers (Groups F–I)
+- Broad cleanup of legacy tests that assume integer `kind` / `unit` values (Layer 1 task 34)
+- Breaking removal of `Game::colonyTemplate()` before its consumers are migrated
