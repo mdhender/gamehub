@@ -479,7 +479,7 @@ php artisan test --compact tests/Feature/Database/Migrations/CreateColonyTemplat
 ---
 
 ### Task A6 — Create `turns` table
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1
 
