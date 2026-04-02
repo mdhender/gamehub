@@ -550,40 +550,40 @@ Group A is complete when all of the following are true:
 
 ### Enums
 
-- [ ] `app/Enums/TurnStatus.php` exists with values: `pending`, `generating`, `completed`, `closed`
-- [ ] `app/Enums/PopulationClass.php` exists with 9 cases: `UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`, `TRN`
-- [ ] `app/Enums/UnitCode.php` exists with the exact 30 codes from the mapping table
-- [ ] `app/Enums/ColonyKind.php` exists with values: `COPN`, `CENC`, `CORB`
+- [x] `app/Enums/TurnStatus.php` exists with values: `pending`, `generating`, `completed`, `closed`
+- [x] `app/Enums/PopulationClass.php` exists with 9 cases: `UEM`, `USK`, `PRO`, `SLD`, `CNW`, `SPY`, `PLC`, `SAG`, `TRN`
+- [x] `app/Enums/UnitCode.php` exists with the exact 30 codes from the mapping table
+- [x] `app/Enums/ColonyKind.php` exists with values: `COPN`, `CENC`, `CORB`
 
 ### Rebuild Migrations
 
-- [ ] `colony_inventory.unit` is string (was integer)
-- [ ] `colony_template_items.unit` is string (was integer)
-- [ ] `colony_templates.kind` is string (was integer)
-- [ ] `colony_templates.game_id` is **not unique** (multi-colony templates per game)
-- [ ] `colonies.kind` is string (was integer)
-- [ ] `colonies` has new columns: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
-- [ ] Both rebuild migrations use the SQLite temp-table copy/rename pattern
-- [ ] No rebuild uses `->change()`
-- [ ] Unknown legacy integer values fail loudly with `RuntimeException`
+- [x] `colony_inventory.unit` is string (was integer)
+- [x] `colony_template_items.unit` is string (was integer)
+- [x] `colony_templates.kind` is string (was integer)
+- [x] `colony_templates.game_id` is **not unique** (multi-colony templates per game)
+- [x] `colonies.kind` is string (was integer)
+- [x] `colonies` has new columns: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
+- [x] Both rebuild migrations use the SQLite temp-table copy/rename pattern
+- [x] No rebuild uses `->change()`
+- [x] Unknown legacy integer values fail loudly with `RuntimeException`
 
 ### New Tables
 
-- [ ] `colony_population` exists with unique `(colony_id, population_code)` and cascade delete
-- [ ] `colony_template_population` exists with unique `(colony_template_id, population_code)` and cascade delete
-- [ ] `turns` exists with unique `(game_id, number)`, cascade delete, nullable `reports_locked_at`
+- [x] `colony_population` exists with unique `(colony_id, population_code)` and cascade delete
+- [x] `colony_template_population` exists with unique `(colony_template_id, population_code)` and cascade delete
+- [x] `turns` exists with unique `(game_id, number)`, cascade delete, nullable `reports_locked_at`
 
 ### Foreign Keys / Cascades
 
-- [ ] Rebuilt tables retain correct cascade FKs
-- [ ] New tables have correct cascade FKs
-- [ ] `turns.game_id` cascades on game delete
+- [x] Rebuilt tables retain correct cascade FKs
+- [x] New tables have correct cascade FKs
+- [x] `turns.game_id` cascades on game delete
 
 ### Test Coverage
 
-- [ ] Every task has its own PHPUnit test file
-- [ ] Rebuild migrations are tested with explicit data verification
-- [ ] Additive tables are tested with schema, uniqueness, and cascade assertions
+- [x] Every task has its own PHPUnit test file
+- [x] Rebuild migrations are tested with explicit data verification
+- [x] Additive tables are tested with schema, uniqueness, and cascade assertions
 
 ### Quality Gate
 
