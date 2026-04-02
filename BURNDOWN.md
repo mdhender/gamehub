@@ -383,7 +383,7 @@ Wrap in `Schema::disableForeignKeyConstraints()` / `Schema::enableForeignKeyCons
 ---
 
 ### Task A4 — Create `colony_population` table
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1, A3
 
