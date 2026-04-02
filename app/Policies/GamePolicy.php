@@ -12,7 +12,7 @@ class GamePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isGm();
+        return $user->isAdmin() || $user->games()->wherePivot('is_active', true)->exists();
     }
 
     /**

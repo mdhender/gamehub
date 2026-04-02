@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\GameRole;
 use App\Http\Requests\StoreGameRequest;
 use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
@@ -25,7 +24,7 @@ class GameController extends Controller
         $games = $user->isAdmin()
             ? Game::withCount(['gms', 'players'])->orderBy('name')->get(['id', 'name', 'is_active', 'created_at'])
             : $user->games()
-                ->wherePivot('role', GameRole::Gm->value)
+                ->wherePivot('is_active', true)
                 ->withCount(['gms', 'players'])
                 ->orderBy('name')
                 ->get(['games.id', 'games.name', 'games.is_active', 'games.created_at']);

@@ -50,13 +50,21 @@ class GameControllerTest extends TestCase
     }
 
     #[Test]
-    public function player_cannot_view_games_index(): void
+    public function player_can_view_games_index_with_only_their_games(): void
     {
         $player = User::factory()->create();
-        $game = Game::factory()->create();
-        $game->users()->attach($player, ['role' => GameRole::Player->value]);
+        Game::factory()->create();
+        $playerGame = Game::factory()->create();
+        $playerGame->users()->attach($player, ['role' => GameRole::Player->value]);
 
-        $this->actingAs($player)->get('/games')->assertForbidden();
+        $response = $this->actingAs($player)->get('/games');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('games/index')
+            ->has('games', 1)
+            ->where('games.0.id', $playerGame->id)
+        );
     }
 
     #[Test]
