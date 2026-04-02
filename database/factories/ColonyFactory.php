@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ColonyKind;
 use App\Models\Colony;
 use App\Models\Empire;
 use App\Models\Planet;
@@ -22,8 +23,14 @@ class ColonyFactory extends Factory
         return [
             'empire_id' => Empire::factory(),
             'planet_id' => Planet::factory(),
-            'kind' => fake()->numberBetween(1, 10),
+            'kind' => ColonyKind::OpenSurface,
             'tech_level' => fake()->numberBetween(1, 5),
+            'name' => 'Not Named',
+            'is_on_surface' => true,
+            'rations' => 1.0,
+            'sol' => 0.0,
+            'birth_rate' => 0.0,
+            'death_rate' => 0.0,
         ];
     }
 }

@@ -338,7 +338,7 @@ and pass `unit` as a `UnitCode` enum case.
 ---
 
 ### Task B11 — Update `ColonyFactory`
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** B7
 
