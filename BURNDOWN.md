@@ -84,7 +84,7 @@ task immediately before or during Group D/E when multi-template consumers are up
 ---
 
 ### Task B7 — Update `Colony` model
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1, A3
 
