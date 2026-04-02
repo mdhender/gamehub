@@ -160,7 +160,7 @@ with enum values.
 ---
 
 ### Task B8 — Update `ColonyInventory` model
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** A1, A2
 

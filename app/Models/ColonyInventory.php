@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UnitCode;
 use Database\Factories\ColonyInventoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,16 @@ class ColonyInventory extends Model
     protected $table = 'colony_inventory';
 
     public $timestamps = false;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'unit' => UnitCode::class,
+        ];
+    }
 
     /** @return BelongsTo<Colony, $this> */
     public function colony(): BelongsTo
