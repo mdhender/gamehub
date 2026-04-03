@@ -133,6 +133,19 @@ class TurnReportControllerGenerateTest extends TestCase
     }
 
     #[Test]
+    public function test_generate_allows_admin_without_game_role(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->post($this->generateUrl($game, $turn))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
+    #[Test]
     public function test_generate_surfaces_generator_runtime_errors_as_validation_errors(): void
     {
         $game = Game::factory()->create(['status' => GameStatus::Active]);

@@ -160,6 +160,32 @@ class TurnReportControllerDownloadTest extends TestCase
     }
 
     #[Test]
+    public function test_download_returns_404_when_turn_belongs_to_another_game(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $gm = $this->gmUser($game);
+
+        $otherGame = Game::factory()->create(['status' => GameStatus::Active]);
+        $otherTurn = $otherGame->turns()->create([
+            'number' => 0,
+            'status' => TurnStatus::Completed,
+        ]);
+        $otherPlayer = $this->playerUser($otherGame);
+        $otherPivot = $otherGame->users()->where('users.id', $otherPlayer->id)->first()->pivot;
+        $otherEmpire = Empire::factory()->create(['game_id' => $otherGame->id, 'player_id' => $otherPivot->id]);
+
+        TurnReport::factory()->create([
+            'game_id' => $otherGame->id,
+            'turn_id' => $otherTurn->id,
+            'empire_id' => $otherEmpire->id,
+        ]);
+
+        $this->actingAs($gm)
+            ->get($this->downloadUrl($game, $otherTurn, $otherEmpire))
+            ->assertNotFound();
+    }
+
+    #[Test]
     public function test_download_returns_404_when_report_does_not_exist(): void
     {
         $game = $this->activeGameWithTurnZero();

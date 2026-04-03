@@ -260,10 +260,10 @@ php artisan test --compact tests/Feature/TurnReports/TurnReportControllerDownloa
 ```
 
 **Acceptance criteria:**
-- [ ] Admin generate/lock paths are covered
-- [ ] Show/download turn-scoping 404 tests exist
-- [ ] No policy-logic duplication is added
-- [ ] All four controller test files pass
+- [x] Admin generate/lock paths are covered
+- [x] Show/download turn-scoping 404 tests exist
+- [x] No policy-logic duplication is added
+- [x] All four controller test files pass
 
 ---
 

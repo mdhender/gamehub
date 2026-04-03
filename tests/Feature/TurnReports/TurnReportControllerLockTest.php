@@ -137,6 +137,21 @@ class TurnReportControllerLockTest extends TestCase
     }
 
     #[Test]
+    public function test_lock_allows_admin_without_game_role(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->post($this->lockUrl($game, $turn))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertNotNull($turn->fresh()->reports_locked_at);
+    }
+
+    #[Test]
     public function test_lock_rejects_already_closed_turn(): void
     {
         $game = $this->activeGameWithTurnZero(TurnStatus::Closed);
