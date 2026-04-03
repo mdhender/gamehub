@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
+use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\Player;
@@ -44,9 +46,9 @@ class EmpireCreatorTest extends TestCase
             'is_homeworld' => true,
         ]);
 
-        $colonyTemplate = $game->colonyTemplate()->create(['kind' => 1, 'tech_level' => 1]);
+        $colonyTemplate = $game->colonyTemplate()->create(['kind' => ColonyKind::OpenSurface, 'tech_level' => 1]);
         $colonyTemplate->items()->create([
-            'unit' => 10,
+            'unit' => UnitCode::Factories,
             'tech_level' => 1,
             'quantity_assembled' => 5,
             'quantity_disassembled' => 0,
@@ -110,7 +112,7 @@ class EmpireCreatorTest extends TestCase
         $colony = $empire->colonies()->first();
         $this->assertNotNull($colony);
         $this->assertSame($homeSystem->homeworld_planet_id, $colony->planet_id);
-        $this->assertSame(1, $colony->kind);
+        $this->assertSame(ColonyKind::OpenSurface, $colony->kind);
         $this->assertSame(1, $colony->tech_level);
     }
 
@@ -124,7 +126,7 @@ class EmpireCreatorTest extends TestCase
 
         $inventory = $empire->colonies()->first()->inventory()->get();
         $this->assertCount(1, $inventory);
-        $this->assertSame(10, $inventory->first()->unit);
+        $this->assertSame(UnitCode::Factories, $inventory->first()->unit);
         $this->assertSame(5, $inventory->first()->quantity_assembled);
     }
 

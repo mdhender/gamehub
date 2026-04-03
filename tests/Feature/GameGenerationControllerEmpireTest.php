@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
+use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\Player;
@@ -52,9 +54,9 @@ class GameGenerationControllerEmpireTest extends TestCase
             'is_homeworld' => true,
         ]);
 
-        $colonyTemplate = $game->colonyTemplate()->create(['kind' => 1, 'tech_level' => 1]);
+        $colonyTemplate = $game->colonyTemplate()->create(['kind' => ColonyKind::OpenSurface, 'tech_level' => 1]);
         $colonyTemplate->items()->create([
-            'unit' => 10,
+            'unit' => UnitCode::Factories,
             'tech_level' => 1,
             'quantity_assembled' => 5,
             'quantity_disassembled' => 0,

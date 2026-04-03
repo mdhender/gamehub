@@ -29,7 +29,7 @@ class GameGenerationControllerTest extends TestCase
                 'habitability' => 10,
                 'homeworld' => $homeworldCount > 0 && $i === 0,
                 'deposits' => [
-                    ['resource' => 'gold', 'yield_pct' => 5, 'quantity_remaining' => 1000],
+                    ['resource' => 'GOLD', 'yield_pct' => 5, 'quantity_remaining' => 1000],
                 ],
             ];
         }
@@ -43,11 +43,12 @@ class GameGenerationControllerTest extends TestCase
 
     private function makeColonyTemplateJson(int $itemCount = 1): string
     {
+        $unitCodes = ['FCT', 'FRM', 'MIN', 'MSL', 'STU', 'TPT', 'FOOD'];
         $inventory = [];
 
         for ($i = 0; $i < $itemCount; $i++) {
             $inventory[] = [
-                'unit' => $i + 1,
+                'unit' => $unitCodes[$i % count($unitCodes)],
                 'TechLevel' => 1,
                 'QuantityAssembled' => 1000,
                 'QuantityDisassembled' => 0,
@@ -55,7 +56,7 @@ class GameGenerationControllerTest extends TestCase
         }
 
         return json_encode([
-            'Kind' => 1,
+            'Kind' => 'COPN',
             'TechLevel' => 1,
             'inventory' => $inventory,
         ]);
@@ -110,7 +111,7 @@ class GameGenerationControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('homeSystemTemplate.planet_count', 6)
                 ->whereNot('homeSystemTemplate.homeworld_orbit', null)
-                ->where('colonyTemplate.unit_count', 7)
+                ->where('colonyTemplate.unit_count', 17)
             );
     }
 

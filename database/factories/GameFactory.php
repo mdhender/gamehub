@@ -65,28 +65,36 @@ class GameFactory extends Factory
                 }
             }
 
-            $colonyData = json_decode(
+            $colonyDataArray = json_decode(
                 file_get_contents(base_path('sample-data/beta/colony-template.json')),
                 true
             );
 
-            $normalized = array_change_key_case($colonyData, CASE_LOWER);
-
-            $colonyTemplate = ColonyTemplate::create([
-                'game_id' => $game->id,
-                'kind' => $normalized['kind'],
-                'tech_level' => $normalized['techlevel'],
-            ]);
-
-            foreach ($normalized['inventory'] as $itemData) {
-                $item = array_change_key_case($itemData, CASE_LOWER);
-                ColonyTemplateItem::create([
-                    'colony_template_id' => $colonyTemplate->id,
-                    'unit' => $item['unit'],
-                    'tech_level' => $item['techlevel'],
-                    'quantity_assembled' => $item['quantityassembled'],
-                    'quantity_disassembled' => $item['quantitydisassembled'],
+            foreach ($colonyDataArray as $colonyData) {
+                $colonyTemplate = ColonyTemplate::create([
+                    'game_id' => $game->id,
+                    'kind' => $colonyData['kind'],
+                    'tech_level' => $colonyData['tech-level'],
                 ]);
+
+                $allItems = array_merge(
+                    $colonyData['inventory']['operational'] ?? [],
+                    $colonyData['inventory']['stored'] ?? [],
+                );
+
+                foreach ($allItems as $itemData) {
+                    $parts = explode('-', $itemData['unit'], 2);
+                    $unit = $parts[0];
+                    $techLevel = isset($parts[1]) ? (int) $parts[1] : 0;
+
+                    ColonyTemplateItem::create([
+                        'colony_template_id' => $colonyTemplate->id,
+                        'unit' => $unit,
+                        'tech_level' => $techLevel,
+                        'quantity_assembled' => $itemData['quantity'],
+                        'quantity_disassembled' => 0,
+                    ]);
+                }
             }
         });
     }
