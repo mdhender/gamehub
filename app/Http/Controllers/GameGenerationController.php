@@ -6,6 +6,7 @@ use App\Enums\GameStatus;
 use App\Enums\TurnStatus;
 use App\Models\Game;
 use App\Models\HomeSystem;
+use App\Models\TurnReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -38,6 +39,7 @@ class GameGenerationController extends Controller
             'homeSystems' => $this->homeSystemsList($game),
             'availableStars' => $this->availableStarsList($game),
             'members' => $this->membersList($game),
+            'reportTurn' => $this->reportTurnPayload($game),
         ]);
     }
 
@@ -292,7 +294,12 @@ class GameGenerationController extends Controller
 
         $empiresByPlayerId = $game->empires()->with('homeSystem.star')->get()->keyBy('player_id');
 
-        return $players->map(function ($player) use ($empiresByPlayerId) {
+        $currentTurn = $game->currentTurn;
+        $reportsByEmpireId = $currentTurn
+            ? TurnReport::where('turn_id', $currentTurn->id)->pluck('empire_id')->flip()
+            : collect();
+
+        return $players->map(function ($player) use ($empiresByPlayerId, $reportsByEmpireId) {
             $empire = $empiresByPlayerId->get($player->id);
 
             return [
@@ -304,8 +311,29 @@ class GameGenerationController extends Controller
                     'name' => $empire->name,
                     'home_system_id' => $empire->home_system_id,
                     'home_system_location' => $empire->homeSystem->star->location(),
+                    'has_report' => $reportsByEmpireId->has($empire->id),
                 ] : null,
             ];
         })->all();
+    }
+
+    private function reportTurnPayload(Game $game): ?array
+    {
+        $currentTurn = $game->currentTurn;
+
+        if (! $currentTurn) {
+            return null;
+        }
+
+        return [
+            'id' => $currentTurn->id,
+            'number' => $currentTurn->number,
+            'status' => $currentTurn->status->value,
+            'reports_locked_at' => $currentTurn->reports_locked_at?->toIso8601String(),
+            'can_generate' => $game->canGenerateReports(),
+            'can_lock' => $game->isActive()
+                && $currentTurn->status === TurnStatus::Completed
+                && $currentTurn->reports_locked_at === null,
+        ];
     }
 }

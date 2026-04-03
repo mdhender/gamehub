@@ -366,11 +366,11 @@ bun run build
 ```
 
 **Acceptance criteria:**
-- [ ] `reportTurn` prop is returned from the generate page endpoint
-- [ ] `members[*].empire.has_report` is available when an empire exists
-- [ ] `types.ts` is updated with `ReportTurn` type and `has_report` on `MemberItem.empire`
-- [ ] Prop tests pass
-- [ ] TypeScript compiles without errors
+- [x] `reportTurn` prop is returned from the generate page endpoint
+- [x] `members[*].empire.has_report` is available when an empire exists
+- [x] `types.ts` is updated with `ReportTurn` type and `has_report` on `MemberItem.empire`
+- [x] Prop tests pass
+- [x] TypeScript compiles without errors
 
 ---
 

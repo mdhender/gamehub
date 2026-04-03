@@ -67,7 +67,17 @@ export type MemberItem = {
         name: string;
         home_system_id: number;
         home_system_location: string;
+        has_report: boolean;
     } | null;
+};
+
+export type ReportTurn = {
+    id: number;
+    number: number;
+    status: string;
+    reports_locked_at: string | null;
+    can_generate: boolean;
+    can_lock: boolean;
 };
 
 export type StarItem = {
