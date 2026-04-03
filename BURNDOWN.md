@@ -1,846 +1,275 @@
-# Layer 1 / Group C — New Models and Factories
+# Burndown — Layer 1, Group D: Template Ingestion Updates
 
-## Scope
+## Overview
 
-This burndown covers **Layer 1, Group C** from `docs/SETUP_REPORT.md`: creating the new Eloquent models and factories
-for `ColonyPopulation`, `ColonyTemplatePopulation`, and `Turn`, plus wiring their relationships into existing models.
+Group D updates the colony template upload pipeline to accept the new JSON format: an **array of colony templates**, each with `CODE-TL` unit strings, an `operational`/`stored` inventory split, and a `population` section.
 
-1. Create `ColonyPopulation` model and add `Colony::population()` relationship
-2. Create `ColonyTemplatePopulation` model and add `ColonyTemplate::population()` relationship
-3. Create `Turn` model with `TurnStatus` cast and `Game` relationship
-4. Add `Game::turns()`, `Game::currentTurn()` relationships and `Game::canGenerateReports()` helper
-5. Create `TurnFactory`
-6. Create `ColonyPopulationFactory` and `ColonyTemplatePopulationFactory`
+**Prerequisite groups:** A (enums, schema migrations), B (model updates), C (new models/factories) — all complete.
+
+**Out of scope (Group E):** `EmpireCreator` multi-colony creation, `GameGenerationController::activate()` Turn 0 creation.
 
 ---
 
-## Global Guardrails
+## Task D1 — Add `Game::colonyTemplates()` HasMany relationship
 
-- **Order is fixed:** complete tasks C14a → C14b → C15 → C16 → C17a → C17b in sequence.
-- **Use PHPUnit only** (not Pest).
-- Match existing repo conventions:
-  - `#[Fillable([...])]` attribute for mass assignment
-  - `/** @use HasFactory<XxxFactory> */` PHPDoc on the trait
-  - Explicit relationship PHPDoc return types: `/** @return BelongsTo<X, $this> */`
-  - Casts via `protected function casts(): array` (see `Game` model for the pattern)
-  - Use `fake()->...` in factories, not `$this->faker`
-- **Assume Groups A and B are complete.** All migrations have been applied. All existing models and factories use
-  string-backed enum casts.
-- **Run after every PHP task:** `vendor/bin/pint --dirty --format agent`
+**Why:** The upload controller needs to delete-and-recreate multiple colony templates per game. The existing `colonyTemplate()` is `HasOne` and must stay for existing read paths (`EmpireCreator`, `GameGenerationController::colonyTemplateSummary()`). A new `colonyTemplates()` `HasMany` provides the write path.
 
----
-
-## Critical Risks and Guardrails
-
-### 1. Wrong table names (most likely bug)
-
-Laravel auto-pluralizes model names to derive table names:
-- `ColonyPopulation` → `colony_populations` (wrong — actual table is `colony_population`)
-- `ColonyTemplatePopulation` → `colony_template_populations` (wrong — actual table is `colony_template_population`)
-
-**Guardrail:** Both population models **must** set `protected $table` explicitly.
-
-### 2. Wrong timestamp behavior
-
-The `colony_population` and `colony_template_population` tables have **no** `created_at` / `updated_at` columns.
-
-**Guardrail:** Both population models **must** set `public $timestamps = false;`. The `Turn` model **must not** disable
-timestamps — the `turns` table has both timestamp columns.
-
-### 3. Using the wrong "active" signal in `canGenerateReports()`
-
-`Game::isActive()` checks the `status` enum (`GameStatus::Active`), **not** the `is_active` boolean column.
-
-**Guardrail:** In tests for `canGenerateReports()`, always create games with:
-```php
-['status' => GameStatus::Active]
-```
-
-### 4. Unique constraint collisions in tests
-
-Both population tables have composite unique keys (`colony_id + population_code` and
-`colony_template_id + population_code`).
-
-**Guardrail:** When creating multiple population rows for the same parent in a single test, assign **distinct**
-`population_code` values.
-
----
-
-## Current File State (Post–Groups A & B)
-
-### Existing models (already updated)
-
-- **`Colony`** — `#[Fillable]` includes new columns; casts `kind` → `ColonyKind`, `is_on_surface` → `boolean`,
-  floats for `rations`, `sol`, `birth_rate`, `death_rate`; has `empire()`, `planet()`, `inventory()` relationships;
-  `$timestamps = false`
-- **`ColonyTemplate`** — casts `kind` → `ColonyKind`; has `game()`, `items()` relationships
-- **`ColonyInventory`** — casts `unit` → `UnitCode`; `$table = 'colony_inventory'`; `$timestamps = false`
-- **`ColonyTemplateItem`** — casts `unit` → `UnitCode`; `$timestamps = false`
-- **`Game`** — casts `status` → `GameStatus`; has `isActive()` and other status helpers; has `homeSystemTemplate()`,
-  `colonyTemplate()`, `stars()`, `planets()`, `deposits()`, `homeSystems()`, `empires()`, `generationSteps()`,
-  `playerRecords()`, `users()`, `gms()`, `players()` relationships and capability helpers
-
-### Existing factories (already updated)
-
-- `ColonyFactory` — uses `ColonyKind::OpenSurface`, includes all new column defaults
-- `ColonyTemplateFactory` — uses `ColonyKind::OpenSurface`
-- `ColonyInventoryFactory` — uses `UnitCode` enum cases
-- `ColonyTemplateItemFactory` — uses `UnitCode` enum cases
-
-### Existing migrations (from Group A)
-
-- `colony_population` — `id`, `colony_id` FK, `population_code` string, `quantity` int, `pay_rate` float,
-  `rebel_quantity` int default 0; unique `(colony_id, population_code)`; no timestamps
-- `colony_template_population` — `id`, `colony_template_id` FK, `population_code` string, `quantity` int,
-  `pay_rate` float; unique `(colony_template_id, population_code)`; no timestamps
-- `turns` — `id`, `game_id` FK, `number` int, `status` string default `'pending'`, `reports_locked_at` datetime
-  nullable, `created_at`, `updated_at`; unique `(game_id, number)`
-
-### Enums (from Group A)
-
-- `TurnStatus`: `Pending='pending'`, `Generating='generating'`, `Completed='completed'`, `Closed='closed'`
-- `PopulationClass`: `Unemployable='UEM'`, `Unskilled='USK'`, `Professional='PRO'`, `Soldier='SLD'`,
-  `ConstructionWorker='CNW'`, `Spy='SPY'`, `Police='PLC'`, `SpecialAgent='SAG'`, `Trainee='TRN'`
-- `ColonyKind`: `OpenSurface='COPN'`, `Enclosed='CENC'`, `Orbital='CORB'`
-- `UnitCode`: 30 cases (`AUT`, `ESH`, `EWP`, `FCT`, `FRM`, … `RSCH`)
-
----
-
-## Tasks
-
----
-
-### Task C14a — Create `ColonyPopulation` model and wire `Colony::population()`
-
-**Status:** DONE
-**Effort:** S
-**Depends on:** Groups A & B complete
-
-#### Files to create
-
-- `app/Models/ColonyPopulation.php`
-- `tests/Feature/Models/ColonyPopulationModelTest.php`
-
-#### Files to modify
-
-- `app/Models/Colony.php` — add `population()` relationship
-
-#### Commands
-
-```bash
-php artisan make:test --phpunit Models/ColonyPopulationModelTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Models/ColonyPopulationModelTest.php
-```
-
-#### Implementation — `app/Models/ColonyPopulation.php`
-
-```php
-<?php
-
-namespace App\Models;
-
-use App\Enums\PopulationClass;
-use Database\Factories\ColonyPopulationFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-#[Fillable(['colony_id', 'population_code', 'quantity', 'pay_rate', 'rebel_quantity'])]
-class ColonyPopulation extends Model
-{
-    /** @use HasFactory<ColonyPopulationFactory> */
-    use HasFactory;
-
-    protected $table = 'colony_population';
-
-    public $timestamps = false;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'population_code' => PopulationClass::class,
-            'pay_rate' => 'float',
-        ];
-    }
-
-    /** @return BelongsTo<Colony, $this> */
-    public function colony(): BelongsTo
-    {
-        return $this->belongsTo(Colony::class);
-    }
-}
-```
-
-**Key details:**
-- `$table = 'colony_population'` — required because Laravel would default to `colony_populations`
-- `$timestamps = false` — table has no timestamp columns
-- `population_code` cast to `PopulationClass` enum
-- `pay_rate` cast to `float`
-
-#### Implementation — `app/Models/Colony.php` edit
-
-Add the following import and relationship method:
-
-```php
-use App\Models\ColonyPopulation;
-
-// Add to existing relationship methods:
-
-/** @return HasMany<ColonyPopulation, $this> */
-public function population(): HasMany
-{
-    return $this->hasMany(ColonyPopulation::class);
-}
-```
-
-#### Test requirements — `tests/Feature/Models/ColonyPopulationModelTest.php`
-
-1. **`test_it_uses_the_colony_population_table`** — create a `ColonyPopulation` record, assert row exists in
-   `colony_population` table using `assertDatabaseHas`
-2. **`test_it_casts_population_code_to_population_class_enum`** — create with
-   `population_code => PopulationClass::Unskilled`, refresh, assert `$record->population_code === PopulationClass::Unskilled`
-3. **`test_it_stores_enum_backing_value_in_database`** — create with `PopulationClass::Soldier`, assert
-   `assertDatabaseHas('colony_population', ['population_code' => 'SLD'])`
-4. **`test_it_casts_pay_rate_to_float`** — create with `pay_rate => 0.125`, refresh, assert `is_float($record->pay_rate)`
-   and value equals `0.125`
-5. **`test_it_belongs_to_a_colony`** — create a `ColonyPopulation`, assert `$record->colony` is an instance of `Colony`
-6. **`test_colony_has_population_relationship`** — create a `Colony` then create two `ColonyPopulation` records with
-   distinct `population_code` values, assert `$colony->population` returns a collection of count 2
-7. **`test_it_defaults_rebel_quantity_to_zero`** — create via `ColonyPopulation::create()` without specifying
-   `rebel_quantity`, assert the stored value is `0`
-
-Create the `Colony` and `Planet`/`Empire` explicitly or use `Colony::factory()` (factory is updated). For
-`ColonyPopulation`, create records directly via `ColonyPopulation::create()` since the factory doesn't exist yet.
-
-#### Done when
-
-- `ColonyPopulation` model reads from/writes to `colony_population` table
-- `population_code` casts to `PopulationClass` enum
-- `ColonyPopulation->colony` resolves the parent colony
-- `Colony->population` returns the related population records
-- No timestamp-related SQL errors on insert
-- Targeted test passes and Pint reports no issues
-
----
-
-### Task C14b — Create `ColonyTemplatePopulation` model and wire `ColonyTemplate::population()`
-
-**Status:** DONE
-**Effort:** S
-**Depends on:** C14a (for pattern reference)
-
-#### Files to create
-
-- `app/Models/ColonyTemplatePopulation.php`
-- `tests/Feature/Models/ColonyTemplatePopulationModelTest.php`
-
-#### Files to modify
-
-- `app/Models/ColonyTemplate.php` — add `population()` relationship
-
-#### Commands
-
-```bash
-php artisan make:test --phpunit Models/ColonyTemplatePopulationModelTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Models/ColonyTemplatePopulationModelTest.php
-```
-
-#### Implementation — `app/Models/ColonyTemplatePopulation.php`
-
-```php
-<?php
-
-namespace App\Models;
-
-use App\Enums\PopulationClass;
-use Database\Factories\ColonyTemplatePopulationFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-#[Fillable(['colony_template_id', 'population_code', 'quantity', 'pay_rate'])]
-class ColonyTemplatePopulation extends Model
-{
-    /** @use HasFactory<ColonyTemplatePopulationFactory> */
-    use HasFactory;
-
-    protected $table = 'colony_template_population';
-
-    public $timestamps = false;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'population_code' => PopulationClass::class,
-            'pay_rate' => 'float',
-        ];
-    }
-
-    /** @return BelongsTo<ColonyTemplate, $this> */
-    public function colonyTemplate(): BelongsTo
-    {
-        return $this->belongsTo(ColonyTemplate::class);
-    }
-}
-```
-
-**Key details:**
-- `$table = 'colony_template_population'` — required because Laravel would default to `colony_template_populations`
-- `$timestamps = false` — table has no timestamp columns
-- No `rebel_quantity` column — this table doesn't have it (unlike `colony_population`)
-
-#### Implementation — `app/Models/ColonyTemplate.php` edit
-
-Add the following import and relationship method:
-
-```php
-use App\Models\ColonyTemplatePopulation;
-
-// Add to existing relationship methods:
-
-/** @return HasMany<ColonyTemplatePopulation, $this> */
-public function population(): HasMany
-{
-    return $this->hasMany(ColonyTemplatePopulation::class);
-}
-```
-
-Also add the `HasMany` import if not already present.
-
-#### Test requirements — `tests/Feature/Models/ColonyTemplatePopulationModelTest.php`
-
-1. **`test_it_uses_the_colony_template_population_table`** — create a record, assert
-   `assertDatabaseHas('colony_template_population', [...])`
-2. **`test_it_casts_population_code_to_population_class_enum`** — create with
-   `PopulationClass::Professional`, refresh, assert enum cast
-3. **`test_it_stores_enum_backing_value_in_database`** — assert raw DB stores `'PRO'`
-4. **`test_it_casts_pay_rate_to_float`** — create with `pay_rate => 0.375`, assert `is_float` after refresh
-5. **`test_it_belongs_to_a_colony_template`** — assert `$record->colonyTemplate` is a `ColonyTemplate`
-6. **`test_colony_template_has_population_relationship`** — create a `ColonyTemplate` then two
-   `ColonyTemplatePopulation` records with distinct codes, assert `$template->population->count() === 2`
-
-Create records directly via `ColonyTemplatePopulation::create()` since the factory doesn't exist yet.
-
-#### Done when
-
-- `ColonyTemplatePopulation` model reads from/writes to `colony_template_population` table
-- `population_code` casts to `PopulationClass` enum
-- `ColonyTemplatePopulation->colonyTemplate` resolves the parent
-- `ColonyTemplate->population` returns the related population records
-- No timestamp-related SQL errors on insert
-- Targeted test passes and Pint reports no issues
-
----
-
-### Task C15 — Create `Turn` model
-
-**Status:** DONE
-**Effort:** S
-**Depends on:** Groups A & B complete
-
-#### Files to create
-
-- `app/Models/Turn.php`
-- `tests/Feature/Models/TurnModelTest.php`
-
-#### Commands
-
-```bash
-php artisan make:test --phpunit Models/TurnModelTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Models/TurnModelTest.php
-```
-
-#### Implementation — `app/Models/Turn.php`
-
-```php
-<?php
-
-namespace App\Models;
-
-use App\Enums\TurnStatus;
-use Database\Factories\TurnFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-#[Fillable(['game_id', 'number', 'status', 'reports_locked_at'])]
-class Turn extends Model
-{
-    /** @use HasFactory<TurnFactory> */
-    use HasFactory;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'status' => TurnStatus::class,
-            'reports_locked_at' => 'datetime',
-        ];
-    }
-
-    /** @return BelongsTo<Game, $this> */
-    public function game(): BelongsTo
-    {
-        return $this->belongsTo(Game::class);
-    }
-}
-```
-
-**Key details:**
-- No `$table` needed — `turns` matches Laravel convention
-- Do **not** set `$timestamps = false` — the `turns` table has `created_at` and `updated_at`
-- `status` casts to `TurnStatus` enum
-- `reports_locked_at` casts to `datetime` (returns `Carbon` instance or `null`)
-
-#### Test requirements — `tests/Feature/Models/TurnModelTest.php`
-
-1. **`test_it_casts_status_to_turn_status_enum`** — create a `Turn` with `status => TurnStatus::Pending`, refresh,
-   assert `$turn->status === TurnStatus::Pending`
-2. **`test_it_stores_status_enum_backing_value_in_database`** — assert
-   `assertDatabaseHas('turns', ['status' => 'pending'])`
-3. **`test_it_casts_reports_locked_at_to_datetime`** — create with `reports_locked_at => now()`, refresh, assert
-   `$turn->reports_locked_at` is an instance of `\Illuminate\Support\Carbon`
-4. **`test_reports_locked_at_is_nullable`** — create without `reports_locked_at`, assert it is `null`
-5. **`test_it_belongs_to_a_game`** — create a `Turn`, assert `$turn->game` is a `Game` instance
-6. **`test_unique_constraint_on_game_id_and_number`** — create a turn for a game with number 0, attempt to create
-   another turn with the same game_id and number, assert exception is thrown
-
-Create the `Game` explicitly via `Game::factory()->create()`. Create `Turn` records via `Turn::create()` since the
-factory doesn't exist yet.
-
-#### Done when
-
-- `Turn` model persists to the `turns` table
-- `status` casts to `TurnStatus` enum
-- `reports_locked_at` returns `Carbon|null`
-- `Turn->game` relationship works
-- Unique constraint enforced on `(game_id, number)`
-- Targeted test passes and Pint reports no issues
-
----
-
-### Task C16 — Add `Game::turns()`, `Game::currentTurn()`, and `Game::canGenerateReports()`
-
-**Status:** DONE
-**Effort:** S
-**Depends on:** C15
-
-#### Files to modify
-
+**Files to modify:**
 - `app/Models/Game.php`
 
-#### Files to create
+**Changes:**
+1. Add import for `ColonyTemplate` if not already present.
+2. Add a new `colonyTemplates()` method returning `HasMany` to `ColonyTemplate`.
+3. Do **not** remove or rename the existing `colonyTemplate()` method.
 
-- `tests/Feature/Models/GameTurnRelationshipTest.php`
+**Tests:**
+- Run existing tests to confirm nothing breaks: `php artisan test --compact --filter=GameGenerationControllerTest`
+- Run: `php artisan test --compact --filter=EmpireCreatorTest`
 
-#### Commands
-
-```bash
-php artisan make:test --phpunit Models/GameTurnRelationshipTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Models/GameTurnRelationshipTest.php
-```
-
-#### Implementation — `app/Models/Game.php` edits
-
-Add the following imports at the top of the file:
-
-```php
-use App\Enums\TurnStatus;
-use App\Models\Turn;
-```
-
-Add these three methods to the `Game` model, placing relationships alongside the existing relationship methods and
-the capability helper alongside the existing `can*` helpers:
-
-```php
-/** @return HasMany<Turn, $this> */
-public function turns(): HasMany
-{
-    return $this->hasMany(Turn::class)->orderBy('number');
-}
-
-/** @return HasOne<Turn, $this> */
-public function currentTurn(): HasOne
-{
-    return $this->hasOne(Turn::class)->latestOfMany('number');
-}
-
-public function canGenerateReports(): bool
-{
-    $currentTurn = $this->currentTurn;
-
-    return $this->isActive()
-        && $currentTurn !== null
-        && $currentTurn->reports_locked_at === null
-        && $currentTurn->status !== TurnStatus::Generating;
-}
-```
-
-**Key details:**
-- `turns()` returns `HasMany` ordered ascending by `number`
-- `currentTurn()` uses `latestOfMany('number')` to get the highest-numbered turn
-- `canGenerateReports()` checks four conditions per the design doc:
-  1. Game is active (`status === GameStatus::Active`)
-  2. A current turn exists
-  3. Reports are not locked (`reports_locked_at` is null)
-  4. Turn is not currently generating (`status !== TurnStatus::Generating`)
-
-#### Test requirements — `tests/Feature/Models/GameTurnRelationshipTest.php`
-
-**Relationship tests:**
-
-1. **`test_game_turns_relationship_returns_turns`** — create a `Game`, create two turns, assert
-   `$game->turns->count() === 2`
-2. **`test_game_turns_are_ordered_by_number`** — create turns with numbers 2, 0, 1 (out of order), assert
-   `$game->turns->pluck('number')->all() === [0, 1, 2]`
-3. **`test_game_current_turn_returns_highest_turn_number`** — create turns 0, 1, 2 for a game, assert
-   `$game->currentTurn->number === 2`
-4. **`test_game_current_turn_returns_null_when_no_turns_exist`** — create a game with no turns, assert
-   `$game->currentTurn` is null
-
-**`canGenerateReports()` tests:**
-
-5. **`test_can_generate_reports_returns_true_for_active_game_with_pending_turn`** — active game, turn 0 with status
-   `Pending`, not locked → returns `true`
-6. **`test_can_generate_reports_returns_true_for_active_game_with_completed_turn`** — active game, turn 0 with status
-   `Completed`, not locked → returns `true`
-7. **`test_can_generate_reports_returns_false_when_game_is_not_active`** — game with
-   `status => GameStatus::Setup`, turn 0 pending → returns `false`
-8. **`test_can_generate_reports_returns_false_when_no_turns_exist`** — active game, no turns → returns `false`
-9. **`test_can_generate_reports_returns_false_when_turn_is_locked`** — active game, turn 0 with
-   `reports_locked_at => now()` → returns `false`
-10. **`test_can_generate_reports_returns_false_when_turn_is_generating`** — active game, turn 0 with
-    `status => TurnStatus::Generating` → returns `false`
-11. **`test_can_generate_reports_returns_false_when_turn_is_closed`** — active game, turn 0 with
-    `status => TurnStatus::Closed` → returns `false`
-
-**Important test setup notes:**
-- Always set game status explicitly: `Game::factory()->create(['status' => GameStatus::Active])`
-- Create turns via `Turn::create()` with explicit attributes — don't rely on `TurnFactory` defaults (it exists by now
-  but being explicit is clearer for these tests)
-- For test 3, create turns out of insertion order to prove `latestOfMany` works by number, not by ID
-
-#### Done when
-
-- `Game->turns` returns turns ordered ascending by `number`
-- `Game->currentTurn` returns the turn with the highest `number`
-- `canGenerateReports()` returns `true` only when all four conditions from the design doc are met
-- All 11 tests pass
-- Pint reports no issues
+**Acceptance criteria:**
+- `Game` has both `colonyTemplate(): HasOne` and `colonyTemplates(): HasMany`.
+- All existing tests pass without modification.
 
 ---
 
-### Task C17a — Create `TurnFactory`
+## Task D2 — Rewrite `UploadColonyTemplateRequest` validation for the new schema
 
-**Status:** DONE
-**Effort:** S
-**Depends on:** C15
+**Why:** The current validation only checks that the file is valid JSON with a non-empty `inventory` array. The new format requires validating: array-of-templates, `kind` as `ColonyKind`, `tech-level` as integer, `population` section, `inventory.operational`/`inventory.stored` split, and `CODE-TL` unit format rules.
 
-#### Files to create
+**Files to modify:**
+- `app/Http/Requests/UploadColonyTemplateRequest.php`
 
-- `database/factories/TurnFactory.php`
-- `tests/Feature/Database/Factories/TurnFactoryTest.php`
+**Changes:**
+Rewrite the `after()` validation closure to validate the new schema. Keep the `rules()` method (file upload validation) unchanged.
 
-#### Commands
+Validation rules for the decoded JSON:
+1. Top-level must be a **non-empty array** of template objects.
+2. **Duplicate `kind` values** across templates must be rejected (one colony per kind per planet).
+3. Per template:
+   - `kind` — required, must be a valid `ColonyKind` backed value (`COPN`, `CENC`, `CORB`).
+   - `tech-level` — required, must be a positive integer.
+   - `population` — required, must be a non-empty array.
+   - `inventory` — required, must be an array/object.
+4. Per population entry:
+   - `population_code` — required, must be a valid `PopulationClass` backed value.
+   - `quantity` — required, integer >= 0.
+   - `pay_rate` — required, numeric >= 0.
+5. Inventory structure:
+   - `inventory.operational` and `inventory.stored` are each optional arrays.
+   - At least one item must exist across both sections combined.
+6. Per inventory item:
+   - `unit` — required string.
+   - `quantity` — required, integer >= 0.
+7. **Unit format rules** (critical):
+   - If the unit string contains `-`, split on first `-`:
+     - Left side must be a valid `UnitCode` backed value.
+     - Left side must **not** be a consumable (`CNGD`, `FOOD`, `FUEL`, `GOLD`, `METS`, `MTSP`, `NMTS`, `RSCH`).
+     - Right side must be a positive integer (tech level).
+   - If the unit string has no `-`:
+     - Must be a valid `UnitCode` backed value.
+     - Must be a consumable (one of the 8 consumable codes listed above).
 
-```bash
-php artisan make:test --phpunit Database/Factories/TurnFactoryTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Factories/TurnFactoryTest.php
-```
+**Identifying consumables:** Use a static method or constant. The simplest approach: define a private method `isConsumable(string $code): bool` that checks against the list of consumable `UnitCode` backed values. Alternatively, check whether `UnitCode` already has a helper — it does not, so add the check inline or as a private method in the request class.
 
-#### Implementation — `database/factories/TurnFactory.php`
+**Tests:**
+Create `tests/Feature/UploadColonyTemplateValidationTest.php` (or add to existing `GameGenerationControllerTest`). Test cases:
 
-```php
-<?php
+- Valid new-format upload with 1 template passes validation.
+- Valid new-format upload with 2 templates passes validation.
+- Non-array top-level (single object) fails.
+- Empty array fails.
+- Missing `kind` fails.
+- Invalid `kind` value fails.
+- Missing `tech-level` fails.
+- Missing `population` fails.
+- Empty `population` array fails.
+- Missing inventory fails.
+- Empty inventory (both operational and stored empty/missing) fails.
+- `FCT` without tech level suffix fails (non-consumable must use `CODE-TL`).
+- `FUEL-1` fails (consumable must not have tech level).
+- `INVALID-1` fails (unknown unit code).
+- Duplicate `kind` values in the array fails.
+- Valid `FCT-1` and `FUEL` pass.
 
-namespace Database\Factories;
-
-use App\Enums\TurnStatus;
-use App\Models\Game;
-use App\Models\Turn;
-use Illuminate\Database\Eloquent\Factories\Factory;
-
-/**
- * @extends Factory<Turn>
- */
-class TurnFactory extends Factory
-{
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
-    {
-        return [
-            'game_id' => Game::factory(),
-            'number' => 0,
-            'status' => TurnStatus::Pending,
-            'reports_locked_at' => null,
-        ];
-    }
-}
-```
-
-**Key details:**
-- Default `number` is `0` (setup turn) — matches the most common use case for Layer 1
-- Default `status` is `TurnStatus::Pending` — matching the migration default
-- `reports_locked_at` is `null` by default
-
-#### Test requirements — `tests/Feature/Database/Factories/TurnFactoryTest.php`
-
-1. **`test_factory_creates_a_valid_turn`** — `Turn::factory()->create()` does not throw
-2. **`test_factory_defaults_number_to_zero`** — assert `$turn->number === 0`
-3. **`test_factory_defaults_status_to_pending`** — assert `$turn->status === TurnStatus::Pending`
-4. **`test_factory_defaults_reports_locked_at_to_null`** — assert `$turn->reports_locked_at` is `null`
-5. **`test_factory_auto_creates_game`** — assert `$turn->game` is a `Game` instance
-6. **`test_factory_accepts_attribute_overrides`** — create with `['number' => 5, 'status' => TurnStatus::Completed]`,
-   assert overridden values persist
-
-#### Done when
-
-- `Turn::factory()->create()` succeeds without errors
-- Default values match migration defaults
-- Factory integrates with the `Turn` model's enum casts
-- Targeted test passes and Pint reports no issues
+**Acceptance criteria:**
+- Request validates the new array-of-templates schema.
+- Unit format rules enforce `CODE-TL` for non-consumables and plain codes for consumables.
+- Duplicate `kind` values are rejected.
+- All validation errors appear on the `template` key (consistent with existing pattern).
 
 ---
 
-### Task C17b — Create `ColonyPopulationFactory` and `ColonyTemplatePopulationFactory`
+## Task D3 — Refactor `TemplateController::uploadColony()` for multi-template ingestion
 
-**Status:** DONE
-**Effort:** S
-**Depends on:** C14a, C14b
+**Why:** The controller currently reads a single-object JSON with flat `inventory` and no `population`. It must be rewritten to: iterate an array of templates, parse `CODE-TL` unit strings, distinguish `operational`/`stored` inventory, and store population rows.
 
-#### Files to create
+**Files to modify:**
+- `app/Http/Controllers/GameGeneration/TemplateController.php`
 
-- `database/factories/ColonyPopulationFactory.php`
-- `database/factories/ColonyTemplatePopulationFactory.php`
-- `tests/Feature/Database/Factories/PopulationFactoriesTest.php`
+**Changes to `uploadColony()` method:**
+1. Keep the authorization and active-game guard unchanged.
+2. Parse the uploaded file as `$templatesData = json_decode(...)` — expect a top-level array.
+3. Wrap the entire delete/recreate in a `DB::transaction()`.
+4. Delete all existing templates: `$game->colonyTemplates()->delete()` (cascading deletes handle items and population).
+5. For each template entry in the array:
+   a. Create a `ColonyTemplate` via `$game->colonyTemplates()->create([...])`:
+      - `kind` from the entry's `kind` value.
+      - `tech_level` from the entry's `tech-level` value.
+   b. Store population rows via `$template->population()->create([...])` for each entry in the template's `population` array:
+      - `population_code`, `quantity`, `pay_rate`.
+   c. Merge operational and stored inventory:
+      ```php
+      $allItems = array_merge(
+          $templateData['inventory']['operational'] ?? [],
+          $templateData['inventory']['stored'] ?? [],
+      );
+      ```
+   d. For each item, parse the `unit` string:
+      - If contains `-`: split on first `-` → `unit = left part`, `tech_level = (int) right part`.
+      - If no `-`: `unit = full string`, `tech_level = 0`.
+   e. Store inventory items via `$template->items()->create([...])`:
+      - `unit`, `tech_level`, `quantity_assembled = quantity`, `quantity_disassembled = 0`.
 
-#### Commands
+**Required imports:** Add `use Illuminate\Support\Facades\DB;` if not present.
 
-```bash
-php artisan make:test --phpunit Database/Factories/PopulationFactoriesTest
-vendor/bin/pint --dirty --format agent
-php artisan test --compact tests/Feature/Database/Factories/PopulationFactoriesTest.php
-```
+**Tests:**
+Add/update tests in `tests/Feature/GameGenerationControllerTest.php`:
 
-#### Implementation — `database/factories/ColonyPopulationFactory.php`
+- Upload with 1 template stores 1 `colony_templates` row, correct items, correct population.
+- Upload with 2 templates stores 2 `colony_templates` rows, each with their own items and population.
+- Re-upload replaces all previous templates (old template rows are deleted, new ones created).
+- Unit parsing: `FCT-1` → `unit=FCT, tech_level=1`; `FUEL` → `unit=FUEL, tech_level=0`; `STU` (no TL) → `unit=STU, tech_level=0`.
+- Population rows are stored with correct `population_code`, `quantity`, `pay_rate`.
+- Active game rejection still works with new payload format.
 
-```php
-<?php
-
-namespace Database\Factories;
-
-use App\Enums\PopulationClass;
-use App\Models\Colony;
-use App\Models\ColonyPopulation;
-use Illuminate\Database\Eloquent\Factories\Factory;
-
-/**
- * @extends Factory<ColonyPopulation>
- */
-class ColonyPopulationFactory extends Factory
-{
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
-    {
-        return [
-            'colony_id' => Colony::factory(),
-            'population_code' => fake()->randomElement(PopulationClass::cases()),
-            'quantity' => fake()->numberBetween(1, 1000),
-            'pay_rate' => fake()->randomFloat(2, 0, 10),
-            'rebel_quantity' => 0,
-        ];
-    }
-}
-```
-
-#### Implementation — `database/factories/ColonyTemplatePopulationFactory.php`
-
-```php
-<?php
-
-namespace Database\Factories;
-
-use App\Enums\PopulationClass;
-use App\Models\ColonyTemplate;
-use App\Models\ColonyTemplatePopulation;
-use Illuminate\Database\Eloquent\Factories\Factory;
-
-/**
- * @extends Factory<ColonyTemplatePopulation>
- */
-class ColonyTemplatePopulationFactory extends Factory
-{
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
-    {
-        return [
-            'colony_template_id' => ColonyTemplate::factory(),
-            'population_code' => fake()->randomElement(PopulationClass::cases()),
-            'quantity' => fake()->numberBetween(1, 1000),
-            'pay_rate' => fake()->randomFloat(2, 0, 10),
-        ];
-    }
-}
-```
-
-**Key details:**
-- `ColonyPopulationFactory` includes `rebel_quantity` defaulting to `0`
-- `ColonyTemplatePopulationFactory` does **not** include `rebel_quantity` — that column doesn't exist on the template
-  table
-- Both use `fake()->randomElement(PopulationClass::cases())` for the enum, matching existing factory patterns
-
-#### Test requirements — `tests/Feature/Database/Factories/PopulationFactoriesTest.php`
-
-**ColonyPopulationFactory tests:**
-
-1. **`test_colony_population_factory_creates_a_valid_record`** — `ColonyPopulation::factory()->create()` does not throw
-2. **`test_colony_population_factory_defaults_rebel_quantity_to_zero`** — assert `$record->rebel_quantity === 0`
-3. **`test_colony_population_factory_creates_related_colony`** — assert `$record->colony` is a `Colony` instance
-4. **`test_colony_population_factory_uses_population_class_enum`** — assert
-   `$record->fresh()->population_code instanceof PopulationClass`
-5. **`test_colony_population_factory_accepts_explicit_population_code`** — create with
-   `['population_code' => PopulationClass::Soldier]`, assert `$record->population_code === PopulationClass::Soldier`
-
-**ColonyTemplatePopulationFactory tests:**
-
-6. **`test_colony_template_population_factory_creates_a_valid_record`** —
-   `ColonyTemplatePopulation::factory()->create()` does not throw
-7. **`test_colony_template_population_factory_creates_related_template`** — assert `$record->colonyTemplate` is a
-   `ColonyTemplate` instance
-8. **`test_colony_template_population_factory_uses_population_class_enum`** — assert enum cast works
-9. **`test_colony_template_population_factory_accepts_explicit_population_code`** — create with
-   `['population_code' => PopulationClass::Professional]`, assert exact match
-
-**Note on unique constraint collisions:** Each factory test creates a single record per parent, so unique constraint
-collisions should not occur. If creating multiple records for the same parent, always specify distinct
-`population_code` values.
-
-#### Done when
-
-- Both factories create valid records with auto-created parents
-- Enum-backed values persist correctly through the model casts
-- `rebel_quantity` defaults to `0` for colony population
-- No inserts fail from wrong table names or missing timestamps
-- Targeted test passes and Pint reports no issues
+**Acceptance criteria:**
+- Uploading a valid multi-template JSON creates the correct number of templates, items, and population rows.
+- `CODE-TL` parsing correctly splits unit code and tech level.
+- Plain consumable codes store `tech_level = 0`.
+- Re-upload is atomic (transaction) and fully replaces all previous templates.
+- Existing authorization and active-game guard behavior is preserved.
 
 ---
 
-## Execution Order
+## Task D4 — Update existing colony upload tests for new JSON format
 
-```
-C14a (ColonyPopulation model + Colony::population)
-  → C14b (ColonyTemplatePopulation model + ColonyTemplate::population)
-    → C15 (Turn model)
-      → C16 (Game::turns, Game::currentTurn, Game::canGenerateReports)
-        → C17a (TurnFactory)
-          → C17b (ColonyPopulationFactory + ColonyTemplatePopulationFactory)
-```
+**Why:** The existing `makeColonyTemplateJson()` helper and the 4 colony upload tests in `GameGenerationControllerTest` use the old single-object format. They must be updated to use the new array-of-templates format with `CODE-TL` units and population.
 
-Each task is a separate commit boundary.
+**Files to modify:**
+- `tests/Feature/GameGenerationControllerTest.php`
 
----
+**Changes:**
+1. Rewrite `makeColonyTemplateJson()` to return the new format:
+   ```php
+   private function makeColonyTemplateJson(int $templateCount = 1, int $itemCount = 1): string
+   ```
+   - Returns a JSON-encoded array of `$templateCount` templates.
+   - Each template includes: `kind`, `tech-level`, `population` (at least 1 entry), `inventory` with `operational` (containing `$itemCount` items using `CODE-TL` format) and optionally `stored`.
+   - Use valid `ColonyKind` values, cycling through `COPN`, `CORB`, `CENC` for multiple templates.
 
-## Group C Acceptance Criteria
+2. Update `upload_colony_template_creates_template_and_items`:
+   - Use `makeColonyTemplateJson(templateCount: 1, itemCount: 3)`.
+   - Assert template count, item count, and population count.
 
-Group C is complete when all of the following are true:
+3. Update `upload_colony_template_replaces_existing_template`:
+   - Start from `withDefaultTemplates()` (which creates 2 templates from the sample file).
+   - Upload new payload.
+   - Assert old templates are gone, new templates exist with correct counts.
 
-### New Models
+4. Update `upload_colony_template_is_rejected_when_game_is_active`:
+   - Just change the payload to new format.
 
-- [x] `app/Models/ColonyPopulation.php` exists with `$table = 'colony_population'`, `$timestamps = false`,
-  `population_code` cast to `PopulationClass`, `pay_rate` cast to `float`, `colony()` relationship
-- [x] `app/Models/ColonyTemplatePopulation.php` exists with `$table = 'colony_template_population'`,
-  `$timestamps = false`, `population_code` cast to `PopulationClass`, `pay_rate` cast to `float`,
-  `colonyTemplate()` relationship
-- [x] `app/Models/Turn.php` exists with `status` cast to `TurnStatus`, `reports_locked_at` cast to `datetime`,
-  `game()` relationship, timestamps enabled
+5. Update `upload_colony_template_is_rejected_when_no_inventory_items`:
+   - Use new format with empty `operational` and `stored` arrays.
 
-### Parent Model Relationships
+**Tests:**
+- All 4 existing tests pass with the new format.
+- Run: `php artisan test --compact --filter=GameGenerationControllerTest`
 
-- [x] `Colony::population()` returns `HasMany<ColonyPopulation>`
-- [x] `ColonyTemplate::population()` returns `HasMany<ColonyTemplatePopulation>`
-- [x] `Game::turns()` returns `HasMany<Turn>` ordered by `number`
-- [x] `Game::currentTurn()` returns `HasOne<Turn>` using `latestOfMany('number')`
-- [x] `Game::canGenerateReports()` returns `true` only when game is active, current turn exists, reports not locked,
-  and turn is not generating
-
-### New Factories
-
-- [x] `database/factories/TurnFactory.php` — defaults: `number = 0`, `status = Pending`, `reports_locked_at = null`
-- [x] `database/factories/ColonyPopulationFactory.php` — uses `PopulationClass` cases, defaults `rebel_quantity = 0`
-- [x] `database/factories/ColonyTemplatePopulationFactory.php` — uses `PopulationClass` cases, no `rebel_quantity`
-
-### Convention Compliance
-
-- [x] All new models use `#[Fillable([...])]` attribute
-- [x] All new models use `HasFactory` with explicit generic PHPDoc
-- [x] Both population models define explicit `$table` property
-- [x] Both population models set `$timestamps = false`
-- [x] `Turn` model does **not** set `$timestamps = false`
-- [x] Relationship PHPDocs match existing style
-- [x] All new factories use `fake()->...` not `$this->faker`
-- [x] All tests are PHPUnit classes, not Pest
-
-### Test Coverage
-
-- [x] Every Group C task has PHPUnit test coverage
-- [x] Model tests verify enum casting, raw persisted values, and relationships in both directions
-- [x] Factory tests verify defaults and enum integration
-- [x] `canGenerateReports()` tests cover all positive and negative conditions
-- [x] Pint passes on all changed files
-
-### Quality Gate
-
-```bash
-php artisan test --compact tests/Feature/Models/ColonyPopulationModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyTemplatePopulationModelTest.php
-php artisan test --compact tests/Feature/Models/TurnModelTest.php
-php artisan test --compact tests/Feature/Models/GameTurnRelationshipTest.php
-php artisan test --compact tests/Feature/Database/Factories/TurnFactoryTest.php
-php artisan test --compact tests/Feature/Database/Factories/PopulationFactoriesTest.php
-vendor/bin/pint --dirty --format agent
-```
-
-All targeted tests must pass and Pint must report no formatting issues.
+**Acceptance criteria:**
+- `makeColonyTemplateJson()` produces new-format JSON exclusively.
+- All existing colony upload tests pass and test the real contract.
+- No test still depends on the old single-object format.
 
 ---
 
-## Out of Scope for Group C
+## Task D5 — Add real sample file upload regression test
 
-Do **not** pull these into this burndown:
+**Why:** A regression test using the actual `sample-data/beta/colony-template.json` file locks the contract between the checked-in sample data and the upload pipeline, preventing future drift.
 
-- Template upload request/controller changes for population section (Group D tasks 18–20)
-- `EmpireCreator` updates for colony population seeding (Group E task 21)
-- `GameGenerationController::activate()` Turn 0 creation (Group E task 22)
-- Report migration/model/service work (Group F tasks 23–30)
-- Routes, authorization, and controllers (Group G tasks 31–33)
-- Fixing existing broken tests (Layer 1 task 34)
-- Frontend work (Group I tasks 36–37)
-- `Game::colonyTemplates()` HasMany conversion (tracked for Group D/E)
+**Files to modify:**
+- `tests/Feature/GameGenerationControllerTest.php`
+
+**Changes:**
+Add a new test method `upload_colony_template_with_real_sample_file`:
+1. Create a game, authenticate as GM.
+2. Read the real file from `base_path('sample-data/beta/colony-template.json')`.
+3. Create an `UploadedFile` from it.
+4. POST to the colony template upload endpoint.
+5. Assert the upload succeeds (redirect, no errors).
+6. Assert database state:
+   - 2 `colony_templates` rows created for this game.
+   - First template (`COPN`): 17 total inventory items (6 operational + 11 stored), 4 population rows.
+   - Second template (`CORB`): 1 inventory item (1 operational + 0 stored), 4 population rows.
+7. Spot-check parsed values:
+   - `ASW-1` stored as `unit = ASW`, `tech_level = 1`.
+   - `FUEL` stored as `unit = FUEL`, `tech_level = 0`.
+   - `STU` (operational, no tech level) stored as `unit = STU`, `tech_level = 0`.
+   - First template's `UEM` population: `quantity = 3500000`, `pay_rate = 0.0`.
+
+**Tests:**
+- Run: `php artisan test --compact --filter=upload_colony_template_with_real_sample_file`
+
+**Acceptance criteria:**
+- The checked-in sample file uploads successfully end-to-end.
+- Database state matches the sample file contents exactly.
+- Parsed unit codes and tech levels are correct.
+
+---
+
+## Task D6 — Run Pint and full test suite
+
+**Why:** Final cleanup and verification that all changes are consistent and nothing is broken.
+
+**Steps:**
+1. Run `vendor/bin/pint --dirty` to fix any formatting issues.
+2. Run `php artisan test --compact` to verify the full test suite passes.
+
+**Acceptance criteria:**
+- No Pint violations.
+- Full test suite passes.
+
+---
+
+## Group D Acceptance Criteria
+
+Group D is complete when **all** of the following are true:
+
+1. **`sample-data/beta/colony-template.json`** is confirmed to already match the new contract (array format, `CODE-TL` units, population). A regression test locks this contract.
+
+2. **`UploadColonyTemplateRequest`** validates:
+   - Top-level array of templates (non-empty).
+   - Each template has `kind` (valid `ColonyKind`), `tech-level` (integer), `population` (non-empty array), and `inventory`.
+   - Population entries have valid `population_code`, `quantity`, `pay_rate`.
+   - Inventory items use correct unit format: `CODE-TL` for non-consumables, plain code for consumables.
+   - Duplicate `kind` values across templates are rejected.
+
+3. **`TemplateController::uploadColony()`**:
+   - Accepts the new array-of-templates schema.
+   - Deletes all existing colony templates for the game (atomic transaction).
+   - Creates all uploaded templates with items and population rows.
+   - Parses `CODE-TL` format correctly (`FCT-1` → unit=FCT, tech_level=1; `FUEL` → unit=FUEL, tech_level=0).
+
+4. **`Game` model** exposes both `colonyTemplate(): HasOne` (existing readers) and `colonyTemplates(): HasMany` (upload write path).
+
+5. **Out-of-scope guardrails intact:**
+   - `EmpireCreator` still creates from the first template only (unchanged).
+   - `GameGenerationController::colonyTemplateSummary()` still uses `colonyTemplate()` (unchanged).
+   - No multi-colony empire creation logic introduced.
+
+6. **Tests:**
+   - All existing colony upload tests updated for new format and passing.
+   - New validation tests cover positive and negative cases.
+   - Real sample file regression test passes.
+   - Full test suite passes.
+   - Pint clean.
