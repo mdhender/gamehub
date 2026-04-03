@@ -7,6 +7,8 @@ use App\Enums\GameStatus;
 use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Enums\UnitCode;
+use App\Models\Colony;
+use App\Models\ColonyTemplate;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\TurnReport;
@@ -331,5 +333,161 @@ class SetupReportGeneratorTest extends TestCase
         $count = $this->generator->generate($turn);
 
         $this->assertSame(2, $count);
+    }
+
+    #[Test]
+    public function snapshot_is_immutable_after_live_data_changes(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $this->generator->generate($turn);
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $colony = $empire->colonies()->first();
+        $originalName = $colony->name;
+        $originalInvQty = $colony->inventory()->first()->quantity_assembled;
+        $originalPopQty = $colony->population()->first()->quantity;
+
+        $colony->update(['name' => 'Mutated Colony Name']);
+        $colony->inventory()->first()->update(['quantity_assembled' => $originalInvQty + 9999]);
+        $colony->population()->first()->update(['quantity' => $originalPopQty + 9999]);
+
+        $reportColony = TurnReport::where('turn_id', $turn->id)->first()
+            ->colonies()->first();
+
+        $this->assertSame($originalName, $reportColony->name);
+        $this->assertSame($originalInvQty, $reportColony->inventory()->first()->quantity_assembled);
+        $this->assertSame($originalPopQty, $reportColony->population()->first()->quantity);
+    }
+
+    #[Test]
+    public function report_survives_live_colony_deletion(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $this->generator->generate($turn);
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $colony = $empire->colonies()->first();
+        $reportColonyName = TurnReport::where('turn_id', $turn->id)->first()
+            ->colonies()->first()->name;
+
+        $colony->inventory()->delete();
+        $colony->population()->delete();
+        $colony->delete();
+
+        $report = TurnReport::where('turn_id', $turn->id)->first();
+        $this->assertNotNull($report);
+
+        $snapshotColony = $report->colonies()->first();
+        $this->assertNotNull($snapshotColony);
+        $this->assertSame($reportColonyName, $snapshotColony->name);
+        $this->assertGreaterThan(0, $snapshotColony->inventory()->count());
+        $this->assertGreaterThan(0, $snapshotColony->population()->count());
+    }
+
+    #[Test]
+    public function rerun_refreshes_stale_snapshot_content(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $this->generator->generate($turn);
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $colony = $empire->colonies()->first();
+        $originalName = $colony->name;
+        $originalInvQty = $colony->inventory()->first()->quantity_assembled;
+
+        $colony->update(['name' => 'Refreshed Colony']);
+        $colony->inventory()->first()->update(['quantity_assembled' => $originalInvQty + 500]);
+
+        $this->generator->generate($turn->fresh());
+
+        $report = TurnReport::where('turn_id', $turn->id)->first();
+        $reportColony = $report->colonies()->first();
+
+        $this->assertSame('Refreshed Colony', $reportColony->name);
+        $this->assertSame($originalInvQty + 500, $reportColony->inventory()->first()->quantity_assembled);
+
+        $this->assertSame(1, TurnReport::where('turn_id', $turn->id)->count());
+        $this->assertSame(1, $report->colonies()->count());
+        $this->assertSame(1, $reportColony->inventory()->count());
+        $this->assertSame(1, $reportColony->population()->count());
+    }
+
+    #[Test]
+    public function multi_colony_snapshot_with_multiple_templates(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        (new StarGenerator)->generate($game);
+        (new PlanetGenerator)->generate($game->fresh());
+        (new DepositGenerator)->generate($game->fresh());
+
+        $game = $game->fresh();
+        $hsTemplate = $game->homeSystemTemplate()->create();
+        $hsTemplate->planets()->create([
+            'orbit' => 3,
+            'type' => 'terrestrial',
+            'habitability' => 20,
+            'is_homeworld' => true,
+        ]);
+
+        $surfaceTemplate = $game->colonyTemplate()->create(['kind' => ColonyKind::OpenSurface, 'tech_level' => 1]);
+        $surfaceTemplate->items()->create([
+            'unit' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity_assembled' => 5,
+            'quantity_disassembled' => 0,
+        ]);
+        $surfaceTemplate->population()->create([
+            'population_code' => PopulationClass::Unemployable,
+            'quantity' => 1000,
+            'pay_rate' => 0.0,
+        ]);
+
+        $orbitalTemplate = ColonyTemplate::create(['game_id' => $game->id, 'kind' => ColonyKind::Orbital, 'tech_level' => 1]);
+        $orbitalTemplate->items()->create([
+            'unit' => UnitCode::Structure,
+            'tech_level' => 0,
+            'quantity_assembled' => 100,
+            'quantity_disassembled' => 0,
+        ]);
+        $orbitalTemplate->population()->create([
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 500,
+            'pay_rate' => 0.125,
+        ]);
+
+        (new HomeSystemCreator)->createRandom($game->fresh());
+
+        $game = $game->fresh();
+        $game->status = GameStatus::Active;
+        $game->save();
+
+        $game->turns()->create(['number' => 0, 'status' => TurnStatus::Pending]);
+
+        $user = User::factory()->create();
+        $game->users()->attach($user, ['role' => 'player', 'is_active' => true]);
+        (new EmpireCreator)->create($game->fresh(), $user);
+
+        $turn = $game->turns()->first();
+        $this->generator->generate($turn);
+
+        $report = TurnReport::where('turn_id', $turn->id)->first();
+        $reportColonies = $report->colonies()->orderBy('kind')->get();
+
+        $this->assertCount(2, $reportColonies);
+
+        $kinds = $reportColonies->pluck('kind')->all();
+        $this->assertContains(ColonyKind::OpenSurface, $kinds);
+        $this->assertContains(ColonyKind::Orbital, $kinds);
+
+        foreach ($reportColonies as $rc) {
+            $this->assertGreaterThan(0, $rc->inventory()->count());
+            $this->assertGreaterThan(0, $rc->population()->count());
+        }
     }
 }

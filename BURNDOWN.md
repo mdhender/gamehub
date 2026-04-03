@@ -211,11 +211,11 @@ php artisan test --compact tests/Feature/Services/SetupReportGeneratorTest.php
 ```
 
 **Acceptance criteria:**
-- [ ] Snapshot immutability test proves report data is stable after live data mutation
-- [ ] Historical survival test proves reports survive live colony deletion
-- [ ] Rerun test asserts snapshot content refreshes, not just row counts
-- [ ] Multi-colony test verifies multiple templates produce distinct report colony entries
-- [ ] All `SetupReportGeneratorTest` tests pass
+- [x] Snapshot immutability test proves report data is stable after live data mutation
+- [x] Historical survival test proves reports survive live colony deletion
+- [x] Rerun test asserts snapshot content refreshes, not just row counts
+- [x] Multi-colony test verifies multiple templates produce distinct report colony entries
+- [x] All `SetupReportGeneratorTest` tests pass
 
 ---
 
