@@ -344,7 +344,7 @@ Create records directly via `ColonyTemplatePopulation::create()` since the facto
 
 ### Task C15 — Create `Turn` model
 
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** Groups A & B complete
 
