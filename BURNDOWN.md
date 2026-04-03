@@ -286,7 +286,7 @@ php artisan test --compact --filter=activate_rolls_back_when_turn_zero_creation_
 
 ## Task E5 — Formatting and full test suite verification
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Why:** Final cleanup to ensure all Group E changes are formatted and the entire test suite passes.
 
@@ -320,20 +320,20 @@ php artisan test --compact --filter=activate_rolls_back_when_turn_zero_creation_
 
 Group E is complete when **all** of the following are true:
 
-- [ ] **1. Multi-colony empire creation:** `EmpireCreator` uses `Game::colonyTemplates()` (HasMany) and creates one colony per template, all on the empire's homeworld.
+- [x] **1. Multi-colony empire creation:** `EmpireCreator` uses `Game::colonyTemplates()` (HasMany) and creates one colony per template, all on the empire's homeworld.
 
-- [ ] **2. Starting inventory:** Inventory rows are copied from each template using `insert()` with `->value` for enum-backed columns (bypassing cast safety).
+- [x] **2. Starting inventory:** Inventory rows are copied from each template using `insert()` with `->value` for enum-backed columns (bypassing cast safety).
 
-- [ ] **3. Starting population:** `colony_population` rows are created for each template's population entries with `rebel_quantity = 0`. Retrieved rows cast back correctly to `PopulationClass`.
+- [x] **3. Starting population:** `colony_population` rows are created for each template's population entries with `rebel_quantity = 0`. Retrieved rows cast back correctly to `PopulationClass`.
 
-- [ ] **4. Turn 0 creation:** `GameGenerationController::activate()` creates Turn 0 with `TurnStatus::Pending` and `reports_locked_at = null` in the same transaction that sets the game to `Active`.
+- [x] **4. Turn 0 creation:** `GameGenerationController::activate()` creates Turn 0 with `TurnStatus::Pending` and `reports_locked_at = null` in the same transaction that sets the game to `Active`.
 
-- [ ] **5. Turn behavior:** Turn 0 becomes the game's `currentTurn`. `Game::canGenerateReports()` returns `true` immediately after activation.
+- [x] **5. Turn behavior:** Turn 0 becomes the game's `currentTurn`. `Game::canGenerateReports()` returns `true` immediately after activation.
 
-- [ ] **6. Atomicity:** If Turn 0 creation fails, the game status change is rolled back. Failed activation does not create stray turns.
+- [x] **6. Atomicity:** If Turn 0 creation fails, the game status change is rolled back. Failed activation does not create stray turns.
 
-- [ ] **7. Regression safety:** Single-template empire creation still works. Existing home-system assignment, capacity checks, and reassignment behavior unchanged. Existing activation authorization and rejection tests pass.
+- [x] **7. Regression safety:** Single-template empire creation still works. Existing home-system assignment, capacity checks, and reassignment behavior unchanged. Existing activation authorization and rejection tests pass.
 
-- [ ] **8. Scope control:** No changes to template upload logic. No changes to `Game::colonyTemplate()` or `colonyTemplateSummary()`. No new services, events, or jobs introduced.
+- [x] **8. Scope control:** No changes to template upload logic. No changes to `Game::colonyTemplate()` or `colonyTemplateSummary()`. No new services, events, or jobs introduced.
 
-- [ ] **9. Verification:** Pint clean. Focused Group E tests pass. Full test suite passes.
+- [x] **9. Verification:** Pint clean. Focused Group E tests pass. Full test suite passes.
