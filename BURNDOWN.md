@@ -163,7 +163,7 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 
 ## Task F4 — Migrations: `turn_report_surveys` and `turn_report_survey_deposits` tables
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #27
 
@@ -207,11 +207,11 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 - `test_deleting_turn_report_survey_cascades_deposits` — create parent survey + deposit children, delete survey, assert deposits are gone.
 
 **Acceptance criteria:**
-- [ ] Both tables exist with exact columns listed above
-- [ ] `planet_id` on surveys is a plain nullable integer, not a FK
-- [ ] Survey deposit FK cascades on delete from `turn_report_surveys`
-- [ ] No timestamps on either table
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
+- [x] Both tables exist with exact columns listed above
+- [x] `planet_id` on surveys is a plain nullable integer, not a FK
+- [x] Survey deposit FK cascades on delete from `turn_report_surveys`
+- [x] No timestamps on either table
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
 
 ---
 

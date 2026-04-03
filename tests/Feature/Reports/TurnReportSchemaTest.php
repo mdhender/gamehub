@@ -293,4 +293,77 @@ class TurnReportSchemaTest extends TestCase
         $this->assertDatabaseMissing('turn_report_colony_inventory', ['id' => $inventoryId]);
         $this->assertDatabaseMissing('turn_report_colony_population', ['id' => $populationId]);
     }
+
+    #[Test]
+    public function test_turn_report_surveys_accept_plain_planet_id_without_live_foreign_key(): void
+    {
+        $game = Game::factory()->create();
+        $turn = Turn::factory()->create(['game_id' => $game->id]);
+        $empire = Empire::factory()->create(['game_id' => $game->id]);
+
+        $reportId = DB::table('turn_reports')->insertGetId([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+            'generated_at' => now(),
+        ]);
+
+        $id = DB::table('turn_report_surveys')->insertGetId([
+            'turn_report_id' => $reportId,
+            'planet_id' => 99999,
+            'orbit' => 3,
+            'star_x' => 10,
+            'star_y' => 20,
+            'star_z' => 30,
+            'star_sequence' => 1,
+            'planet_type' => 'TERR',
+            'habitability' => 75,
+        ]);
+
+        $this->assertNotNull($id);
+        $this->assertDatabaseHas('turn_report_surveys', [
+            'id' => $id,
+            'planet_id' => 99999,
+            'planet_type' => 'TERR',
+        ]);
+    }
+
+    #[Test]
+    public function test_deleting_turn_report_survey_cascades_deposits(): void
+    {
+        $game = Game::factory()->create();
+        $turn = Turn::factory()->create(['game_id' => $game->id]);
+        $empire = Empire::factory()->create(['game_id' => $game->id]);
+
+        $reportId = DB::table('turn_reports')->insertGetId([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+            'generated_at' => now(),
+        ]);
+
+        $surveyId = DB::table('turn_report_surveys')->insertGetId([
+            'turn_report_id' => $reportId,
+            'planet_id' => null,
+            'orbit' => 2,
+            'star_x' => 0,
+            'star_y' => 0,
+            'star_z' => 0,
+            'star_sequence' => 1,
+            'planet_type' => 'ROCK',
+            'habitability' => 0,
+        ]);
+
+        $depositId = DB::table('turn_report_survey_deposits')->insertGetId([
+            'turn_report_survey_id' => $surveyId,
+            'deposit_no' => 1,
+            'resource' => 'IRN',
+            'yield_pct' => 50,
+            'quantity_remaining' => 1000,
+        ]);
+
+        DB::table('turn_report_surveys')->where('id', $surveyId)->delete();
+
+        $this->assertDatabaseMissing('turn_report_survey_deposits', ['id' => $depositId]);
+    }
 }
