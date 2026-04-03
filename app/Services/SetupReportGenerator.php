@@ -96,7 +96,28 @@ class SetupReportGenerator
                     }
                 }
 
-                // Task F12 will add homeworld survey snapshots here
+                $homeworld = $empire->homeSystem->homeworldPlanet;
+                $homeworldStar = $homeworld->star;
+
+                $survey = $report->surveys()->create([
+                    'planet_id' => $homeworld->id,
+                    'orbit' => $homeworld->orbit,
+                    'star_x' => $homeworldStar->x,
+                    'star_y' => $homeworldStar->y,
+                    'star_z' => $homeworldStar->z,
+                    'star_sequence' => $homeworldStar->sequence,
+                    'planet_type' => $homeworld->type,
+                    'habitability' => $homeworld->habitability,
+                ]);
+
+                $homeworld->deposits->values()->each(function ($deposit, $index) use ($survey) {
+                    $survey->deposits()->create([
+                        'deposit_no' => $index + 1,
+                        'resource' => $deposit->resource,
+                        'yield_pct' => $deposit->yield_pct,
+                        'quantity_remaining' => $deposit->quantity_remaining,
+                    ]);
+                });
             }
 
             $turn->update(['status' => TurnStatus::Completed]);

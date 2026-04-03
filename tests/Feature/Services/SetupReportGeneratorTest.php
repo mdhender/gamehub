@@ -250,4 +250,86 @@ class SetupReportGeneratorTest extends TestCase
 
         $this->assertSame(0, TurnReport::where('empire_id', $colonylessEmpire->id)->count());
     }
+
+    #[Test]
+    public function generate_creates_homeworld_survey_with_correct_planet_data(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $this->generator->generate($turn);
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $homeworld = $empire->homeSystem->homeworldPlanet;
+        $star = $homeworld->star;
+
+        $survey = TurnReport::where('turn_id', $turn->id)->first()
+            ->surveys()->first();
+
+        $this->assertSame($homeworld->id, $survey->planet_id);
+        $this->assertSame($homeworld->orbit, $survey->orbit);
+        $this->assertEquals($star->x, $survey->star_x);
+        $this->assertEquals($star->y, $survey->star_y);
+        $this->assertEquals($star->z, $survey->star_z);
+        $this->assertSame($star->sequence, $survey->star_sequence);
+        $this->assertSame($homeworld->type, $survey->planet_type);
+        $this->assertSame($homeworld->habitability, $survey->habitability);
+    }
+
+    #[Test]
+    public function generate_snapshots_all_homeworld_deposits_with_one_based_deposit_numbers(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $this->generator->generate($turn);
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $homeworld = $empire->homeSystem->homeworldPlanet;
+        $liveDeposits = $homeworld->deposits()->orderBy('id')->get();
+
+        $survey = TurnReport::where('turn_id', $turn->id)->first()
+            ->surveys()->first();
+        $reportDeposits = $survey->deposits()->orderBy('deposit_no')->get();
+
+        $this->assertCount($liveDeposits->count(), $reportDeposits);
+
+        $reportDeposits->each(function ($reportDeposit, $index) {
+            $this->assertSame($index + 1, $reportDeposit->deposit_no);
+        });
+    }
+
+    #[Test]
+    public function generate_marks_turn_completed_on_success(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $this->generator->generate($turn);
+
+        $this->assertSame(TurnStatus::Completed, $turn->fresh()->status);
+    }
+
+    #[Test]
+    public function generate_returns_count_of_processed_empires(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        // Add a second empire with a colony
+        $user2 = User::factory()->create();
+        $game->users()->attach($user2, ['role' => 'player', 'is_active' => true]);
+        (new EmpireCreator)->create($game->fresh(), $user2);
+
+        // Add a third empire without colonies
+        Empire::factory()->create([
+            'game_id' => $game->id,
+            'player_id' => null,
+            'home_system_id' => $game->homeSystems()->first()->id,
+        ]);
+
+        $count = $this->generator->generate($turn);
+
+        $this->assertSame(2, $count);
+    }
 }

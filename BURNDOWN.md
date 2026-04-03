@@ -780,7 +780,7 @@ For each empire:
 
 ## Task F12 — Service: homeworld survey + deposits + final status
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #30 (part 3 of 3)
 
