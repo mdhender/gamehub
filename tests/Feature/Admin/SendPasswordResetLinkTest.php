@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,7 +26,7 @@ class SendPasswordResetLinkTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        Notification::assertSentTo($user, \Illuminate\Auth\Notifications\ResetPassword::class);
+        Notification::assertSentTo($user, ResetPassword::class);
     }
 
     #[Test]
@@ -57,6 +58,6 @@ class SendPasswordResetLinkTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        Notification::assertSentTo($admin, \Illuminate\Auth\Notifications\ResetPassword::class);
+        Notification::assertSentTo($admin, ResetPassword::class);
     }
 }
