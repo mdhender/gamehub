@@ -581,8 +581,8 @@ vendor/bin/pint --dirty --format agent
 - [x] TypeScript compiles without errors
 - [x] ESLint passes
 - [x] Pint reports no formatting issues
-- [ ] GM end-to-end report workflow verified
-- [ ] Player self-service report access verified
+- [x] GM end-to-end report workflow verified
+- [x] Player self-service report access verified
 
 ---
 
