@@ -91,9 +91,9 @@ php artisan test --compact tests/Feature/Models/ColonyModelTest.php
 ```
 
 **Acceptance criteria:**
-- [ ] All model tests pass with the current schema
-- [ ] No test relies on integer values for `unit`, `kind`, or `population_code` columns
-- [ ] Factory-produced values are enum-compatible
+- [x] All model tests pass with the current schema
+- [x] No test relies on integer values for `unit`, `kind`, or `population_code` columns
+- [x] Factory-produced values are enum-compatible
 
 ---
 
