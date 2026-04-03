@@ -113,7 +113,7 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 
 ## Task F3 — Migrations: `turn_report_colony_inventory` and `turn_report_colony_population` tables
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design tasks:** #25, #26
 
@@ -154,10 +154,10 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 - `test_deleting_turn_report_colony_cascades_inventory_and_population` — create a `turn_report_colonies` row with child inventory and population rows, delete the colony row, assert all children are gone.
 
 **Acceptance criteria:**
-- [ ] Both tables exist with exact columns listed above
-- [ ] Both child FKs cascade on delete from `turn_report_colonies`
-- [ ] No timestamps on either table
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
+- [x] Both tables exist with exact columns listed above
+- [x] Both child FKs cascade on delete from `turn_report_colonies`
+- [x] No timestamps on either table
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
 
 ---
 
