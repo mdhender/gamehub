@@ -128,10 +128,10 @@ php artisan test --compact tests/Feature/GameGenerationControllerTest.php
 ```
 
 **Acceptance criteria:**
-- [ ] Validation tests use the current array-based colony template format with population
-- [ ] Controller upload tests assert both inventory and population persistence
-- [ ] Replacement tests verify old templates are deleted and new ones created
-- [ ] All upload-related tests pass
+- [x] Validation tests use the current array-based colony template format with population
+- [x] Controller upload tests assert both inventory and population persistence
+- [x] Replacement tests verify old templates are deleted and new ones created
+- [x] All upload-related tests pass
 
 ---
 
