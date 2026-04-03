@@ -36,7 +36,7 @@ Group D updates the colony template upload pipeline to accept the new JSON forma
 
 ## Task D2 — Rewrite `UploadColonyTemplateRequest` validation for the new schema
 
-**Status:** TODO
+**Status:** DONE
 
 **Why:** The current validation only checks that the file is valid JSON with a non-empty `inventory` array. The new format requires validating: array-of-templates, `kind` as `ColonyKind`, `tech-level` as integer, `population` section, `inventory.operational`/`inventory.stored` split, and `CODE-TL` unit format rules.
 
