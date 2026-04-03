@@ -290,9 +290,9 @@ bun run build
 ```
 
 **Acceptance criteria:**
-- [ ] `TurnReportController` Wayfinder file exists with typed helpers
-- [ ] Helpers cover `generate`, `lock`, `show`, `download` actions
-- [ ] TypeScript compiles without errors after generation
+- [x] `TurnReportController` Wayfinder file exists with typed helpers
+- [x] Helpers cover `generate`, `lock`, `show`, `download` actions
+- [x] TypeScript compiles without errors after generation
 
 ---
 
