@@ -547,7 +547,7 @@ public function canGenerateReports(): bool
 
 ### Task C17a — Create `TurnFactory`
 
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** C15
 
