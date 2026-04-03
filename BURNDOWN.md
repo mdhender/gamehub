@@ -495,7 +495,7 @@ php artisan test --compact tests/Feature/Database/Factories/ColonyInventoryFacto
 ---
 
 ### Task B13 — Update `ColonyTemplateItemFactory`
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** B10, B11a
 
