@@ -41,25 +41,34 @@ class GameGenerationControllerTest extends TestCase
         return json_encode(['planets' => $planets]);
     }
 
-    private function makeColonyTemplateJson(int $itemCount = 1): string
+    private function makeColonyTemplateJson(int $templateCount = 1, int $itemCount = 1): string
     {
-        $unitCodes = ['FCT', 'FRM', 'MIN', 'MSL', 'STU', 'TPT', 'FOOD'];
-        $inventory = [];
+        $kinds = ['COPN', 'CORB', 'CENC'];
+        $nonConsumables = ['FCT', 'FRM', 'MIN', 'MSL', 'STU', 'TPT'];
+        $templates = [];
 
-        for ($i = 0; $i < $itemCount; $i++) {
-            $inventory[] = [
-                'unit' => $unitCodes[$i % count($unitCodes)],
-                'TechLevel' => 1,
-                'QuantityAssembled' => 1000,
-                'QuantityDisassembled' => 0,
+        for ($t = 0; $t < $templateCount; $t++) {
+            $operational = [];
+            for ($i = 0; $i < $itemCount; $i++) {
+                $operational[] = [
+                    'unit' => $nonConsumables[$i % count($nonConsumables)].'-1',
+                    'quantity' => 10,
+                ];
+            }
+
+            $templates[] = [
+                'kind' => $kinds[$t % count($kinds)],
+                'tech-level' => 1,
+                'population' => [
+                    ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.5],
+                ],
+                'inventory' => [
+                    'operational' => $operational,
+                ],
             ];
         }
 
-        return json_encode([
-            'Kind' => 'COPN',
-            'TechLevel' => 1,
-            'inventory' => $inventory,
-        ]);
+        return json_encode($templates);
     }
 
     private function jsonFile(string $filename, string $content): UploadedFile
@@ -441,14 +450,16 @@ class GameGenerationControllerTest extends TestCase
         $game = Game::factory()->create();
         $user = $this->gmUser($game);
 
-        $file = $this->jsonFile('colony.json', $this->makeColonyTemplateJson(itemCount: 3));
+        $file = $this->jsonFile('colony.json', $this->makeColonyTemplateJson(templateCount: 1, itemCount: 3));
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
             ->assertRedirect();
 
-        $this->assertNotNull($game->fresh()->colonyTemplate);
-        $this->assertSame(3, $game->colonyTemplate()->first()->items()->count());
+        $this->assertSame(1, $game->colonyTemplates()->count());
+        $template = $game->colonyTemplates()->first();
+        $this->assertSame(3, $template->items()->count());
+        $this->assertSame(1, $template->population()->count());
     }
 
     #[Test]
@@ -465,7 +476,7 @@ class GameGenerationControllerTest extends TestCase
             ->assertRedirect();
 
         $this->assertModelMissing($existingTemplate);
-        $this->assertSame(1, $game->colonyTemplate()->first()->items()->count());
+        $this->assertSame(1, $game->colonyTemplates()->count());
     }
 
     #[Test]
@@ -487,11 +498,113 @@ class GameGenerationControllerTest extends TestCase
         $game = Game::factory()->create();
         $user = $this->gmUser($game);
 
-        $file = $this->jsonFile('colony.json', json_encode(['Kind' => 1, 'TechLevel' => 1, 'inventory' => []]));
+        $payload = [[
+            'kind' => 'COPN',
+            'tech-level' => 1,
+            'population' => [['population_code' => 'UEM', 'quantity' => 0, 'pay_rate' => 0]],
+            'inventory' => ['operational' => [], 'stored' => []],
+        ]];
+
+        $file = $this->jsonFile('colony.json', json_encode($payload));
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
             ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function upload_colony_template_with_two_templates_stores_both(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $file = $this->jsonFile('colony.json', $this->makeColonyTemplateJson(templateCount: 2, itemCount: 2));
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect();
+
+        $this->assertSame(2, $game->colonyTemplates()->count());
+        $game->colonyTemplates()->each(function ($template) {
+            $this->assertSame(2, $template->items()->count());
+            $this->assertSame(1, $template->population()->count());
+        });
+    }
+
+    #[Test]
+    public function upload_colony_template_parses_unit_codes_correctly(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $payload = [[
+            'kind' => 'COPN',
+            'tech-level' => 1,
+            'population' => [['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.5]],
+            'inventory' => [
+                'operational' => [
+                    ['unit' => 'FCT-1', 'quantity' => 10],
+                    ['unit' => 'STU-2', 'quantity' => 5],
+                ],
+                'stored' => [
+                    ['unit' => 'FUEL', 'quantity' => 100],
+                ],
+            ],
+        ]];
+
+        $file = $this->jsonFile('colony.json', json_encode($payload));
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect();
+
+        $template = $game->colonyTemplates()->first();
+        $this->assertSame(3, $template->items()->count());
+
+        $fct = $template->items()->where('unit', 'FCT')->first();
+        $this->assertNotNull($fct);
+        $this->assertSame(1, $fct->tech_level);
+
+        $stu = $template->items()->where('unit', 'STU')->first();
+        $this->assertNotNull($stu);
+        $this->assertSame(2, $stu->tech_level);
+
+        $fuel = $template->items()->where('unit', 'FUEL')->first();
+        $this->assertNotNull($fuel);
+        $this->assertSame(0, $fuel->tech_level);
+    }
+
+    #[Test]
+    public function upload_colony_template_stores_population_rows(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $payload = [[
+            'kind' => 'COPN',
+            'tech-level' => 1,
+            'population' => [
+                ['population_code' => 'UEM', 'quantity' => 3500000, 'pay_rate' => 0.0],
+                ['population_code' => 'USK', 'quantity' => 500000, 'pay_rate' => 1.5],
+            ],
+            'inventory' => [
+                'operational' => [['unit' => 'FCT-1', 'quantity' => 10]],
+            ],
+        ]];
+
+        $file = $this->jsonFile('colony.json', json_encode($payload));
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect();
+
+        $template = $game->colonyTemplates()->first();
+        $this->assertSame(2, $template->population()->count());
+
+        $uem = $template->population()->where('population_code', 'UEM')->first();
+        $this->assertNotNull($uem);
+        $this->assertSame(3500000, $uem->quantity);
+        $this->assertSame(0.0, $uem->pay_rate);
     }
 
     // -------------------------------------------------------------------------

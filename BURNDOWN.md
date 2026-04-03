@@ -105,7 +105,7 @@ Create `tests/Feature/UploadColonyTemplateValidationTest.php` (or add to existin
 
 ## Task D3 — Refactor `TemplateController::uploadColony()` for multi-template ingestion
 
-**Status:** TODO
+**Status:** DONE
 
 **Why:** The controller currently reads a single-object JSON with flat `inventory` and no `population`. It must be rewritten to: iterate an array of templates, parse `CODE-TL` unit strings, distinguish `operational`/`stored` inventory, and store population rows.
 

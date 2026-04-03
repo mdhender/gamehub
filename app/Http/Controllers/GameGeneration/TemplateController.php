@@ -7,6 +7,7 @@ use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Game;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -58,26 +59,49 @@ class TemplateController extends Controller
             ]);
         }
 
-        $raw = json_decode(file_get_contents($request->file('template')->getRealPath()), true);
-        $data = array_change_key_case($raw, CASE_LOWER);
-        $inventory = $data['inventory'] ?? [];
+        $templatesData = json_decode(file_get_contents($request->file('template')->getRealPath()), true);
 
-        $game->colonyTemplate()->delete();
+        DB::transaction(function () use ($game, $templatesData) {
+            $game->colonyTemplates()->delete();
 
-        $template = $game->colonyTemplate()->create([
-            'kind' => $data['kind'],
-            'tech_level' => $data['techlevel'],
-        ]);
+            foreach ($templatesData as $templateData) {
+                $template = $game->colonyTemplates()->create([
+                    'kind' => $templateData['kind'],
+                    'tech_level' => $templateData['tech-level'],
+                ]);
 
-        foreach ($inventory as $itemData) {
-            $item = array_change_key_case($itemData, CASE_LOWER);
-            $template->items()->create([
-                'unit' => $item['unit'],
-                'tech_level' => $item['techlevel'],
-                'quantity_assembled' => $item['quantityassembled'],
-                'quantity_disassembled' => $item['quantitydisassembled'],
-            ]);
-        }
+                foreach ($templateData['population'] as $popData) {
+                    $template->population()->create([
+                        'population_code' => $popData['population_code'],
+                        'quantity' => $popData['quantity'],
+                        'pay_rate' => $popData['pay_rate'],
+                    ]);
+                }
+
+                $allItems = array_merge(
+                    $templateData['inventory']['operational'] ?? [],
+                    $templateData['inventory']['stored'] ?? [],
+                );
+
+                foreach ($allItems as $itemData) {
+                    $unit = $itemData['unit'];
+                    if (str_contains($unit, '-')) {
+                        [$unitCode, $techLevel] = explode('-', $unit, 2);
+                        $techLevel = (int) $techLevel;
+                    } else {
+                        $unitCode = $unit;
+                        $techLevel = 0;
+                    }
+
+                    $template->items()->create([
+                        'unit' => $unitCode,
+                        'tech_level' => $techLevel,
+                        'quantity_assembled' => $itemData['quantity'],
+                        'quantity_disassembled' => 0,
+                    ]);
+                }
+            }
+        });
 
         return back()->with('success', 'Colony template uploaded.');
     }
