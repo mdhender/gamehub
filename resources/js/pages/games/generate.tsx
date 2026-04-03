@@ -77,7 +77,7 @@ export default function GameGenerate({
 }: {
     game: Game;
     homeSystemTemplate: HomeSystemTemplateSummary | null;
-    colonyTemplate: ColonyTemplateSummary | null;
+    colonyTemplate: ColonyTemplateSummary[] | null;
     generationSteps: GenerationStep[];
     stars: StarsSummary | null;
     planets: PlanetsSummary | null;

@@ -149,19 +149,20 @@ class GameGenerationController extends Controller
         ];
     }
 
+    /** @return list<array{unit_count: int, kind: string, tech_level: int}>|null */
     private function colonyTemplateSummary(Game $game): ?array
     {
-        $template = $game->colonyTemplate?->load('items');
+        $templates = $game->colonyTemplates()->with('items')->get();
 
-        if (! $template) {
+        if ($templates->isEmpty()) {
             return null;
         }
 
-        return [
+        return $templates->map(fn ($template) => [
             'unit_count' => $template->items->count(),
             'kind' => $template->kind,
             'tech_level' => $template->tech_level,
-        ];
+        ])->values()->all();
     }
 
     private function starsSummary(Game $game): ?array

@@ -14,7 +14,7 @@ export default function ColonyTemplateSection({
     colonyTemplate,
 }: {
     game: Game;
-    colonyTemplate: ColonyTemplateSummary | null;
+    colonyTemplate: ColonyTemplateSummary[] | null;
 }) {
     return (
         <section>
@@ -24,22 +24,29 @@ export default function ColonyTemplateSection({
             />
 
             <div className="mt-4 space-y-4">
-                {colonyTemplate ? (
-                    <div className="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">
-                        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-                            <div>
-                                <dt className="text-muted-foreground">Kind</dt>
-                                <dd className="font-medium">{colonyTemplate.kind}</dd>
+                {colonyTemplate && colonyTemplate.length > 0 ? (
+                    <div className="space-y-3">
+                        {colonyTemplate.map((template, index) => (
+                            <div
+                                key={index}
+                                className="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+                            >
+                                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                                    <div>
+                                        <dt className="text-muted-foreground">Kind</dt>
+                                        <dd className="font-medium">{template.kind}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-muted-foreground">Tech level</dt>
+                                        <dd className="font-medium">{template.tech_level}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-muted-foreground">Inventory items</dt>
+                                        <dd className="font-medium">{template.unit_count}</dd>
+                                    </div>
+                                </dl>
                             </div>
-                            <div>
-                                <dt className="text-muted-foreground">Tech level</dt>
-                                <dd className="font-medium">{colonyTemplate.tech_level}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-muted-foreground">Inventory items</dt>
-                                <dd className="font-medium">{colonyTemplate.unit_count}</dd>
-                            </div>
-                        </dl>
+                        ))}
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground">No template uploaded yet.</p>
@@ -56,7 +63,7 @@ export default function ColonyTemplateSection({
                             <>
                                 <div className="grid gap-2">
                                     <Label htmlFor="colony-template-file">
-                                        {colonyTemplate ? 'Replace template' : 'Upload template'}
+                                        {colonyTemplate && colonyTemplate.length > 0 ? 'Replace template' : 'Upload template'}
                                     </Label>
                                     <Input
                                         id="colony-template-file"

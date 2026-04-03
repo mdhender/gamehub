@@ -22,7 +22,7 @@ export type HomeSystemTemplateSummary = {
 
 export type ColonyTemplateSummary = {
     unit_count: number;
-    kind: number;
+    kind: string;
     tech_level: number;
 };
 

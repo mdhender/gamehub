@@ -120,7 +120,9 @@ class GameGenerationControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('homeSystemTemplate.planet_count', 6)
                 ->whereNot('homeSystemTemplate.homeworld_orbit', null)
-                ->where('colonyTemplate.unit_count', 17)
+                ->has('colonyTemplate', 2)
+                ->where('colonyTemplate.0.unit_count', 17)
+                ->where('colonyTemplate.1.unit_count', 1)
             );
     }
 
