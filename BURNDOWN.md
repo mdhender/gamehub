@@ -435,7 +435,7 @@ factory doesn't exist yet.
 
 ### Task C16 — Add `Game::turns()`, `Game::currentTurn()`, and `Game::canGenerateReports()`
 
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** C15
 

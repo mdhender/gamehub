@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\GameRole;
 use App\Enums\GameStatus;
+use App\Enums\TurnStatus;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,6 +50,18 @@ class Game extends Model
     public function colonyTemplate(): HasOne
     {
         return $this->hasOne(ColonyTemplate::class);
+    }
+
+    /** @return HasMany<Turn, $this> */
+    public function turns(): HasMany
+    {
+        return $this->hasMany(Turn::class)->orderBy('number');
+    }
+
+    /** @return HasOne<Turn, $this> */
+    public function currentTurn(): HasOne
+    {
+        return $this->hasOne(Turn::class)->latestOfMany('number');
     }
 
     /** @return HasMany<Star, $this> */
@@ -187,5 +200,16 @@ class Game extends Model
     public function canAssignEmpires(): bool
     {
         return $this->isActive();
+    }
+
+    public function canGenerateReports(): bool
+    {
+        $currentTurn = $this->currentTurn;
+
+        return $this->isActive()
+            && $currentTurn !== null
+            && $currentTurn->reports_locked_at === null
+            && $currentTurn->status !== TurnStatus::Generating
+            && $currentTurn->status !== TurnStatus::Closed;
     }
 }
