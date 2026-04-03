@@ -624,7 +624,7 @@ class TurnFactory extends Factory
 
 ### Task C17b — Create `ColonyPopulationFactory` and `ColonyTemplatePopulationFactory`
 
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** C14a, C14b
 
