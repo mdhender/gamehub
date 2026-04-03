@@ -774,47 +774,47 @@ Group C is complete when all of the following are true:
 
 ### New Models
 
-- [ ] `app/Models/ColonyPopulation.php` exists with `$table = 'colony_population'`, `$timestamps = false`,
+- [x] `app/Models/ColonyPopulation.php` exists with `$table = 'colony_population'`, `$timestamps = false`,
   `population_code` cast to `PopulationClass`, `pay_rate` cast to `float`, `colony()` relationship
-- [ ] `app/Models/ColonyTemplatePopulation.php` exists with `$table = 'colony_template_population'`,
+- [x] `app/Models/ColonyTemplatePopulation.php` exists with `$table = 'colony_template_population'`,
   `$timestamps = false`, `population_code` cast to `PopulationClass`, `pay_rate` cast to `float`,
   `colonyTemplate()` relationship
-- [ ] `app/Models/Turn.php` exists with `status` cast to `TurnStatus`, `reports_locked_at` cast to `datetime`,
+- [x] `app/Models/Turn.php` exists with `status` cast to `TurnStatus`, `reports_locked_at` cast to `datetime`,
   `game()` relationship, timestamps enabled
 
 ### Parent Model Relationships
 
-- [ ] `Colony::population()` returns `HasMany<ColonyPopulation>`
-- [ ] `ColonyTemplate::population()` returns `HasMany<ColonyTemplatePopulation>`
-- [ ] `Game::turns()` returns `HasMany<Turn>` ordered by `number`
-- [ ] `Game::currentTurn()` returns `HasOne<Turn>` using `latestOfMany('number')`
-- [ ] `Game::canGenerateReports()` returns `true` only when game is active, current turn exists, reports not locked,
+- [x] `Colony::population()` returns `HasMany<ColonyPopulation>`
+- [x] `ColonyTemplate::population()` returns `HasMany<ColonyTemplatePopulation>`
+- [x] `Game::turns()` returns `HasMany<Turn>` ordered by `number`
+- [x] `Game::currentTurn()` returns `HasOne<Turn>` using `latestOfMany('number')`
+- [x] `Game::canGenerateReports()` returns `true` only when game is active, current turn exists, reports not locked,
   and turn is not generating
 
 ### New Factories
 
-- [ ] `database/factories/TurnFactory.php` — defaults: `number = 0`, `status = Pending`, `reports_locked_at = null`
-- [ ] `database/factories/ColonyPopulationFactory.php` — uses `PopulationClass` cases, defaults `rebel_quantity = 0`
-- [ ] `database/factories/ColonyTemplatePopulationFactory.php` — uses `PopulationClass` cases, no `rebel_quantity`
+- [x] `database/factories/TurnFactory.php` — defaults: `number = 0`, `status = Pending`, `reports_locked_at = null`
+- [x] `database/factories/ColonyPopulationFactory.php` — uses `PopulationClass` cases, defaults `rebel_quantity = 0`
+- [x] `database/factories/ColonyTemplatePopulationFactory.php` — uses `PopulationClass` cases, no `rebel_quantity`
 
 ### Convention Compliance
 
-- [ ] All new models use `#[Fillable([...])]` attribute
-- [ ] All new models use `HasFactory` with explicit generic PHPDoc
-- [ ] Both population models define explicit `$table` property
-- [ ] Both population models set `$timestamps = false`
-- [ ] `Turn` model does **not** set `$timestamps = false`
-- [ ] Relationship PHPDocs match existing style
-- [ ] All new factories use `fake()->...` not `$this->faker`
-- [ ] All tests are PHPUnit classes, not Pest
+- [x] All new models use `#[Fillable([...])]` attribute
+- [x] All new models use `HasFactory` with explicit generic PHPDoc
+- [x] Both population models define explicit `$table` property
+- [x] Both population models set `$timestamps = false`
+- [x] `Turn` model does **not** set `$timestamps = false`
+- [x] Relationship PHPDocs match existing style
+- [x] All new factories use `fake()->...` not `$this->faker`
+- [x] All tests are PHPUnit classes, not Pest
 
 ### Test Coverage
 
-- [ ] Every Group C task has PHPUnit test coverage
-- [ ] Model tests verify enum casting, raw persisted values, and relationships in both directions
-- [ ] Factory tests verify defaults and enum integration
-- [ ] `canGenerateReports()` tests cover all positive and negative conditions
-- [ ] Pint passes on all changed files
+- [x] Every Group C task has PHPUnit test coverage
+- [x] Model tests verify enum casting, raw persisted values, and relationships in both directions
+- [x] Factory tests verify defaults and enum integration
+- [x] `canGenerateReports()` tests cover all positive and negative conditions
+- [x] Pint passes on all changed files
 
 ### Quality Gate
 
