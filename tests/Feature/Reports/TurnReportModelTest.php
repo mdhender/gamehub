@@ -2,10 +2,16 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Enums\ColonyKind;
+use App\Enums\PopulationClass;
+use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\Turn;
 use App\Models\TurnReport;
+use App\Models\TurnReportColony;
+use App\Models\TurnReportColonyInventory;
+use App\Models\TurnReportColonyPopulation;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
@@ -109,5 +115,89 @@ class TurnReportModelTest extends TestCase
 
         $this->assertSame(2, $report->colonies()->count());
         $this->assertSame(1, $report->surveys()->count());
+    }
+
+    private function makeTurnReportColony(): TurnReportColony
+    {
+        $report = $this->makeTurnReport();
+
+        return TurnReportColony::query()->create([
+            'turn_report_id' => $report->id,
+            'name' => 'Alpha',
+            'kind' => ColonyKind::OpenSurface,
+            'tech_level' => 1,
+            'orbit' => 1,
+            'star_x' => 0,
+            'star_y' => 0,
+            'star_z' => 0,
+            'star_sequence' => 1,
+            'is_on_surface' => true,
+            'rations' => 1.0,
+            'sol' => 0.0,
+            'birth_rate' => 0.0,
+            'death_rate' => 0.0,
+        ]);
+    }
+
+    #[Test]
+    public function test_turn_report_colony_casts_kind_to_colony_kind_enum(): void
+    {
+        $colony = $this->makeTurnReportColony();
+
+        $this->assertInstanceOf(ColonyKind::class, $colony->fresh()->kind);
+    }
+
+    #[Test]
+    public function test_turn_report_colony_inventory_casts_unit_code_to_unit_code_enum(): void
+    {
+        $colony = $this->makeTurnReportColony();
+
+        $inventory = TurnReportColonyInventory::query()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity_assembled' => 10,
+            'quantity_disassembled' => 0,
+        ]);
+
+        $this->assertInstanceOf(UnitCode::class, $inventory->fresh()->unit_code);
+    }
+
+    #[Test]
+    public function test_turn_report_colony_population_casts_population_code_to_population_class_enum(): void
+    {
+        $colony = $this->makeTurnReportColony();
+
+        $population = TurnReportColonyPopulation::query()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Professional,
+            'quantity' => 100,
+            'pay_rate' => 1.0,
+            'rebel_quantity' => 0,
+        ]);
+
+        $this->assertInstanceOf(PopulationClass::class, $population->fresh()->population_code);
+    }
+
+    #[Test]
+    public function test_turn_report_colony_has_many_inventory_and_population(): void
+    {
+        $colony = $this->makeTurnReportColony();
+
+        DB::table('turn_report_colony_inventory')->insert([
+            ['turn_report_colony_id' => $colony->id, 'unit_code' => 'FCT', 'tech_level' => 1, 'quantity_assembled' => 10, 'quantity_disassembled' => 0],
+            ['turn_report_colony_id' => $colony->id, 'unit_code' => 'FRM', 'tech_level' => 1, 'quantity_assembled' => 5, 'quantity_disassembled' => 2],
+        ]);
+
+        DB::table('turn_report_colony_population')->insert([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => 'PRO',
+            'quantity' => 100,
+            'pay_rate' => 1.0,
+            'rebel_quantity' => 0,
+        ]);
+
+        $this->assertSame(2, $colony->inventory()->count());
+        $this->assertSame(1, $colony->population()->count());
     }
 }

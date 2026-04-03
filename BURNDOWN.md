@@ -281,7 +281,7 @@ public function reports(): HasMany
 
 ## Task F6 — Models: `TurnReportColony`, `TurnReportColonyInventory`, `TurnReportColonyPopulation`
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #28 (part 2 of 3)
 
@@ -365,10 +365,10 @@ class TurnReportColonyPopulation extends Model
 - `test_turn_report_colony_has_many_inventory_and_population` — create parent with children, assert counts.
 
 **Acceptance criteria:**
-- [ ] All 3 models exist with exact fillable, casts, and relationships
-- [ ] `$timestamps = false` on all 3
-- [ ] Casts match the live model enum usage (`ColonyKind`, `UnitCode`, `PopulationClass`)
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
+- [x] All 3 models exist with exact fillable, casts, and relationships
+- [x] `$timestamps = false` on all 3
+- [x] Casts match the live model enum usage (`ColonyKind`, `UnitCode`, `PopulationClass`)
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
 
 ---
 
