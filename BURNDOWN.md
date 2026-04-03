@@ -162,9 +162,9 @@ php artisan test --compact tests/Feature/GameGenerationControllerActivateTest.ph
 ```
 
 **Acceptance criteria:**
-- [ ] `EmpireCreatorTest` passes (all 12 tests)
-- [ ] `GameGenerationControllerActivateTest` passes (all 5 tests)
-- [ ] No unnecessary fixture churn was introduced
+- [x] `EmpireCreatorTest` passes (all 12 tests)
+- [x] `GameGenerationControllerActivateTest` passes (all 5 tests)
+- [x] No unnecessary fixture churn was introduced
 
 ---
 
