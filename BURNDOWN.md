@@ -576,7 +576,7 @@ return [
 
 ## Task F10 — Service: `SetupReportGenerator` — atomic status transition and skeleton
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #30 (part 1 of 3)
 
