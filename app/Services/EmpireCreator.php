@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Colony;
 use App\Models\ColonyInventory;
+use App\Models\ColonyPopulation;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\HomeSystem;
@@ -67,7 +68,7 @@ class EmpireCreator
                 'home_system_id' => $homeSystem->id,
             ]);
 
-            $this->createColony($empire, $homeSystem, $game);
+            $this->createColonies($empire, $homeSystem, $game);
 
             return $empire;
         });
@@ -100,33 +101,45 @@ class EmpireCreator
         });
     }
 
-    private function createColony(Empire $empire, HomeSystem $homeSystem, Game $game): Colony
+    private function createColonies(Empire $empire, HomeSystem $homeSystem, Game $game): void
     {
-        $colonyTemplate = $game->colonyTemplate()->with('items')->first();
+        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population'])->orderBy('id')->get();
 
-        if (! $colonyTemplate) {
+        if ($colonyTemplates->isEmpty()) {
             throw new \RuntimeException('This game does not have a colony template.');
         }
 
-        $colony = Colony::create([
-            'empire_id' => $empire->id,
-            'planet_id' => $homeSystem->homeworld_planet_id,
-            'kind' => $colonyTemplate->kind,
-            'tech_level' => $colonyTemplate->tech_level,
-        ]);
+        foreach ($colonyTemplates as $colonyTemplate) {
+            $colony = Colony::create([
+                'empire_id' => $empire->id,
+                'planet_id' => $homeSystem->homeworld_planet_id,
+                'kind' => $colonyTemplate->kind,
+                'tech_level' => $colonyTemplate->tech_level,
+            ]);
 
-        if ($colonyTemplate->items->isNotEmpty()) {
-            ColonyInventory::insert(
-                $colonyTemplate->items->map(fn ($item) => [
-                    'colony_id' => $colony->id,
-                    'unit' => $item->unit,
-                    'tech_level' => $item->tech_level,
-                    'quantity_assembled' => $item->quantity_assembled,
-                    'quantity_disassembled' => $item->quantity_disassembled,
-                ])->all()
-            );
+            if ($colonyTemplate->items->isNotEmpty()) {
+                ColonyInventory::insert(
+                    $colonyTemplate->items->map(fn ($item) => [
+                        'colony_id' => $colony->id,
+                        'unit' => $item->unit->value,
+                        'tech_level' => $item->tech_level,
+                        'quantity_assembled' => $item->quantity_assembled,
+                        'quantity_disassembled' => $item->quantity_disassembled,
+                    ])->all()
+                );
+            }
+
+            if ($colonyTemplate->population->isNotEmpty()) {
+                ColonyPopulation::insert(
+                    $colonyTemplate->population->map(fn ($pop) => [
+                        'colony_id' => $colony->id,
+                        'population_code' => $pop->population_code->value,
+                        'quantity' => $pop->quantity,
+                        'pay_rate' => $pop->pay_rate,
+                        'rebel_quantity' => 0,
+                    ])->all()
+                );
+            }
         }
-
-        return $colony;
     }
 }

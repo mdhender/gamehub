@@ -20,7 +20,7 @@ Group E extends the setup-time business logic with two changes:
 
 ## Task E1 — Extend `EmpireCreator` for multi-template colony creation and starting population
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Why:** `EmpireCreator` currently reads only the first colony template via `$game->colonyTemplate()` (HasOne) and creates a single colony with inventory. It never populates `colony_population`. Group D made colony templates multi-row (`colonyTemplates()` HasMany), so empire creation must now create one colony per template and copy both inventory and population from each.
 
