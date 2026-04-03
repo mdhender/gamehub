@@ -557,40 +557,40 @@ Group B is complete when all of the following are true:
 
 ### Models
 
-- [ ] `app/Models/Colony.php` casts `kind` to `ColonyKind`
-- [ ] `Colony` `#[Fillable]` includes: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
-- [ ] `Colony` casts: `is_on_surface` → `boolean`, `rations` → `float`, `sol` → `float`, `birth_rate` → `float`,
+- [x] `app/Models/Colony.php` casts `kind` to `ColonyKind`
+- [x] `Colony` `#[Fillable]` includes: `name`, `is_on_surface`, `rations`, `sol`, `birth_rate`, `death_rate`
+- [x] `Colony` casts: `is_on_surface` → `boolean`, `rations` → `float`, `sol` → `float`, `birth_rate` → `float`,
   `death_rate` → `float`
-- [ ] `app/Models/ColonyInventory.php` casts `unit` to `UnitCode`
-- [ ] `app/Models/ColonyTemplate.php` casts `kind` to `ColonyKind`
-- [ ] `app/Models/ColonyTemplateItem.php` casts `unit` to `UnitCode`
+- [x] `app/Models/ColonyInventory.php` casts `unit` to `UnitCode`
+- [x] `app/Models/ColonyTemplate.php` casts `kind` to `ColonyKind`
+- [x] `app/Models/ColonyTemplateItem.php` casts `unit` to `UnitCode`
 
 ### Factories
 
-- [ ] `database/factories/ColonyFactory.php` uses `ColonyKind`, not integers
-- [ ] `ColonyFactory` includes valid defaults for the six new colony columns
-- [ ] `database/factories/ColonyTemplateFactory.php` uses `ColonyKind`, not integers
-- [ ] `database/factories/ColonyInventoryFactory.php` uses `UnitCode` values, not integers
-- [ ] `database/factories/ColonyTemplateItemFactory.php` uses `UnitCode` values, not integers
+- [x] `database/factories/ColonyFactory.php` uses `ColonyKind`, not integers
+- [x] `ColonyFactory` includes valid defaults for the six new colony columns
+- [x] `database/factories/ColonyTemplateFactory.php` uses `ColonyKind`, not integers
+- [x] `database/factories/ColonyInventoryFactory.php` uses `UnitCode` values, not integers
+- [x] `database/factories/ColonyTemplateItemFactory.php` uses `UnitCode` values, not integers
 
 ### Schema Compatibility
 
-- [ ] All new tests assert **string-backed enum values in the database**
-- [ ] No Group B code assumes the old integer `kind` / `unit` schema
-- [ ] No Group B task introduces references to missing `ColonyPopulation` / `ColonyTemplatePopulation` model classes
+- [x] All new tests assert **string-backed enum values in the database**
+- [x] No Group B code assumes the old integer `kind` / `unit` schema
+- [x] No Group B task introduces references to missing `ColonyPopulation` / `ColonyTemplatePopulation` model classes
 
 ### Explicit Deferrals
 
-- [ ] `Colony::population()` is deferred to Group C task 14
-- [ ] `ColonyTemplate::population()` is deferred to Group C task 14
-- [ ] `Game::colonyTemplates()` is tracked as a separate existing-model gap task for Group D/E
+- [x] `Colony::population()` is deferred to Group C task 14
+- [x] `ColonyTemplate::population()` is deferred to Group C task 14
+- [x] `Game::colonyTemplates()` is tracked as a separate existing-model gap task for Group D/E
 
 ### Test Coverage
 
-- [ ] Every Group B task has its own PHPUnit feature test file
-- [ ] Model tests verify enum casting and raw persisted values
-- [ ] Factory tests verify defaults are valid against the migrated schema
-- [ ] Pint passes on all changed files
+- [x] Every Group B task has its own PHPUnit feature test file
+- [x] Model tests verify enum casting and raw persisted values
+- [x] Factory tests verify defaults are valid against the migrated schema
+- [x] Pint passes on all changed files
 
 ### Quality Gate
 
