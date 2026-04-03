@@ -332,7 +332,7 @@ Tests:
 
 ## Task G4 — Controller action: `show` with Blade view
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Design tasks:** #31, #33
 
@@ -427,14 +427,14 @@ Tests:
 - `test_show_renders_snapshot_data` — create a `TurnReport` with colony, inventory, population, survey, and deposit snapshots via factories. Assert the response body contains key values from the snapshots (colony name, unit code value, population code value, deposit resource).
 
 **Acceptance criteria:**
-- [ ] Route `games.turns.reports.show` exists as `GET /games/{game}/turns/{turn}/reports/empires/{empire}`
-- [ ] Controller returns `404` if the empire does not belong to the game
-- [ ] Controller authorizes via `TurnReportPolicy::show` (GM any empire, player own only)
-- [ ] Report is loaded from snapshot tables by `(game_id, turn_id, empire_id)`
-- [ ] Missing reports return `404`
-- [ ] Browser response renders a readable text-style report in Blade
-- [ ] Report content comes from snapshot rows, not live gameplay tables
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportControllerShowTest`
+- [x] Route `games.turns.reports.show` exists as `GET /games/{game}/turns/{turn}/reports/empires/{empire}`
+- [x] Controller returns `404` if the empire does not belong to the game
+- [x] Controller authorizes via `TurnReportPolicy::show` (GM any empire, player own only)
+- [x] Report is loaded from snapshot tables by `(game_id, turn_id, empire_id)`
+- [x] Missing reports return `404`
+- [x] Browser response renders a readable text-style report in Blade
+- [x] Report content comes from snapshot rows, not live gameplay tables
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportControllerShowTest`
 
 ---
 

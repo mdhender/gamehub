@@ -29,7 +29,8 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
         ->group(function () {
             Route::post('generate', [TurnReportController::class, 'generate'])->name('generate');
             Route::post('lock', [TurnReportController::class, 'lock'])->name('lock');
-            // show, download routes added in subsequent tasks
+            Route::get('empires/{empire}', [TurnReportController::class, 'show'])->name('show')->withoutScopedBindings();
+            // download route added in subsequent task
         });
 
     Route::prefix('{game}/generate')->name('generate.')->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TurnStatus;
+use App\Models\Empire;
 use App\Models\Game;
 use App\Models\Turn;
 use App\Models\TurnReport;
@@ -10,6 +11,7 @@ use App\Services\SetupReportGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class TurnReportController extends Controller
 {
@@ -71,5 +73,37 @@ class TurnReportController extends Controller
         }
 
         return back()->with('success', 'Turn reports locked.');
+    }
+
+    public function show(Game $game, Turn $turn, Empire $empire): View
+    {
+        abort_unless($empire->game_id === $game->id, 404);
+
+        Gate::authorize('show', [TurnReport::class, $game, $empire]);
+
+        $report = $this->loadReport($game, $turn, $empire);
+
+        return view('turn-reports.show', [
+            'game' => $game,
+            'turn' => $turn,
+            'empire' => $empire,
+            'report' => $report,
+        ]);
+    }
+
+    private function loadReport(Game $game, Turn $turn, Empire $empire): TurnReport
+    {
+        return TurnReport::query()
+            ->where('game_id', $game->id)
+            ->where('turn_id', $turn->id)
+            ->where('empire_id', $empire->id)
+            ->with([
+                'colonies' => fn ($q) => $q->orderBy('id'),
+                'colonies.inventory' => fn ($q) => $q->orderBy('id'),
+                'colonies.population' => fn ($q) => $q->orderBy('id'),
+                'surveys' => fn ($q) => $q->orderBy('id'),
+                'surveys.deposits' => fn ($q) => $q->orderBy('deposit_no'),
+            ])
+            ->firstOrFail();
     }
 }
