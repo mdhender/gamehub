@@ -217,7 +217,7 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 
 ## Task F5 — Model: `TurnReport`
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #28 (part 1 of 3)
 
@@ -272,10 +272,10 @@ public function reports(): HasMany
 - Model tests for this task can create records directly via DB insert or wait for the factory in Task F8. Either approach is acceptable — if waiting, mark the tests as part of Task F8's scope.
 
 **Acceptance criteria:**
-- [ ] `TurnReport` model exists with exact fillable, casts, and relationships
-- [ ] `Turn::reports()` HasMany relationship exists
-- [ ] `$timestamps = false`
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
+- [x] `TurnReport` model exists with exact fillable, casts, and relationships
+- [x] `Turn::reports()` HasMany relationship exists
+- [x] `$timestamps = false`
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
 
 ---
 
