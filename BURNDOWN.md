@@ -577,10 +577,10 @@ vendor/bin/pint --dirty --format agent
 5. Confirm another player's report is not accessible (403)
 
 **Acceptance criteria:**
-- [ ] All targeted PHPUnit suites pass
-- [ ] TypeScript compiles without errors
-- [ ] ESLint passes
-- [ ] Pint reports no formatting issues
+- [x] All targeted PHPUnit suites pass
+- [x] TypeScript compiles without errors
+- [x] ESLint passes
+- [x] Pint reports no formatting issues
 - [ ] GM end-to-end report workflow verified
 - [ ] Player self-service report access verified
 
