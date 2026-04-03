@@ -9,6 +9,7 @@ use App\Http\Controllers\GameGeneration\StarController;
 use App\Http\Controllers\GameGeneration\TemplateController;
 use App\Http\Controllers\GameGenerationController;
 use App\Http\Controllers\GameMemberController;
+use App\Http\Controllers\TurnReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(function () {
@@ -22,6 +23,13 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
     Route::post('{game}/members/{user}/restore', [GameMemberController::class, 'restore'])->name('members.restore');
     Route::post('{game}/members/{user}/promote', [GameMemberController::class, 'promote'])->name('members.promote');
     Route::delete('{game}/members/{user}/remove', [GameMemberController::class, 'remove'])->name('members.remove');
+
+    Route::prefix('{game}/turns/{turn}/reports')->name('turns.reports.')
+        ->scopeBindings()
+        ->group(function () {
+            Route::post('generate', [TurnReportController::class, 'generate'])->name('generate');
+            // lock, show, download routes added in subsequent tasks
+        });
 
     Route::prefix('{game}/generate')->name('generate.')->group(function () {
         Route::get('/', [GameGenerationController::class, 'show'])->name('show');

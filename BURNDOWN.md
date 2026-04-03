@@ -115,7 +115,7 @@ Tests:
 
 ## Task G2 — Routes and controller action: `generate`
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Design tasks:** #31, #33
 
@@ -222,15 +222,15 @@ Tests:
 - `test_generate_surfaces_generator_runtime_errors_as_validation_errors` — mock or set turn status to `Generating` so the service throws `RuntimeException`. Assert session error on `turn`.
 
 **Acceptance criteria:**
-- [ ] Route `games.turns.reports.generate` exists as `POST /games/{game}/turns/{turn}/reports/generate`
-- [ ] Route uses scoped bindings so `{turn}` is scoped to `{game}`
-- [ ] Controller uses `Gate::authorize()` with `TurnReportPolicy::generate`
-- [ ] Rejects inactive games with validation error
-- [ ] Rejects non-zero turns with validation error
-- [ ] Calls `SetupReportGenerator::generate($turn)` on valid input
-- [ ] Service `RuntimeException` is converted to validation error, not 500
-- [ ] Success redirect includes the generated empire count in flash
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportControllerGenerateTest`
+- [x] Route `games.turns.reports.generate` exists as `POST /games/{game}/turns/{turn}/reports/generate`
+- [x] Route uses scoped bindings so `{turn}` is scoped to `{game}`
+- [x] Controller uses `Gate::authorize()` with `TurnReportPolicy::generate`
+- [x] Rejects inactive games with validation error
+- [x] Rejects non-zero turns with validation error
+- [x] Calls `SetupReportGenerator::generate($turn)` on valid input
+- [x] Service `RuntimeException` is converted to validation error, not 500
+- [x] Success redirect includes the generated empire count in flash
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportControllerGenerateTest`
 
 ---
 
