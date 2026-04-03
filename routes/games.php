@@ -28,7 +28,8 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
         ->scopeBindings()
         ->group(function () {
             Route::post('generate', [TurnReportController::class, 'generate'])->name('generate');
-            // lock, show, download routes added in subsequent tasks
+            Route::post('lock', [TurnReportController::class, 'lock'])->name('lock');
+            // show, download routes added in subsequent tasks
         });
 
     Route::prefix('{game}/generate')->name('generate.')->group(function () {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TurnStatus;
 use App\Models\Game;
 use App\Models\Turn;
 use App\Models\TurnReport;
@@ -37,5 +38,38 @@ class TurnReportController extends Controller
         }
 
         return back()->with('success', "Generated {$count} setup report(s).");
+    }
+
+    public function lock(Game $game, Turn $turn): RedirectResponse
+    {
+        Gate::authorize('lock', [TurnReport::class, $game]);
+
+        if (! $game->isActive()) {
+            throw ValidationException::withMessages([
+                'game' => 'The game must be active to lock reports.',
+            ]);
+        }
+
+        if ($turn->number !== 0) {
+            throw ValidationException::withMessages([
+                'turn' => 'Only Turn 0 can be locked in this version.',
+            ]);
+        }
+
+        $updated = Turn::where('id', $turn->id)
+            ->whereNull('reports_locked_at')
+            ->whereNotIn('status', [TurnStatus::Closed, TurnStatus::Generating])
+            ->update([
+                'reports_locked_at' => now(),
+                'status' => TurnStatus::Closed,
+            ]);
+
+        if ($updated === 0) {
+            throw ValidationException::withMessages([
+                'turn' => 'Turn cannot be locked (already locked, closed, or currently generating).',
+            ]);
+        }
+
+        return back()->with('success', 'Turn reports locked.');
     }
 }

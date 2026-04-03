@@ -236,7 +236,7 @@ Tests:
 
 ## Task G3 — Controller action: `lock`
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Design tasks:** #31, #33
 
@@ -317,16 +317,16 @@ Tests:
 - `test_lock_disables_future_report_generation` — after lock, assert `$game->fresh()->canGenerateReports()` is `false`.
 
 **Acceptance criteria:**
-- [ ] Route `games.turns.reports.lock` exists as `POST /games/{game}/turns/{turn}/reports/lock`
-- [ ] Controller uses `Gate::authorize()` with `TurnReportPolicy::lock`
-- [ ] Lock sets `reports_locked_at` to a non-null datetime and `status` to `closed`
-- [ ] Rejects inactive games with validation error
-- [ ] Rejects non-zero turns with validation error
-- [ ] Rejects already locked, closed, or generating turns with validation error
-- [ ] Uses atomic guarded update (not load-then-check)
-- [ ] `Game::canGenerateReports()` returns `false` after successful lock
-- [ ] Success redirect includes flash message
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportControllerLockTest`
+- [x] Route `games.turns.reports.lock` exists as `POST /games/{game}/turns/{turn}/reports/lock`
+- [x] Controller uses `Gate::authorize()` with `TurnReportPolicy::lock`
+- [x] Lock sets `reports_locked_at` to a non-null datetime and `status` to `closed`
+- [x] Rejects inactive games with validation error
+- [x] Rejects non-zero turns with validation error
+- [x] Rejects already locked, closed, or generating turns with validation error
+- [x] Uses atomic guarded update (not load-then-check)
+- [x] `Game::canGenerateReports()` returns `false` after successful lock
+- [x] Success redirect includes flash message
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportControllerLockTest`
 
 ---
 
