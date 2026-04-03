@@ -848,7 +848,7 @@ For each empire:
 
 ## Task F13 — Formatting and full test suite verification
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Steps:**
 
