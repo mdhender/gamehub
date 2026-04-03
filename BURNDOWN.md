@@ -526,7 +526,7 @@ return [
 
 ## Task F9 — Factories: survey report factories
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #29 (part 2 of 2)
 
@@ -568,9 +568,9 @@ return [
 - `test_turn_report_survey_deposit_factory_creates_with_deposit_resource_enum` — create, assert `resource` is `DepositResource` instance.
 
 **Acceptance criteria:**
-- [ ] Both factories exist and follow existing conventions
-- [ ] Enum casts hydrate correctly
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportFactoryTest`
+- [x] Both factories exist and follow existing conventions
+- [x] Enum casts hydrate correctly
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportFactoryTest`
 
 ---
 
