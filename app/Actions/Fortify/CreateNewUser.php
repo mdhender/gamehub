@@ -22,6 +22,8 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $input['handle'] = mb_strtolower($input['handle'] ?? '');
+
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
@@ -45,6 +47,7 @@ class CreateNewUser implements CreatesNewUsers
         return DB::transaction(function () use ($input, $invitation): User {
             $user = User::create([
                 'name' => $input['name'],
+                'handle' => $input['handle'],
                 'email' => $input['email'],
                 'password' => $input['password'],
             ]);

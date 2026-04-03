@@ -20,6 +20,9 @@ export default function AdminUsers({ users }: { users: User[] }) {
                                     Name
                                 </th>
                                 <th className="px-4 py-3 text-left font-medium">
+                                    Handle
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
                                     Email
                                 </th>
                                 <th className="px-4 py-3 text-left font-medium">
@@ -40,6 +43,9 @@ export default function AdminUsers({ users }: { users: User[] }) {
                                         >
                                             {user.name}
                                         </Link>
+                                    </td>
+                                    <td className="px-4 py-3 text-muted-foreground">
+                                        {user.handle}
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {user.email}

@@ -18,6 +18,7 @@ class AdminSeeder extends Seeder
 
         User::factory()->admin()->create([
             'name' => 'Penny Guin',
+            'handle' => 'penguin',
             'email' => 'penguin@gamehub.test',
             'password' => 'happy.cat.happy.nap',
         ]);

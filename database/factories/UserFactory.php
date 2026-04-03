@@ -26,6 +26,7 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'handle' => fake()->unique()->regexify('[a-z][a-z0-9_-]{3,15}'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'is_admin' => false,

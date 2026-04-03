@@ -61,6 +61,24 @@ export default function Profile({
                             </div>
 
                             <div className="grid gap-2">
+                                <Label htmlFor="handle">Handle</Label>
+
+                                <Input
+                                    id="handle"
+                                    className="mt-1 block w-full"
+                                    defaultValue={auth.user.handle}
+                                    name="handle"
+                                    required
+                                    placeholder="Handle"
+                                />
+
+                                <InputError
+                                    className="mt-2"
+                                    message={errors.handle}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
 
                                 <Input

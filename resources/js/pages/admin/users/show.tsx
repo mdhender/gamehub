@@ -48,6 +48,15 @@ export default function UserShow({ user }: { user: User }) {
 
                         <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
                             <dt className="text-sm font-medium text-muted-foreground">
+                                Handle
+                            </dt>
+                            <dd className="mt-1 text-sm sm:col-span-2 sm:mt-0">
+                                {user.handle}
+                            </dd>
+                        </div>
+
+                        <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt className="text-sm font-medium text-muted-foreground">
                                 Email
                             </dt>
                             <dd className="mt-1 text-sm sm:col-span-2 sm:mt-0">

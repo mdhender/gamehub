@@ -59,6 +59,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
+            'handle' => 'testuser',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -76,6 +77,7 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
+            'handle' => 'testuser',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -89,6 +91,7 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
+            'handle' => 'testuser',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -107,6 +110,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
+            'handle' => 'testuser',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -125,6 +129,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
+            'handle' => 'testuser',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -143,6 +148,7 @@ class RegistrationTest extends TestCase
 
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
+            'handle' => 'testuser',
             'email' => 'different@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
