@@ -169,7 +169,7 @@ php artisan test --compact --filter=create_creates_one_colony_per_template_on_ho
 
 ## Task E3 — Extend `GameGenerationController::activate()` to create Turn 0
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Why:** `activate()` currently marks the game as `Active` but creates no Turn. The setup report flow requires `Game::canGenerateReports()` to return `true`, which needs an active game **and** a current turn with non-locked, non-generating status.
 

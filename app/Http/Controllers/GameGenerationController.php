@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\GameStatus;
+use App\Enums\TurnStatus;
 use App\Models\Game;
 use App\Models\HomeSystem;
 use Illuminate\Http\RedirectResponse;
@@ -103,6 +104,11 @@ class GameGenerationController extends Controller
 
             $game->status = GameStatus::Active;
             $game->save();
+
+            $game->turns()->create([
+                'number' => 0,
+                'status' => TurnStatus::Pending,
+            ]);
         });
 
         return back()->with('success', 'Game activated.');
