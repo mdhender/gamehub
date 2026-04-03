@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ColonyKind;
 use App\Models\ColonyTemplate;
 use App\Models\Game;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,7 +21,7 @@ class ColonyTemplateFactory extends Factory
     {
         return [
             'game_id' => Game::factory(),
-            'kind' => fake()->numberBetween(1, 10),
+            'kind' => ColonyKind::OpenSurface,
             'tech_level' => fake()->numberBetween(1, 5),
         ];
     }

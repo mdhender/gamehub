@@ -399,7 +399,7 @@ php artisan test --compact tests/Feature/Database/Factories/ColonyFactoryTest.ph
 ---
 
 ### Task B11a — Update `ColonyTemplateFactory` *(gap fix — omitted from SETUP_REPORT)*
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** B9
 
