@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreGameRequest;
 use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
+use App\Models\TurnReport;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class GameController extends Controller
         ]);
     }
 
-    public function show(Game $game): Response
+    public function show(Game $game, Request $request): Response
     {
         Gate::authorize('view', $game);
 
@@ -65,6 +66,7 @@ class GameController extends Controller
                     ->orderBy('name')
                     ->get(['id', 'name', 'email'])
                 : [],
+            'setupReport' => $this->setupReportPayload($game, $request->user()),
         ]);
     }
 
@@ -96,5 +98,42 @@ class GameController extends Controller
         $game->delete();
 
         return back()->with('success', 'Game deleted.');
+    }
+
+    private function setupReportPayload(Game $game, User $user): ?array
+    {
+        $player = $game->playerRecords()
+            ->where('user_id', $user->id)
+            ->where('role', 'player')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $player) {
+            return null;
+        }
+
+        $empire = $player->empire;
+
+        if (! $empire) {
+            return null;
+        }
+
+        $currentTurn = $game->currentTurn;
+
+        if (! $currentTurn) {
+            return null;
+        }
+
+        $hasReport = TurnReport::where('turn_id', $currentTurn->id)
+            ->where('empire_id', $empire->id)
+            ->exists();
+
+        return [
+            'turn_id' => $currentTurn->id,
+            'turn_number' => $currentTurn->number,
+            'empire_id' => $empire->id,
+            'empire_name' => $empire->name,
+            'available' => $hasReport,
+        ];
     }
 }

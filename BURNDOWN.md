@@ -510,13 +510,13 @@ bun run build
 ```
 
 **Acceptance criteria:**
-- [ ] `GameController::show()` returns a `setupReport` prop
-- [ ] Prop is `null` for GMs/admins without their own empire, and for players without empires
-- [ ] Prop has `available: true` when a turn report exists for the player's empire
-- [ ] `games/show.tsx` renders a setup report card when `setupReport` is present
-- [ ] Links use plain anchors to Blade report view and JSON download
-- [ ] Focused prop tests pass
-- [ ] TypeScript compiles without errors
+- [x] `GameController::show()` returns a `setupReport` prop
+- [x] Prop is `null` for GMs/admins without their own empire, and for players without empires
+- [x] Prop has `available: true` when a turn report exists for the player's empire
+- [x] `games/show.tsx` renders a setup report card when `setupReport` is present
+- [x] Links use plain anchors to Blade report view and JSON download
+- [x] Focused prop tests pass
+- [x] TypeScript compiles without errors
 
 ---
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import GameController from '@/actions/App/Http/Controllers/GameController';
 import GameGenerationController from '@/actions/App/Http/Controllers/GameGenerationController';
 import GameMemberController from '@/actions/App/Http/Controllers/GameMemberController';
+import TurnReportController from '@/actions/App/Http/Controllers/TurnReportController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,14 @@ type AvailableUser = {
     email: string;
 };
 
+type SetupReport = {
+    turn_id: number;
+    turn_number: number;
+    empire_id: number;
+    empire_name: string;
+    available: boolean;
+};
+
 type Tab = 'members';
 
 export default function GameShow({
@@ -56,11 +65,13 @@ export default function GameShow({
     members,
     inactiveMembers,
     availableUsers,
+    setupReport,
 }: {
     game: Game;
     members: Member[];
     inactiveMembers: Member[];
     availableUsers: AvailableUser[];
+    setupReport: SetupReport | null;
 }) {
     const { auth } = usePage().props;
     const isAdmin = auth.user?.is_admin;
@@ -439,6 +450,51 @@ export default function GameShow({
 
                     {/* Generate tab — navigates away; content lives on the generate page */}
                 </div>
+
+                {/* Setup Report */}
+                {setupReport && (
+                    <section>
+                        <Heading title="Setup Report" description="" />
+
+                        <div className="mt-4 max-w-md space-y-3">
+                            <p className="text-sm text-muted-foreground">
+                                Turn {setupReport.turn_number} — {setupReport.empire_name}
+                            </p>
+
+                            {!setupReport.available ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Setup report has not been generated yet.
+                                </p>
+                            ) : (
+                                <div className="flex items-center gap-3">
+                                    <a
+                                        href={TurnReportController.show.url({
+                                            game,
+                                            turn: setupReport.turn_id,
+                                            empire: setupReport.empire_id,
+                                        })}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90"
+                                    >
+                                        View setup report
+                                    </a>
+                                    <a
+                                        href={TurnReportController.download.url({
+                                            game,
+                                            turn: setupReport.turn_id,
+                                            empire: setupReport.empire_id,
+                                        })}
+                                        download
+                                        className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                        Download JSON
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
             </div>
 
             <Dialog
