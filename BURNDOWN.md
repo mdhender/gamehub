@@ -435,14 +435,14 @@ bun run build
 6. Confirm buttons disable after lock
 
 **Acceptance criteria:**
-- [ ] `TurnReportsSection.tsx` exists and follows existing section component patterns
-- [ ] `generate.tsx` renders the new section after `EmpiresSection`
-- [ ] Generate Reports button posts to correct Wayfinder route with error display
-- [ ] Lock Reports button posts to correct Wayfinder route with destructive styling
-- [ ] Empire table shows report status and links for empires with reports
-- [ ] Report links use plain `<a>` tags (not `<Link>`) since targets are non-Inertia
-- [ ] TypeScript compiles without errors
-- [ ] ESLint passes
+- [x] `TurnReportsSection.tsx` exists and follows existing section component patterns
+- [x] `generate.tsx` renders the new section after `EmpiresSection`
+- [x] Generate Reports button posts to correct Wayfinder route with error display
+- [x] Lock Reports button posts to correct Wayfinder route with destructive styling
+- [x] Empire table shows report status and links for empires with reports
+- [x] Report links use plain `<a>` tags (not `<Link>`) since targets are non-Inertia
+- [x] TypeScript compiles without errors
+- [x] ESLint passes
 
 ---
 

@@ -19,6 +19,7 @@ import ColonyTemplateSection from './generate/ColonyTemplateSection';
 import DepositsSection from './generate/DepositsSection';
 import EmpiresSection from './generate/EmpiresSection';
 import HomeSystemsSection from './generate/HomeSystemsSection';
+import TurnReportsSection from './generate/TurnReportsSection';
 import HomeSystemTemplateSection from './generate/HomeSystemTemplateSection';
 import PlanetsSection from './generate/PlanetsSection';
 import PrngSeedSection from './generate/PrngSeedSection';
@@ -35,6 +36,7 @@ import {
     MemberItem,
     PlanetItem,
     PlanetsSummary,
+    ReportTurn,
     StarItem,
     StarsSummary,
 } from './generate/types';
@@ -74,6 +76,7 @@ export default function GameGenerate({
     homeSystems,
     availableStars,
     members,
+    reportTurn,
 }: {
     game: Game;
     homeSystemTemplate: HomeSystemTemplateSummary | null;
@@ -87,6 +90,7 @@ export default function GameGenerate({
     homeSystems: HomeSystemItem[];
     availableStars: AvailableStar[] | null;
     members: MemberItem[];
+    reportTurn: ReportTurn | null;
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -178,6 +182,8 @@ export default function GameGenerate({
                 />
 
                 <EmpiresSection game={game} members={members} homeSystems={homeSystems} />
+
+                <TurnReportsSection game={game} reportTurn={reportTurn} members={members} />
             </div>
 
             {/* Delete step confirmation dialog — shared across Stars, Planets, Deposits, and Home Systems sections */}
