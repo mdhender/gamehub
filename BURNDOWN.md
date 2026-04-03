@@ -50,9 +50,11 @@ php artisan test --compact tests/Feature/Models/ColonyTemplateItemModelTest.php
 ```
 
 **Acceptance criteria:**
-- [ ] All listed suites have been executed
-- [ ] A failure/staleness list exists with each failure mapped to H.2, H.3, or H.4
-- [ ] No production code is changed in this task
+- [x] All listed suites have been executed
+- [x] A failure/staleness list exists with each failure mapped to H.2, H.3, or H.4
+- [x] No production code is changed in this task
+
+**Audit result (2026-04-03):** All 13 suites pass — 137 tests, 468 assertions, zero failures. All suites are category (c) already aligned. No regressions from Groups A–E schema changes. H.2, H.3, H.4 may require no fixes.
 
 ---
 
