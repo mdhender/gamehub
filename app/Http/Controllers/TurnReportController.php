@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class TurnReportController extends Controller
 {
@@ -88,6 +89,88 @@ class TurnReportController extends Controller
             'turn' => $turn,
             'empire' => $empire,
             'report' => $report,
+        ]);
+    }
+
+    public function download(Game $game, Turn $turn, Empire $empire): Response
+    {
+        abort_unless($empire->game_id === $game->id, 404);
+
+        Gate::authorize('download', [TurnReport::class, $game, $empire]);
+
+        $report = $this->loadReport($game, $turn, $empire);
+
+        $data = [
+            'game' => [
+                'id' => $game->id,
+                'name' => $game->name,
+            ],
+            'turn' => [
+                'id' => $turn->id,
+                'number' => $turn->number,
+                'status' => $turn->status->value,
+                'reports_locked_at' => $turn->reports_locked_at?->toIso8601String(),
+            ],
+            'empire' => [
+                'id' => $empire->id,
+                'name' => $empire->name,
+            ],
+            'generated_at' => $report->generated_at->toIso8601String(),
+            'colonies' => $report->colonies->map(fn ($colony) => [
+                'id' => $colony->id,
+                'source_colony_id' => $colony->source_colony_id,
+                'name' => $colony->name,
+                'kind' => $colony->kind->value,
+                'tech_level' => $colony->tech_level,
+                'planet_id' => $colony->planet_id,
+                'orbit' => $colony->orbit,
+                'star_x' => $colony->star_x,
+                'star_y' => $colony->star_y,
+                'star_z' => $colony->star_z,
+                'star_sequence' => $colony->star_sequence,
+                'is_on_surface' => $colony->is_on_surface,
+                'rations' => $colony->rations,
+                'sol' => $colony->sol,
+                'birth_rate' => $colony->birth_rate,
+                'death_rate' => $colony->death_rate,
+                'inventory' => $colony->inventory->map(fn ($item) => [
+                    'unit_code' => $item->unit_code->value,
+                    'tech_level' => $item->tech_level,
+                    'quantity_assembled' => $item->quantity_assembled,
+                    'quantity_disassembled' => $item->quantity_disassembled,
+                ])->values(),
+                'population' => $colony->population->map(fn ($pop) => [
+                    'population_code' => $pop->population_code->value,
+                    'quantity' => $pop->quantity,
+                    'pay_rate' => $pop->pay_rate,
+                    'rebel_quantity' => $pop->rebel_quantity,
+                ])->values(),
+            ])->values(),
+            'surveys' => $report->surveys->map(fn ($survey) => [
+                'id' => $survey->id,
+                'planet_id' => $survey->planet_id,
+                'orbit' => $survey->orbit,
+                'star_x' => $survey->star_x,
+                'star_y' => $survey->star_y,
+                'star_z' => $survey->star_z,
+                'star_sequence' => $survey->star_sequence,
+                'planet_type' => $survey->planet_type->value,
+                'habitability' => $survey->habitability,
+                'deposits' => $survey->deposits->map(fn ($dep) => [
+                    'deposit_no' => $dep->deposit_no,
+                    'resource' => $dep->resource->value,
+                    'yield_pct' => $dep->yield_pct,
+                    'quantity_remaining' => $dep->quantity_remaining,
+                ])->values(),
+            ])->values(),
+        ];
+
+        $filename = "report-{$game->id}-turn-{$turn->number}-empire-{$empire->id}.json";
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        return response($json, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 

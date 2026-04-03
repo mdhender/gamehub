@@ -440,7 +440,7 @@ Tests:
 
 ## Task G5 — Controller action: `download`
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Design tasks:** #31, #33
 
@@ -569,14 +569,14 @@ Tests:
 - `test_download_payload_contains_snapshot_data` — create a full report with colony, inventory, population, survey, and deposits via factories. Decode JSON response. Assert `colonies` array is not empty. Assert first colony has `name`, `kind`, nested `inventory`, and nested `population`. Assert `surveys` array is not empty. Assert first survey has `deposits` array.
 
 **Acceptance criteria:**
-- [ ] Route `games.turns.reports.download` exists as `GET /games/{game}/turns/{turn}/reports/empires/{empire}/download`
-- [ ] Authorization matches `show` (GM any empire, player own only, non-member denied)
-- [ ] Controller returns `404` for cross-game empire mismatches and missing reports
-- [ ] Response is a JSON attachment with `Content-Type: application/json` and `Content-Disposition: attachment`
-- [ ] Filename exactly matches `report-{game_id}-turn-{number}-empire-{empire_id}.json`
-- [ ] JSON payload contains structured snapshot data: colonies (with nested inventory/population), surveys (with nested deposits)
-- [ ] All enum fields are serialized as string values
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportControllerDownloadTest`
+- [x] Route `games.turns.reports.download` exists as `GET /games/{game}/turns/{turn}/reports/empires/{empire}/download`
+- [x] Authorization matches `show` (GM any empire, player own only, non-member denied)
+- [x] Controller returns `404` for cross-game empire mismatches and missing reports
+- [x] Response is a JSON attachment with `Content-Type: application/json` and `Content-Disposition: attachment`
+- [x] Filename exactly matches `report-{game_id}-turn-{number}-empire-{empire_id}.json`
+- [x] JSON payload contains structured snapshot data: colonies (with nested inventory/population), surveys (with nested deposits)
+- [x] All enum fields are serialized as string values
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportControllerDownloadTest`
 
 ---
 

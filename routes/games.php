@@ -30,7 +30,7 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
             Route::post('generate', [TurnReportController::class, 'generate'])->name('generate');
             Route::post('lock', [TurnReportController::class, 'lock'])->name('lock');
             Route::get('empires/{empire}', [TurnReportController::class, 'show'])->name('show')->withoutScopedBindings();
-            // download route added in subsequent task
+            Route::get('empires/{empire}/download', [TurnReportController::class, 'download'])->name('download')->withoutScopedBindings();
         });
 
     Route::prefix('{game}/generate')->name('generate.')->group(function () {
