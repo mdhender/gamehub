@@ -213,7 +213,7 @@ php artisan test --compact --filter=create_creates_one_colony_per_template_on_ho
 
 ## Task E4 — Add activate test coverage for Turn 0 creation
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Why:** The activate changes from Task E3 need test coverage for Turn 0 creation, atomicity, and rejection-path safety.
 
