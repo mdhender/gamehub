@@ -374,7 +374,7 @@ class TurnReportColonyPopulation extends Model
 
 ## Task F7 — Models: `TurnReportSurvey`, `TurnReportSurveyDeposit`
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #28 (part 3 of 3)
 
@@ -429,10 +429,10 @@ class TurnReportSurveyDeposit extends Model
 - `test_turn_report_survey_has_many_deposits`
 
 **Acceptance criteria:**
-- [ ] Both models exist with exact fillable, casts, and relationships
-- [ ] `$timestamps = false` on both
-- [ ] Casts use `PlanetType` and `DepositResource` enums
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
+- [x] Both models exist with exact fillable, casts, and relationships
+- [x] `$timestamps = false` on both
+- [x] Casts use `PlanetType` and `DepositResource` enums
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
 
 ---
 

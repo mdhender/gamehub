@@ -3,6 +3,8 @@
 namespace Tests\Feature\Reports;
 
 use App\Enums\ColonyKind;
+use App\Enums\DepositResource;
+use App\Enums\PlanetType;
 use App\Enums\PopulationClass;
 use App\Enums\UnitCode;
 use App\Models\Empire;
@@ -12,6 +14,8 @@ use App\Models\TurnReport;
 use App\Models\TurnReportColony;
 use App\Models\TurnReportColonyInventory;
 use App\Models\TurnReportColonyPopulation;
+use App\Models\TurnReportSurvey;
+use App\Models\TurnReportSurveyDeposit;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
@@ -199,5 +203,58 @@ class TurnReportModelTest extends TestCase
 
         $this->assertSame(2, $colony->inventory()->count());
         $this->assertSame(1, $colony->population()->count());
+    }
+
+    private function makeTurnReportSurvey(): TurnReportSurvey
+    {
+        $report = $this->makeTurnReport();
+
+        return TurnReportSurvey::query()->create([
+            'turn_report_id' => $report->id,
+            'orbit' => 1,
+            'star_x' => 0,
+            'star_y' => 0,
+            'star_z' => 0,
+            'star_sequence' => 1,
+            'planet_type' => PlanetType::Terrestrial,
+            'habitability' => 80,
+        ]);
+    }
+
+    #[Test]
+    public function test_turn_report_survey_casts_planet_type_to_planet_type_enum(): void
+    {
+        $survey = $this->makeTurnReportSurvey();
+
+        $this->assertInstanceOf(PlanetType::class, $survey->fresh()->planet_type);
+    }
+
+    #[Test]
+    public function test_turn_report_survey_deposit_casts_resource_to_deposit_resource_enum(): void
+    {
+        $survey = $this->makeTurnReportSurvey();
+
+        $deposit = TurnReportSurveyDeposit::query()->create([
+            'turn_report_survey_id' => $survey->id,
+            'deposit_no' => 1,
+            'resource' => DepositResource::Gold,
+            'yield_pct' => 50,
+            'quantity_remaining' => 1000,
+        ]);
+
+        $this->assertInstanceOf(DepositResource::class, $deposit->fresh()->resource);
+    }
+
+    #[Test]
+    public function test_turn_report_survey_has_many_deposits(): void
+    {
+        $survey = $this->makeTurnReportSurvey();
+
+        DB::table('turn_report_survey_deposits')->insert([
+            ['turn_report_survey_id' => $survey->id, 'deposit_no' => 1, 'resource' => 'GOLD', 'yield_pct' => 50, 'quantity_remaining' => 1000],
+            ['turn_report_survey_id' => $survey->id, 'deposit_no' => 2, 'resource' => 'FUEL', 'yield_pct' => 30, 'quantity_remaining' => 500],
+        ]);
+
+        $this->assertSame(2, $survey->deposits()->count());
     }
 }
