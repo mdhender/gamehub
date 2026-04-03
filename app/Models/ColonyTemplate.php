@@ -37,4 +37,10 @@ class ColonyTemplate extends Model
     {
         return $this->hasMany(ColonyTemplateItem::class);
     }
+
+    /** @return HasMany<ColonyTemplatePopulation, $this> */
+    public function population(): HasMany
+    {
+        return $this->hasMany(ColonyTemplatePopulation::class);
+    }
 }

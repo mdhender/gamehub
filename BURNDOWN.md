@@ -230,7 +230,7 @@ Create the `Colony` and `Planet`/`Empire` explicitly or use `Colony::factory()` 
 
 ### Task C14b — Create `ColonyTemplatePopulation` model and wire `ColonyTemplate::population()`
 
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** C14a (for pattern reference)
 
