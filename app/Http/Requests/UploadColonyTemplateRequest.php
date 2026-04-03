@@ -181,6 +181,6 @@ class UploadColonyTemplateRequest extends FormRequest
 
     private function isConsumable(string $code): bool
     {
-        return in_array($code, ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH'], true);
+        return in_array($code, ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH', 'STU'], true);
     }
 }

@@ -544,7 +544,7 @@ class GameGenerationControllerTest extends TestCase
             'inventory' => [
                 'operational' => [
                     ['unit' => 'FCT-1', 'quantity' => 10],
-                    ['unit' => 'STU-2', 'quantity' => 5],
+                    ['unit' => 'FRM-2', 'quantity' => 5],
                 ],
                 'stored' => [
                     ['unit' => 'FUEL', 'quantity' => 100],
@@ -565,9 +565,9 @@ class GameGenerationControllerTest extends TestCase
         $this->assertNotNull($fct);
         $this->assertSame(1, $fct->tech_level);
 
-        $stu = $template->items()->where('unit', 'STU')->first();
-        $this->assertNotNull($stu);
-        $this->assertSame(2, $stu->tech_level);
+        $frm = $template->items()->where('unit', 'FRM')->first();
+        $this->assertNotNull($frm);
+        $this->assertSame(2, $frm->tech_level);
 
         $fuel = $template->items()->where('unit', 'FUEL')->first();
         $this->assertNotNull($fuel);
@@ -602,6 +602,50 @@ class GameGenerationControllerTest extends TestCase
         $this->assertSame(2, $template->population()->count());
 
         $uem = $template->population()->where('population_code', 'UEM')->first();
+        $this->assertNotNull($uem);
+        $this->assertSame(3500000, $uem->quantity);
+        $this->assertSame(0.0, $uem->pay_rate);
+    }
+
+    #[Test]
+    public function upload_colony_template_with_real_sample_file(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $realPath = base_path('sample-data/beta/colony-template.json');
+        $file = new UploadedFile($realPath, 'colony-template.json', 'application/json', null, true);
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect()
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertSame(2, $game->colonyTemplates()->count());
+
+        $copn = $game->colonyTemplates()->where('kind', 'COPN')->first();
+        $this->assertNotNull($copn);
+        $this->assertSame(17, $copn->items()->count());
+        $this->assertSame(4, $copn->population()->count());
+
+        $corb = $game->colonyTemplates()->where('kind', 'CORB')->first();
+        $this->assertNotNull($corb);
+        $this->assertSame(1, $corb->items()->count());
+        $this->assertSame(4, $corb->population()->count());
+
+        $asw = $copn->items()->where('unit', 'ASW')->first();
+        $this->assertNotNull($asw);
+        $this->assertSame(1, $asw->tech_level);
+
+        $fuel = $copn->items()->where('unit', 'FUEL')->first();
+        $this->assertNotNull($fuel);
+        $this->assertSame(0, $fuel->tech_level);
+
+        $stu = $copn->items()->where('unit', 'STU')->first();
+        $this->assertNotNull($stu);
+        $this->assertSame(0, $stu->tech_level);
+
+        $uem = $copn->population()->where('population_code', 'UEM')->first();
         $this->assertNotNull($uem);
         $this->assertSame(3500000, $uem->quantity);
         $this->assertSame(0.0, $uem->pay_rate);

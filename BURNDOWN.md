@@ -159,7 +159,7 @@ Add/update tests in `tests/Feature/GameGenerationControllerTest.php`:
 
 ## Task D4 — Update existing colony upload tests for new JSON format
 
-**Status:** TODO
+**Status:** DONE
 
 **Why:** The existing `makeColonyTemplateJson()` helper and the 4 colony upload tests in `GameGenerationControllerTest` use the old single-object format. They must be updated to use the new array-of-templates format with `CODE-TL` units and population.
 
@@ -203,7 +203,7 @@ Add/update tests in `tests/Feature/GameGenerationControllerTest.php`:
 
 ## Task D5 — Add real sample file upload regression test
 
-**Status:** TODO
+**Status:** DONE
 
 **Why:** A regression test using the actual `sample-data/beta/colony-template.json` file locks the contract between the checked-in sample data and the upload pipeline, preventing future drift.
 
@@ -239,7 +239,7 @@ Add a new test method `upload_colony_template_with_real_sample_file`:
 
 ## Task D6 — Run Pint and full test suite
 
-**Status:** TODO
+**Status:** DONE
 
 **Why:** Final cleanup and verification that all changes are consistent and nothing is broken.
 
