@@ -52,6 +52,12 @@ class Game extends Model
         return $this->hasOne(ColonyTemplate::class);
     }
 
+    /** @return HasMany<ColonyTemplate, $this> */
+    public function colonyTemplates(): HasMany
+    {
+        return $this->hasMany(ColonyTemplate::class);
+    }
+
     /** @return HasMany<Turn, $this> */
     public function turns(): HasMany
     {

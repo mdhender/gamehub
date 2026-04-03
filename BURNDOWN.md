@@ -12,7 +12,7 @@ Group D updates the colony template upload pipeline to accept the new JSON forma
 
 ## Task D1 — Add `Game::colonyTemplates()` HasMany relationship
 
-**Status:** TODO
+**Status:** DONE
 
 **Why:** The upload controller needs to delete-and-recreate multiple colony templates per game. The existing `colonyTemplate()` is `HasOne` and must stay for existing read paths (`EmpireCreator`, `GameGenerationController::colonyTemplateSummary()`). A new `colonyTemplates()` `HasMany` provides the write path.
 
