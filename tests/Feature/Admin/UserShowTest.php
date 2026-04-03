@@ -67,6 +67,7 @@ class UserShowTest extends TestCase
             ->has('user', fn ($prop) => $prop
                 ->has('id')
                 ->has('name')
+                ->has('handle')
                 ->has('email')
                 ->has('is_admin')
                 ->has('email_verified_at')

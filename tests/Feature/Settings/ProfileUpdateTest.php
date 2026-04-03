@@ -25,11 +25,12 @@ class ProfileUpdateTest extends TestCase
     {
         $user = User::factory()->create();
 
+        $originalHandle = $user->handle;
+
         $response = $this
             ->actingAs($user)
             ->patch(route('profile.update'), [
                 'name' => 'Test User',
-                'handle' => 'testuser',
                 'email' => 'test@example.com',
             ]);
 
@@ -40,7 +41,7 @@ class ProfileUpdateTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
-        $this->assertSame('testuser', $user->handle);
+        $this->assertSame($originalHandle, $user->handle);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
     }
@@ -53,7 +54,6 @@ class ProfileUpdateTest extends TestCase
             ->actingAs($user)
             ->patch(route('profile.update'), [
                 'name' => 'Test User',
-                'handle' => $user->handle,
                 'email' => $user->email,
             ]);
 

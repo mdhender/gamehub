@@ -1,10 +1,12 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     index,
     sendPasswordResetLink,
+    updateHandle,
 } from '@/actions/App/Http/Controllers/Admin/UserController';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,10 +17,12 @@ import {
     DialogFooter,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import type { User } from '@/types';
 
 export default function UserShow({ user }: { user: User }) {
     const [showResetDialog, setShowResetDialog] = useState(false);
+    const [isEditingHandle, setIsEditingHandle] = useState(false);
     const flash = usePage<{ props: { flash?: { success?: string } } }>().props
         .flash as { success?: string } | undefined;
 
@@ -51,7 +55,68 @@ export default function UserShow({ user }: { user: User }) {
                                 Handle
                             </dt>
                             <dd className="mt-1 text-sm sm:col-span-2 sm:mt-0">
-                                {user.handle}
+                                {isEditingHandle ? (
+                                    <Form
+                                        action={updateHandle.url(user.id)}
+                                        method="patch"
+                                        options={{
+                                            preserveScroll: true,
+                                            onSuccess: () =>
+                                                setIsEditingHandle(false),
+                                        }}
+                                        className="flex items-center gap-2"
+                                    >
+                                        {({ processing, errors }) => (
+                                            <>
+                                                <div>
+                                                    <Input
+                                                        name="handle"
+                                                        defaultValue={
+                                                            user.handle
+                                                        }
+                                                        maxLength={16}
+                                                        className="h-8 w-48"
+                                                        autoFocus
+                                                    />
+                                                    <InputError
+                                                        message={errors.handle}
+                                                        className="mt-1"
+                                                    />
+                                                </div>
+                                                <Button
+                                                    type="submit"
+                                                    size="sm"
+                                                    disabled={processing}
+                                                >
+                                                    Save
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setIsEditingHandle(false)
+                                                    }
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </>
+                                        )}
+                                    </Form>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        {user.handle}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                setIsEditingHandle(true)
+                                            }
+                                        >
+                                            Edit
+                                        </Button>
+                                    </span>
+                                )}
                             </dd>
                         </div>
 

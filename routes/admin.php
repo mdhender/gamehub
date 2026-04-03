@@ -8,6 +8,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::middleware('admin')->group(function () {
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::patch('users/{user}/handle', [UserController::class, 'updateHandle'])->name('users.update-handle');
         Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordResetLink'])->name('users.send-password-reset');
         Route::get('invitations', [InvitationController::class, 'index'])->name('invitations.index');
         Route::post('invitations', [InvitationController::class, 'store'])->name('invitations.store');

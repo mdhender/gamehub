@@ -52,6 +52,7 @@ class UserIndexTest extends TestCase
             ->has('users.0', fn ($user) => $user
                 ->has('id')
                 ->has('name')
+                ->has('handle')
                 ->has('email')
                 ->has('is_admin')
                 ->has('is_gm')

@@ -10,13 +10,6 @@ class ProfileUpdateRequest extends FormRequest
 {
     use ProfileValidationRules;
 
-    protected function prepareForValidation(): void
-    {
-        if ($this->has('handle')) {
-            $this->merge(['handle' => mb_strtolower($this->input('handle'))]);
-        }
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -24,6 +17,9 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        $rules = $this->profileRules($this->user()->id);
+        unset($rules['handle']);
+
+        return $rules;
     }
 }
