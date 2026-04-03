@@ -678,7 +678,7 @@ class SetupReportGenerator
 
 ## Task F11 — Service: colony/inventory/population snapshots
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #30 (part 2 of 3)
 
