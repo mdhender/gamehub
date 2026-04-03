@@ -1,306 +1,868 @@
-# Burndown — Layer 1, Group E: Business Logic Extensions
+# Burndown — Layer 1, Group F: Report Schema and Service
 
 ## Overview
 
-Group E extends the setup-time business logic with two changes:
+Group F creates the **report schema**, **report models**, **factories**, and the **`SetupReportGenerator` service** — the core data pipeline that materializes Turn 0 setup reports for all empires.
 
-- **Task 21:** Extend `EmpireCreator` so new empires create colonies from **all** colony templates and copy each template's `population` rows into `colony_population`.
-- **Task 22:** Extend `GameGenerationController::activate()` so activating a game also creates **Turn 0** with status `pending` in the **same transaction**.
+**Design reference:** `docs/SETUP_REPORT.md` — Group F, tasks #23–30.
 
-**Prerequisite groups:** A (enums, schema migrations), B (model updates), C (new models/factories), D (template ingestion) — all complete.
+**Prerequisite groups:** A (enums, schema migrations), B (model updates), C (new models/factories), D (template ingestion), E (business logic extensions) — all complete.
 
-**Out of scope (Group F):** Report schema, report models, SetupReportGenerator service.
+**Out of scope (Group G):** Routes, TurnReportController, TurnReportPolicy, authorization.
 
 **Scope guardrails:**
-- Do **not** change template upload logic.
-- Do **not** change `Game::colonyTemplate()` or `GameGenerationController::colonyTemplateSummary()`.
-- Do **not** introduce new services, jobs, listeners, or events for Turn 0 creation.
+- Do **not** create controller actions, routes, or policies.
+- Do **not** modify existing live models (`Colony`, `Empire`, `Turn`, etc.) except to add inverse relationship helpers.
+- Do **not** create frontend pages or components.
+- Report snapshot tables store **plain integers** for `source_colony_id`, `planet_id` — these are **not** foreign keys to live tables.
+- The only hard FKs in report tables are **parent-child within the report schema** (all `cascadeOnDelete`).
 
 ---
 
-## Task E1 — Extend `EmpireCreator` for multi-template colony creation and starting population
+## Task F1 — Migration: `turn_reports` table
 
 **Status:** [x] Complete
 
-**Why:** `EmpireCreator` currently reads only the first colony template via `$game->colonyTemplate()` (HasOne) and creates a single colony with inventory. It never populates `colony_population`. Group D made colony templates multi-row (`colonyTemplates()` HasMany), so empire creation must now create one colony per template and copy both inventory and population from each.
+**Design task:** #23
 
-**Files to modify:**
-- `app/Services/EmpireCreator.php`
+**Files to create:**
+- `database/migrations/..._create_turn_reports_table.php` (use `php artisan make:migration`)
 
-**Changes:**
+**Schema:**
 
-1. Add import for `ColonyPopulation`:
-   ```php
-   use App\Models\ColonyPopulation;
-   ```
+| Column | Type | Notes |
+|---|---|---|
+| `id` | integer PK | Auto-increment |
+| `game_id` | integer FK → `games` | `constrained()->cascadeOnDelete()` |
+| `turn_id` | integer FK → `turns` | `constrained()->cascadeOnDelete()` |
+| `empire_id` | integer FK → `empires` | `constrained()->cascadeOnDelete()` |
+| `generated_at` | datetime | Not nullable |
 
-2. Replace the single-template lookup in the private colony creation method:
-   - **Current:** `$game->colonyTemplate()->with('items')->first()`
-   - **New:** `$game->colonyTemplates()->with(['items', 'population'])->orderBy('id')->get()`
+**Constraints:**
+- Unique: `['turn_id', 'empire_id']`
+- No `timestamps()` — use `$table->id()` and explicit columns only
 
-3. If the collection is empty, throw `RuntimeException` — keep the message containing `colony template` so the existing test expectation stays valid.
-
-4. Rename the private method from `createColony()` to `createColonies()` (returns `void` instead of `Colony`). Update the call site in `create()`.
-
-5. Loop over each `ColonyTemplate` and for each:
-   - Create a `Colony` via `Colony::create()` with `empire_id`, `planet_id` (homeworld), `kind`, `tech_level`.
-   - Copy inventory using `ColonyInventory::insert()` — use `$item->unit->value` (not the enum object) because `insert()` bypasses casts.
-   - Copy population using `ColonyPopulation::insert()` — use `$pop->population_code->value` for the same reason. Always set `rebel_quantity` to `0`.
-
-6. Population insert mapping per template population row:
-   ```php
-   [
-       'colony_id' => $colony->id,
-       'population_code' => $pop->population_code->value,
-       'quantity' => $pop->quantity,
-       'pay_rate' => $pop->pay_rate,
-       'rebel_quantity' => 0,
-   ]
-   ```
-
-7. Inventory insert mapping (existing pattern, but fix enum usage):
-   ```php
-   [
-       'colony_id' => $colony->id,
-       'unit' => $item->unit->value,
-       'tech_level' => $item->tech_level,
-       'quantity_assembled' => $item->quantity_assembled,
-       'quantity_disassembled' => $item->quantity_disassembled,
-   ]
-   ```
-
-8. Do **not** change:
-   - The outer `DB::transaction()` in `create()`
-   - Player / capacity validation logic
-   - `reassign()` method (it already updates all homeworld colonies)
+**Implementation notes:**
+- Use `$table->foreignId('game_id')->constrained()->cascadeOnDelete()` pattern for all three FKs.
+- These are the only report tables with hard FKs to live entities. All child report tables reference report parents only.
 
 **Tests:**
-- Run existing tests first: `php artisan test --compact --filter=EmpireCreatorTest`
-- All existing tests should pass (the fixture creates one template, so behavior is unchanged for single-template cases)
+- Add to `tests/Feature/Reports/TurnReportSchemaTest.php` (create this file with `LazilyRefreshDatabase`, `#[Test]` attributes)
+- `test_turn_reports_table_can_store_a_report_header` — insert a row, assert it persists.
+- `test_turn_reports_table_enforces_unique_turn_and_empire` — insert two rows with same `(turn_id, empire_id)`, assert `QueryException`.
 
 **Acceptance criteria:**
-- `EmpireCreator` uses `colonyTemplates()` (HasMany) instead of `colonyTemplate()` (HasOne).
-- One colony is created per colony template, all on the homeworld.
-- Inventory rows are copied using `->value` for enum-backed columns.
-- Population rows are created in `colony_population` with `rebel_quantity = 0`.
-- Existing single-template behavior still works.
+- [x] Migration creates `turn_reports` with exact columns listed above
+- [x] Unique constraint on `(turn_id, empire_id)` is enforced
+- [x] `generated_at` column exists and is not nullable
+- [x] Table has no `created_at` / `updated_at` columns
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
 
 ---
 
-## Task E2 — Add `EmpireCreator` test coverage for multi-template and population
+## Task F2 — Migration: `turn_report_colonies` table
 
-**Status:** [x] Complete
+**Status:** [ ] Complete
 
-**Why:** The `EmpireCreator` changes from Task E1 need test coverage for the new multi-colony and population behavior, and the existing fixture needs a population row for realistic testing.
+**Design task:** #24
+
+**Files to create:**
+- `database/migrations/..._create_turn_report_colonies_table.php`
+
+**Schema:**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | integer PK | |
+| `turn_report_id` | integer FK → `turn_reports` | `constrained()->cascadeOnDelete()` |
+| `source_colony_id` | integer nullable | **Plain integer, NOT a foreign key** |
+| `name` | string | Colony name at report time |
+| `kind` | string | `ColonyKind` enum value (COPN, CENC, CORB) |
+| `tech_level` | integer | |
+| `planet_id` | integer nullable | **Plain integer, NOT a foreign key** |
+| `orbit` | integer | Denormalized from planet |
+| `star_x` | integer | Denormalized from star |
+| `star_y` | integer | Denormalized from star |
+| `star_z` | integer | Denormalized from star |
+| `star_sequence` | integer | Denormalized from star |
+| `is_on_surface` | boolean | |
+| `rations` | float | |
+| `sol` | float | |
+| `birth_rate` | float | |
+| `death_rate` | float | |
+
+**Constraints:**
+- No `timestamps()`
+- `source_colony_id` — use `$table->integer('source_colony_id')->nullable()`, do **not** call `constrained()` or `references()`
+- `planet_id` — use `$table->integer('planet_id')->nullable()`, do **not** call `constrained()` or `references()`
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportSchemaTest.php`
+- `test_turn_report_colonies_accept_plain_source_ids_without_live_foreign_keys` — create a `turn_report_colonies` row with arbitrary `source_colony_id` and `planet_id` values that don't exist in `colonies`/`planets` tables. Assert no constraint violation.
+- `test_deleting_turn_report_cascades_to_turn_report_colonies` — create parent + child, delete parent, assert child is gone.
+
+**Acceptance criteria:**
+- [ ] Table matches design schema exactly
+- [ ] `turn_report_id` FK cascades on delete
+- [ ] `source_colony_id` is nullable and is **not** a foreign key
+- [ ] `planet_id` is nullable and is **not** a foreign key
+- [ ] No timestamps columns
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
+
+---
+
+## Task F3 — Migrations: `turn_report_colony_inventory` and `turn_report_colony_population` tables
+
+**Status:** [ ] Complete
+
+**Design tasks:** #25, #26
+
+**Files to create:**
+- `database/migrations/..._create_turn_report_colony_inventory_table.php`
+- `database/migrations/..._create_turn_report_colony_population_table.php`
+
+**Schema: `turn_report_colony_inventory`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | integer PK | |
+| `turn_report_colony_id` | integer FK → `turn_report_colonies` | `constrained()->cascadeOnDelete()` |
+| `unit_code` | string | `UnitCode` enum value |
+| `tech_level` | integer | |
+| `quantity_assembled` | integer | |
+| `quantity_disassembled` | integer | |
+
+**Schema: `turn_report_colony_population`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | integer PK | |
+| `turn_report_colony_id` | integer FK → `turn_report_colonies` | `constrained()->cascadeOnDelete()` |
+| `population_code` | string | `PopulationClass` enum value |
+| `quantity` | integer | |
+| `pay_rate` | float | |
+| `rebel_quantity` | integer | |
+
+**Constraints:**
+- No `timestamps()` on either table
+- No uniqueness constraints beyond the PK — the design does not specify any
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportSchemaTest.php`
+- `test_turn_report_colony_inventory_can_be_created` — insert a row, assert it persists.
+- `test_turn_report_colony_population_can_be_created` — insert a row, assert it persists.
+- `test_deleting_turn_report_colony_cascades_inventory_and_population` — create a `turn_report_colonies` row with child inventory and population rows, delete the colony row, assert all children are gone.
+
+**Acceptance criteria:**
+- [ ] Both tables exist with exact columns listed above
+- [ ] Both child FKs cascade on delete from `turn_report_colonies`
+- [ ] No timestamps on either table
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
+
+---
+
+## Task F4 — Migrations: `turn_report_surveys` and `turn_report_survey_deposits` tables
+
+**Status:** [ ] Complete
+
+**Design task:** #27
+
+**Files to create:**
+- `database/migrations/..._create_turn_report_surveys_table.php`
+- `database/migrations/..._create_turn_report_survey_deposits_table.php`
+
+**Schema: `turn_report_surveys`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | integer PK | |
+| `turn_report_id` | integer FK → `turn_reports` | `constrained()->cascadeOnDelete()` |
+| `planet_id` | integer nullable | **Plain integer, NOT a foreign key** |
+| `orbit` | integer | |
+| `star_x` | integer | |
+| `star_y` | integer | |
+| `star_z` | integer | |
+| `star_sequence` | integer | |
+| `planet_type` | string | `PlanetType` enum value |
+| `habitability` | integer | |
+
+**Schema: `turn_report_survey_deposits`**
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | integer PK | |
+| `turn_report_survey_id` | integer FK → `turn_report_surveys` | `constrained()->cascadeOnDelete()` |
+| `deposit_no` | integer | 1-based sequence within planet |
+| `resource` | string | `DepositResource` enum value |
+| `yield_pct` | integer | |
+| `quantity_remaining` | integer | |
+
+**Constraints:**
+- No `timestamps()` on either table
+- `planet_id` — `$table->integer('planet_id')->nullable()`, **not** a foreign key
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportSchemaTest.php`
+- `test_turn_report_surveys_accept_plain_planet_id_without_live_foreign_key` — insert a survey row with a `planet_id` that doesn't exist in `planets`. Assert no constraint violation.
+- `test_deleting_turn_report_survey_cascades_deposits` — create parent survey + deposit children, delete survey, assert deposits are gone.
+
+**Acceptance criteria:**
+- [ ] Both tables exist with exact columns listed above
+- [ ] `planet_id` on surveys is a plain nullable integer, not a FK
+- [ ] Survey deposit FK cascades on delete from `turn_report_surveys`
+- [ ] No timestamps on either table
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
+
+---
+
+## Task F5 — Model: `TurnReport`
+
+**Status:** [ ] Complete
+
+**Design task:** #28 (part 1 of 3)
+
+**Files to create:**
+- `app/Models/TurnReport.php` (use `php artisan make:class`)
 
 **Files to modify:**
-- `tests/Feature/EmpireCreatorTest.php`
+- `app/Models/Turn.php` — add `reports(): HasMany` relationship
 
-**Changes:**
+**Model contract:**
 
-1. Add missing import:
+```php
+#[Fillable(['game_id', 'turn_id', 'empire_id', 'generated_at'])]
+class TurnReport extends Model
+{
+    public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'generated_at' => 'datetime',
+        ];
+    }
+
+    public function game(): BelongsTo     // → Game
+    public function turn(): BelongsTo     // → Turn
+    public function empire(): BelongsTo   // → Empire
+    public function colonies(): HasMany   // → TurnReportColony
+    public function surveys(): HasMany    // → TurnReportSurvey
+}
+```
+
+**Inverse relationship to add on `Turn`:**
+
+```php
+/** @return HasMany<TurnReport, $this> */
+public function reports(): HasMany
+{
+    return $this->hasMany(TurnReport::class);
+}
+```
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportModelTest.php` (create this file)
+- `test_turn_report_casts_generated_at_to_carbon` — create via factory (Task F8), assert `generated_at` is a Carbon instance.
+- `test_turn_report_belongs_to_game_turn_and_empire` — create, assert relationships resolve.
+- `test_turn_report_has_many_colonies_and_surveys` — create parent with children, assert relation counts.
+
+**Implementation notes:**
+- Follow existing model conventions: `#[Fillable]` attribute, `casts()` method, PHPDoc on relationships.
+- This task creates the model file only. The factory is created in Task F8.
+- Model tests for this task can create records directly via DB insert or wait for the factory in Task F8. Either approach is acceptable — if waiting, mark the tests as part of Task F8's scope.
+
+**Acceptance criteria:**
+- [ ] `TurnReport` model exists with exact fillable, casts, and relationships
+- [ ] `Turn::reports()` HasMany relationship exists
+- [ ] `$timestamps = false`
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
+
+---
+
+## Task F6 — Models: `TurnReportColony`, `TurnReportColonyInventory`, `TurnReportColonyPopulation`
+
+**Status:** [ ] Complete
+
+**Design task:** #28 (part 2 of 3)
+
+**Files to create:**
+- `app/Models/TurnReportColony.php`
+- `app/Models/TurnReportColonyInventory.php`
+- `app/Models/TurnReportColonyPopulation.php`
+
+**Model contract: `TurnReportColony`**
+
+```php
+#[Fillable(['turn_report_id', 'source_colony_id', 'name', 'kind', 'tech_level',
+    'planet_id', 'orbit', 'star_x', 'star_y', 'star_z', 'star_sequence',
+    'is_on_surface', 'rations', 'sol', 'birth_rate', 'death_rate'])]
+class TurnReportColony extends Model
+{
+    public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'kind' => ColonyKind::class,
+            'is_on_surface' => 'boolean',
+            'rations' => 'float',
+            'sol' => 'float',
+            'birth_rate' => 'float',
+            'death_rate' => 'float',
+        ];
+    }
+
+    public function turnReport(): BelongsTo          // → TurnReport
+    public function inventory(): HasMany             // → TurnReportColonyInventory
+    public function population(): HasMany            // → TurnReportColonyPopulation
+}
+```
+
+**Model contract: `TurnReportColonyInventory`**
+
+```php
+#[Fillable(['turn_report_colony_id', 'unit_code', 'tech_level', 'quantity_assembled', 'quantity_disassembled'])]
+class TurnReportColonyInventory extends Model
+{
+    public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'unit_code' => UnitCode::class,
+        ];
+    }
+
+    public function turnReportColony(): BelongsTo    // → TurnReportColony
+}
+```
+
+**Model contract: `TurnReportColonyPopulation`**
+
+```php
+#[Fillable(['turn_report_colony_id', 'population_code', 'quantity', 'pay_rate', 'rebel_quantity'])]
+class TurnReportColonyPopulation extends Model
+{
+    public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'population_code' => PopulationClass::class,
+            'pay_rate' => 'float',
+        ];
+    }
+
+    public function turnReportColony(): BelongsTo    // → TurnReportColony
+}
+```
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportModelTest.php`
+- `test_turn_report_colony_casts_kind_to_colony_kind_enum` — create, assert `kind` is `ColonyKind` instance.
+- `test_turn_report_colony_inventory_casts_unit_code_to_unit_code_enum` — create, assert.
+- `test_turn_report_colony_population_casts_population_code_to_population_class_enum` — create, assert.
+- `test_turn_report_colony_has_many_inventory_and_population` — create parent with children, assert counts.
+
+**Acceptance criteria:**
+- [ ] All 3 models exist with exact fillable, casts, and relationships
+- [ ] `$timestamps = false` on all 3
+- [ ] Casts match the live model enum usage (`ColonyKind`, `UnitCode`, `PopulationClass`)
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
+
+---
+
+## Task F7 — Models: `TurnReportSurvey`, `TurnReportSurveyDeposit`
+
+**Status:** [ ] Complete
+
+**Design task:** #28 (part 3 of 3)
+
+**Files to create:**
+- `app/Models/TurnReportSurvey.php`
+- `app/Models/TurnReportSurveyDeposit.php`
+
+**Model contract: `TurnReportSurvey`**
+
+```php
+#[Fillable(['turn_report_id', 'planet_id', 'orbit', 'star_x', 'star_y', 'star_z',
+    'star_sequence', 'planet_type', 'habitability'])]
+class TurnReportSurvey extends Model
+{
+    public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'planet_type' => PlanetType::class,
+        ];
+    }
+
+    public function turnReport(): BelongsTo          // → TurnReport
+    public function deposits(): HasMany              // → TurnReportSurveyDeposit
+}
+```
+
+**Model contract: `TurnReportSurveyDeposit`**
+
+```php
+#[Fillable(['turn_report_survey_id', 'deposit_no', 'resource', 'yield_pct', 'quantity_remaining'])]
+class TurnReportSurveyDeposit extends Model
+{
+    public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return [
+            'resource' => DepositResource::class,
+        ];
+    }
+
+    public function turnReportSurvey(): BelongsTo    // → TurnReportSurvey
+}
+```
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportModelTest.php`
+- `test_turn_report_survey_casts_planet_type_to_planet_type_enum`
+- `test_turn_report_survey_deposit_casts_resource_to_deposit_resource_enum`
+- `test_turn_report_survey_has_many_deposits`
+
+**Acceptance criteria:**
+- [ ] Both models exist with exact fillable, casts, and relationships
+- [ ] `$timestamps = false` on both
+- [ ] Casts use `PlanetType` and `DepositResource` enums
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportModelTest`
+
+---
+
+## Task F8 — Factories: `TurnReport` and colony report factories
+
+**Status:** [ ] Complete
+
+**Design task:** #29 (part 1 of 2)
+
+**Files to create:**
+- `database/factories/TurnReportFactory.php`
+- `database/factories/TurnReportColonyFactory.php`
+- `database/factories/TurnReportColonyInventoryFactory.php`
+- `database/factories/TurnReportColonyPopulationFactory.php`
+
+**Factory definitions (follow existing factory style):**
+
+**`TurnReportFactory`**
+```php
+return [
+    'game_id' => Game::factory(),
+    'turn_id' => Turn::factory(),
+    'empire_id' => Empire::factory(),
+    'generated_at' => now(),
+];
+```
+
+**`TurnReportColonyFactory`**
+```php
+return [
+    'turn_report_id' => TurnReport::factory(),
+    'source_colony_id' => fake()->optional()->randomNumber(),
+    'name' => fake()->words(2, true),
+    'kind' => fake()->randomElement(ColonyKind::cases()),
+    'tech_level' => fake()->numberBetween(1, 5),
+    'planet_id' => fake()->optional()->randomNumber(),
+    'orbit' => fake()->numberBetween(1, 10),
+    'star_x' => fake()->numberBetween(1, 30),
+    'star_y' => fake()->numberBetween(1, 30),
+    'star_z' => fake()->numberBetween(1, 30),
+    'star_sequence' => fake()->numberBetween(1, 4),
+    'is_on_surface' => fake()->boolean(),
+    'rations' => 1.0,
+    'sol' => 0.0,
+    'birth_rate' => 0.0,
+    'death_rate' => 0.0,
+];
+```
+
+**`TurnReportColonyInventoryFactory`**
+```php
+return [
+    'turn_report_colony_id' => TurnReportColony::factory(),
+    'unit_code' => fake()->randomElement(UnitCode::cases()),
+    'tech_level' => fake()->numberBetween(1, 5),
+    'quantity_assembled' => fake()->numberBetween(0, 1000),
+    'quantity_disassembled' => fake()->numberBetween(0, 100),
+];
+```
+
+**`TurnReportColonyPopulationFactory`**
+```php
+return [
+    'turn_report_colony_id' => TurnReportColony::factory(),
+    'population_code' => fake()->randomElement(PopulationClass::cases()),
+    'quantity' => fake()->numberBetween(1, 1000000),
+    'pay_rate' => fake()->randomFloat(3, 0, 10),
+    'rebel_quantity' => 0,
+];
+```
+
+**Implementation notes:**
+- Use enum cases directly (not `->value`) — this matches existing factory style (see `ColonyFactory`, `ColonyInventoryFactory`).
+- Each factory needs `/** @extends Factory<ModelClass> */` PHPDoc and `use HasFactory` trait on the model.
+- Ensure each model has `use HasFactory;` if not already added in Tasks F5–F7.
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportFactoryTest.php` (create this file)
+- `test_turn_report_factory_creates_persisted_model` — `TurnReport::factory()->create()`, assert model exists.
+- `test_turn_report_colony_factory_creates_persisted_model` — same pattern.
+- `test_turn_report_colony_inventory_factory_creates_with_enum_cast` — create, assert `unit_code` is `UnitCode` instance.
+- `test_turn_report_colony_population_factory_creates_with_enum_cast` — create, assert `population_code` is `PopulationClass` instance.
+
+**Acceptance criteria:**
+- [ ] All 4 factories exist and follow existing factory conventions
+- [ ] `TurnReport::factory()->create()` produces a persisted record
+- [ ] Enum-casted attributes hydrate correctly from factory values
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportFactoryTest`
+
+---
+
+## Task F9 — Factories: survey report factories
+
+**Status:** [ ] Complete
+
+**Design task:** #29 (part 2 of 2)
+
+**Files to create:**
+- `database/factories/TurnReportSurveyFactory.php`
+- `database/factories/TurnReportSurveyDepositFactory.php`
+
+**Factory definitions:**
+
+**`TurnReportSurveyFactory`**
+```php
+return [
+    'turn_report_id' => TurnReport::factory(),
+    'planet_id' => fake()->optional()->randomNumber(),
+    'orbit' => fake()->numberBetween(1, 10),
+    'star_x' => fake()->numberBetween(1, 30),
+    'star_y' => fake()->numberBetween(1, 30),
+    'star_z' => fake()->numberBetween(1, 30),
+    'star_sequence' => fake()->numberBetween(1, 4),
+    'planet_type' => fake()->randomElement(PlanetType::cases()),
+    'habitability' => fake()->numberBetween(0, 25),
+];
+```
+
+**`TurnReportSurveyDepositFactory`**
+```php
+return [
+    'turn_report_survey_id' => TurnReportSurvey::factory(),
+    'deposit_no' => fake()->numberBetween(1, 10),
+    'resource' => fake()->randomElement(DepositResource::cases()),
+    'yield_pct' => fake()->numberBetween(1, 100),
+    'quantity_remaining' => fake()->numberBetween(100, 10000),
+];
+```
+
+**Tests:**
+- Add to `tests/Feature/Reports/TurnReportFactoryTest.php`
+- `test_turn_report_survey_factory_creates_with_planet_type_enum` — create, assert `planet_type` is `PlanetType` instance.
+- `test_turn_report_survey_deposit_factory_creates_with_deposit_resource_enum` — create, assert `resource` is `DepositResource` instance.
+
+**Acceptance criteria:**
+- [ ] Both factories exist and follow existing conventions
+- [ ] Enum casts hydrate correctly
+- [ ] Tests pass: `php artisan test --compact --filter=TurnReportFactoryTest`
+
+---
+
+## Task F10 — Service: `SetupReportGenerator` — atomic status transition and skeleton
+
+**Status:** [ ] Complete
+
+**Design task:** #30 (part 1 of 3)
+
+**Files to create:**
+- `app/Services/SetupReportGenerator.php`
+- `tests/Feature/Services/SetupReportGeneratorTest.php`
+
+**Public API:**
+
+```php
+namespace App\Services;
+
+class SetupReportGenerator
+{
+    /**
+     * Generate setup reports for all empires with colonies.
+     *
+     * @throws \RuntimeException if the turn is not available for report generation.
+     */
+    public function generate(Turn $turn): int
+}
+```
+
+**Implementation — this task only:**
+
+1. Wrap the entire method body in `DB::transaction(...)`.
+
+2. Perform atomic status transition using a single guarded update:
    ```php
-   use App\Enums\PopulationClass;
+   $updated = Turn::where('id', $turn->id)
+       ->whereNull('reports_locked_at')
+       ->whereIn('status', [TurnStatus::Pending, TurnStatus::Completed])
+       ->update(['status' => TurnStatus::Generating]);
+
+   if ($updated === 0) {
+       throw new \RuntimeException('Turn is not available for report generation.');
+   }
    ```
 
-2. Update `activeGameWithHomeSystem()` fixture — after creating the colony template and its item, add a population row:
+3. Reload the turn after the update: `$turn = Turn::findOrFail($turn->id);`
+
+4. Eager-load empires with colonies and all needed relations:
    ```php
-   $colonyTemplate->population()->create([
-       'population_code' => PopulationClass::Unemployable,
-       'quantity' => 3500000,
-       'pay_rate' => 0.0,
+   $empires = Empire::where('game_id', $turn->game_id)
+       ->whereHas('colonies')
+       ->with([
+           'colonies' => fn ($q) => $q->orderBy('id'),
+           'colonies.planet.star',
+           'colonies.inventory',
+           'colonies.population',
+           'homeSystem.homeworldPlanet.star',
+           'homeSystem.homeworldPlanet.deposits' => fn ($q) => $q->orderBy('id'),
+       ])
+       ->orderBy('id')
+       ->get();
+   ```
+
+5. Create placeholder for empire processing loop (Tasks F11–F12 will fill this in):
+   ```php
+   $generatedAt = now();
+
+   foreach ($empires as $empire) {
+       // Tasks F11 and F12 will implement snapshotEmpire()
+   }
+   ```
+
+6. After the loop, set turn status to `completed`:
+   ```php
+   $turn->update(['status' => TurnStatus::Completed]);
+   ```
+
+7. Return `$empires->count()`.
+
+**Tests:**
+- Create `tests/Feature/Services/SetupReportGeneratorTest.php` with `LazilyRefreshDatabase`, `#[Test]` attributes.
+- Use a helper method `activeGameWithEmpire()` that creates the full game setup (similar to `EmpireCreatorTest::activeGameWithHomeSystem()` but also creates an empire with a colony). This helper should:
+  - Create a game and run star/planet/deposit generation
+  - Create home system template + colony template with inventory and population
+  - Create a home system
+  - Activate the game (sets status to Active, creates Turn 0)
+  - Create a player, assign an empire via `EmpireCreator`
+  - Return the game
+
+- `test_generate_allows_pending_turn` — fresh game with pending Turn 0, call `generate()`, assert no exception, turn status is `completed`.
+- `test_generate_allows_completed_turn_rerun` — set Turn 0 status to `completed`, call `generate()` again, assert success.
+- `test_generate_rejects_generating_turn` — set Turn 0 status to `generating`, call `generate()`, assert `RuntimeException`.
+- `test_generate_rejects_closed_turn` — set Turn 0 status to `closed`, assert `RuntimeException`.
+- `test_generate_rejects_locked_turn` — set `reports_locked_at` to `now()`, assert `RuntimeException`.
+
+**Acceptance criteria:**
+- [ ] `SetupReportGenerator` class exists with `generate(Turn $turn): int`
+- [ ] Atomic status transition uses a single guarded update (not `findOrFail` then check)
+- [ ] Full operation runs inside one `DB::transaction()`
+- [ ] Pending and completed turns are accepted
+- [ ] Generating, closed, and locked turns are rejected with `RuntimeException`
+- [ ] Tests pass: `php artisan test --compact --filter=SetupReportGeneratorTest`
+
+---
+
+## Task F11 — Service: colony/inventory/population snapshots
+
+**Status:** [ ] Complete
+
+**Design task:** #30 (part 2 of 3)
+
+**Files to modify:**
+- `app/Services/SetupReportGenerator.php`
+
+**Implementation — add to the empire processing loop:**
+
+For each empire:
+
+1. **Delete existing report** for `(turn_id, empire_id)` — cascade deletes handle all children:
+   ```php
+   TurnReport::where('turn_id', $turn->id)
+       ->where('empire_id', $empire->id)
+       ->delete();
+   ```
+
+2. **Create report header:**
+   ```php
+   $report = TurnReport::create([
+       'game_id' => $turn->game_id,
+       'turn_id' => $turn->id,
+       'empire_id' => $empire->id,
+       'generated_at' => $generatedAt,
    ]);
    ```
 
-3. Add new test `create_applies_colony_template_population`:
-   - Create game + player, call `create()`
-   - Get the colony's population rows
-   - Assert 1 population row exists
-   - Assert `population_code === PopulationClass::Unemployable`
-   - Assert `quantity === 3500000`
-   - Assert `pay_rate === 0.0`
-   - Assert `rebel_quantity === 0`
-
-4. Add new test `create_creates_one_colony_per_template_on_homeworld`:
-   - After `activeGameWithHomeSystem()`, create a second colony template on the same game:
-     ```php
-     $template2 = $game->colonyTemplates()->create([
-         'kind' => ColonyKind::Orbital,
-         'tech_level' => 2,
-     ]);
-     $template2->items()->create([
-         'unit' => UnitCode::Farms,
-         'tech_level' => 1,
-         'quantity_assembled' => 3,
-         'quantity_disassembled' => 0,
-     ]);
-     $template2->population()->create([
-         'population_code' => PopulationClass::Unskilled,
-         'quantity' => 1000000,
-         'pay_rate' => 0.125,
-     ]);
-     ```
-   - Create player, call `create()`
-   - Assert empire has 2 colonies
-   - Assert both colonies have `planet_id === homeSystem->homeworld_planet_id`
-   - Assert one colony has `kind === ColonyKind::OpenSurface`, the other `kind === ColonyKind::Orbital`
-   - Assert each colony has the correct inventory count and population count
-
-5. Update `create_throws_when_no_colony_template` to delete all templates:
+3. **Snapshot each colony** into `turn_report_colonies`:
    ```php
-   $game->colonyTemplates()->delete();
-   ```
-   instead of `$game->colonyTemplate()->delete()`.
-
-**Tests:**
-```bash
-php artisan test --compact --filter=EmpireCreatorTest
-php artisan test --compact --filter=create_applies_colony_template_population
-php artisan test --compact --filter=create_creates_one_colony_per_template_on_homeworld
-```
-
-**Acceptance criteria:**
-- New tests verify population rows are created with correct values.
-- New tests verify multi-template creates multiple colonies with correct kinds.
-- Existing tests continue to pass.
-- The missing-template test uses `colonyTemplates()->delete()`.
-
----
-
-## Task E3 — Extend `GameGenerationController::activate()` to create Turn 0
-
-**Status:** [x] Complete
-
-**Why:** `activate()` currently marks the game as `Active` but creates no Turn. The setup report flow requires `Game::canGenerateReports()` to return `true`, which needs an active game **and** a current turn with non-locked, non-generating status.
-
-**Files to modify:**
-- `app/Http/Controllers/GameGenerationController.php`
-
-**Changes:**
-
-1. Add missing import:
-   ```php
-   use App\Enums\TurnStatus;
-   ```
-
-2. Inside the existing `DB::transaction()` in `activate()`, after saving the game status, create Turn 0:
-   ```php
-   $game->status = GameStatus::Active;
-   $game->save();
-
-   $game->turns()->create([
-       'number' => 0,
-       'status' => TurnStatus::Pending,
+   $star = $colony->planet->star;
+   $reportColony = $report->colonies()->create([
+       'source_colony_id' => $colony->id,
+       'name' => $colony->name,
+       'kind' => $colony->kind,
+       'tech_level' => $colony->tech_level,
+       'planet_id' => $colony->planet_id,
+       'orbit' => $colony->planet->orbit,
+       'star_x' => $star->x,
+       'star_y' => $star->y,
+       'star_z' => $star->z,
+       'star_sequence' => $star->sequence,
+       'is_on_surface' => $colony->is_on_surface,
+       'rations' => $colony->rations,
+       'sol' => $colony->sol,
+       'birth_rate' => $colony->birth_rate,
+       'death_rate' => $colony->death_rate,
    ]);
    ```
 
-3. Do **not** change:
-   - Authorization (`Gate::authorize('update', $game)`)
-   - `canActivate()` validation
-   - Redirect or flash message
-   - Do **not** add a second transaction or move Turn creation outside the existing transaction
+4. **Snapshot inventory** for each colony:
+   ```php
+   foreach ($colony->inventory as $item) {
+       $reportColony->inventory()->create([
+           'unit_code' => $item->unit,
+           'tech_level' => $item->tech_level,
+           'quantity_assembled' => $item->quantity_assembled,
+           'quantity_disassembled' => $item->quantity_disassembled,
+       ]);
+   }
+   ```
+
+5. **Snapshot population** for each colony:
+   ```php
+   foreach ($colony->population as $pop) {
+       $reportColony->population()->create([
+           'population_code' => $pop->population_code,
+           'quantity' => $pop->quantity,
+           'pay_rate' => $pop->pay_rate,
+           'rebel_quantity' => $pop->rebel_quantity,
+       ]);
+   }
+   ```
+
+**Implementation notes:**
+- Use `create()` not `insert()` — report volumes are small and this preserves enum cast safety.
+- The `$colony->planet->star` is already eager-loaded. No N+1 risk.
+- If a colony's `planet` or `star` relation is null, the eager-load guarantees this won't happen for valid data. Let it fail naturally (null dereference) if the data is corrupt — the transaction will roll back.
 
 **Tests:**
-- Run: `php artisan test --compact --filter=GameGenerationControllerActivateTest`
-- All existing tests should pass unchanged.
+- Add to `tests/Feature/Services/SetupReportGeneratorTest.php`
+- `test_generate_creates_one_report_per_empire_with_colonies` — create 2 empires (one with colony, one without), call `generate()`, assert 1 `turn_reports` row, return value is `1`.
+- `test_generate_snapshots_colony_with_denormalized_star_coordinates` — call `generate()`, load the `TurnReportColony`, assert `star_x`, `star_y`, `star_z`, `star_sequence`, `orbit` match the live colony's planet/star.
+- `test_generate_snapshots_colony_inventory` — assert `turn_report_colony_inventory` rows match live inventory count, `unit_code`, quantities.
+- `test_generate_snapshots_colony_population` — assert `turn_report_colony_population` rows match live population.
+- `test_generate_rerun_replaces_existing_report_data` — call `generate()` twice, assert only 1 report exists (delete-and-recreate), and data is fresh.
+- `test_generate_skips_empires_without_colonies` — create an empire with no colonies, assert no report is created for it.
 
 **Acceptance criteria:**
-- Successful activation creates Turn 0 in the same transaction.
-- Turn 0 has `number = 0`, `status = pending`, `reports_locked_at = null`.
-- Existing authorization and rejection tests pass unchanged.
+- [ ] Existing report is deleted before recreation (idempotent)
+- [ ] One report header per eligible empire is created
+- [ ] Colony snapshot includes all denormalized fields (orbit, star coords)
+- [ ] Inventory rows are copied with correct `unit_code` and quantities
+- [ ] Population rows are copied with correct `population_code`, `quantity`, `pay_rate`, `rebel_quantity`
+- [ ] Empires without colonies are skipped
+- [ ] Rerun produces identical results (idempotent)
+- [ ] Tests pass: `php artisan test --compact --filter=SetupReportGeneratorTest`
 
 ---
 
-## Task E4 — Add activate test coverage for Turn 0 creation
+## Task F12 — Service: homeworld survey + deposits + final status
 
-**Status:** [x] Complete
+**Status:** [ ] Complete
 
-**Why:** The activate changes from Task E3 need test coverage for Turn 0 creation, atomicity, and rejection-path safety.
+**Design task:** #30 (part 3 of 3)
 
 **Files to modify:**
-- `tests/Feature/GameGenerationControllerActivateTest.php`
+- `app/Services/SetupReportGenerator.php`
 
-**Changes:**
+**Implementation — add to the empire processing loop, after colony snapshots:**
 
-1. Add missing imports:
+1. **Get homeworld** from the empire's home system:
    ```php
-   use App\Enums\TurnStatus;
-   use App\Models\Turn;
+   $homeworld = $empire->homeSystem->homeworldPlanet;
+   $homeworldStar = $homeworld->star;
    ```
 
-2. Add new test `activate_creates_turn_zero_with_pending_status`:
-   - Use existing `gameWithHomeSystem()` fixture, authenticate as GM
-   - POST to activate
-   - Assert redirect (success)
-   - Assert `$game->fresh()->status === GameStatus::Active`
-   - Assert exactly 1 turn exists for the game:
-     ```php
-     $this->assertDatabaseCount('turns', 1);
-     ```
-   - Assert the turn has correct values:
-     ```php
-     $this->assertDatabaseHas('turns', [
-         'game_id' => $game->id,
-         'number' => 0,
-         'status' => 'pending',
-     ]);
-     ```
-   - Assert `$game->fresh()->currentTurn->number === 0`
-   - Assert `$game->fresh()->canGenerateReports() === true`
-
-3. Add new test `activate_rolls_back_when_turn_zero_creation_fails`:
-   - Create a valid activatable game with `gameWithHomeSystem()`
-   - Pre-create a Turn 0 row to trigger a unique constraint violation:
-     ```php
-     Turn::create([
-         'game_id' => $game->id,
-         'number' => 0,
-         'status' => TurnStatus::Pending,
-     ]);
-     ```
-   - Call `$this->withoutExceptionHandling()`
-   - Expect `Illuminate\Database\QueryException` (import if needed)
-   - POST to activate
-   - After catching, assert the game status is still `GameStatus::HomeSystemGenerated` (not `Active`)
-
-4. Strengthen one rejection test — in `activate_is_rejected_when_status_is_not_home_system_generated`, add assertion that no turns were created:
+2. **Create survey** entry for the homeworld:
    ```php
-   $this->assertDatabaseCount('turns', 0);
+   $survey = $report->surveys()->create([
+       'planet_id' => $homeworld->id,
+       'orbit' => $homeworld->orbit,
+       'star_x' => $homeworldStar->x,
+       'star_y' => $homeworldStar->y,
+       'star_z' => $homeworldStar->z,
+       'star_sequence' => $homeworldStar->sequence,
+       'planet_type' => $homeworld->type,
+       'habitability' => $homeworld->habitability,
+   ]);
    ```
+
+3. **Snapshot all homeworld deposits** with 1-based `deposit_no`:
+   ```php
+   $homeworld->deposits->values()->each(function ($deposit, $index) use ($survey) {
+       $survey->deposits()->create([
+           'deposit_no' => $index + 1,
+           'resource' => $deposit->resource,
+           'yield_pct' => $deposit->yield_pct,
+           'quantity_remaining' => $deposit->quantity_remaining,
+       ]);
+   });
+   ```
+
+4. **Verify final status:** After the empire loop completes, `$turn->update(['status' => TurnStatus::Completed])` should already be in place from Task F10. Verify it's still at the right position (after the loop, before the return).
+
+**Implementation notes:**
+- Deposits are ordered by `id` (from the eager-load in Task F10), so `deposit_no` assignment is deterministic.
+- The homeworld is the empire's `homeSystem->homeworldPlanet`, **not** the colony's planet (though they are the same for setup reports). Use the canonical source.
+- Only empires with colonies are processed — this was already enforced by the `whereHas('colonies')` scope in Task F10.
 
 **Tests:**
-```bash
-php artisan test --compact --filter=GameGenerationControllerActivateTest
-php artisan test --compact --filter=activate_creates_turn_zero_with_pending_status
-php artisan test --compact --filter=activate_rolls_back_when_turn_zero_creation_fails
-```
+- Add to `tests/Feature/Services/SetupReportGeneratorTest.php`
+- `test_generate_creates_homeworld_survey_with_correct_planet_data` — call `generate()`, load the `TurnReportSurvey`, assert `planet_id`, `orbit`, `star_x/y/z`, `star_sequence`, `planet_type`, `habitability` match the homeworld.
+- `test_generate_snapshots_all_homeworld_deposits_with_one_based_deposit_numbers` — create 3 deposits on homeworld, call `generate()`, assert 3 `turn_report_survey_deposits` rows with `deposit_no` 1, 2, 3.
+- `test_generate_marks_turn_completed_on_success` — call `generate()`, assert `$turn->fresh()->status === TurnStatus::Completed`.
+- `test_generate_returns_count_of_processed_empires` — create 2 empires with colonies and 1 without, call `generate()`, assert return value is `2`.
 
 **Acceptance criteria:**
-- Turn 0 is verified as created with correct values after activation.
-- `currentTurn()` resolves to Turn 0.
-- `canGenerateReports()` returns `true` after activation.
-- Transaction rollback is verified — failed Turn 0 creation does not leave the game as Active.
-- Failed activation does not create stray turns.
+- [ ] One homeworld survey per processed empire is created
+- [ ] Survey contains correct homeworld planet data and denormalized star coords
+- [ ] All homeworld deposits are copied with deterministic 1-based `deposit_no`
+- [ ] `deposit_no` ordering follows deposit `id` order
+- [ ] Turn status is `completed` after successful generation
+- [ ] Return value equals the number of empires with colonies
+- [ ] Tests pass: `php artisan test --compact --filter=SetupReportGeneratorTest`
 
 ---
 
-## Task E5 — Formatting and full test suite verification
+## Task F13 — Formatting and full test suite verification
 
-**Status:** [x] Complete
-
-**Why:** Final cleanup to ensure all Group E changes are formatted and the entire test suite passes.
+**Status:** [ ] Complete
 
 **Steps:**
 
-1. Run Pint on modified files:
+1. Run Pint on all modified/created PHP files:
    ```bash
-   vendor/bin/pint --dirty
+   vendor/bin/pint --dirty --format agent
    ```
 
-2. Run focused Group E tests:
+2. Run all Group F tests:
    ```bash
-   php artisan test --compact --filter=EmpireCreatorTest
-   php artisan test --compact --filter=GameGenerationControllerActivateTest
+   php artisan test --compact --filter=TurnReportSchemaTest
+   php artisan test --compact --filter=TurnReportModelTest
+   php artisan test --compact --filter=TurnReportFactoryTest
+   php artisan test --compact --filter=SetupReportGeneratorTest
    ```
 
 3. Run the full test suite:
@@ -309,31 +871,34 @@ php artisan test --compact --filter=activate_rolls_back_when_turn_zero_creation_
    ```
 
 **Acceptance criteria:**
-- No Pint violations.
-- All `EmpireCreatorTest` tests pass.
-- All `GameGenerationControllerActivateTest` tests pass.
-- Full test suite passes.
+- [ ] No Pint violations
+- [ ] All Group F tests pass
+- [ ] Full test suite passes (no regressions from Groups A–E)
 
 ---
 
-## Group E Acceptance Criteria
+## Group F Acceptance Criteria
 
-Group E is complete when **all** of the following are true:
+Group F is complete when **all** of the following are true:
 
-- [x] **1. Multi-colony empire creation:** `EmpireCreator` uses `Game::colonyTemplates()` (HasMany) and creates one colony per template, all on the empire's homeworld.
+- [ ] **1. Report schema:** Five report tables exist (`turn_reports`, `turn_report_colonies`, `turn_report_colony_inventory`, `turn_report_colony_population`, `turn_report_surveys`, `turn_report_survey_deposits`) with correct columns, constraints, and cascade behavior.
 
-- [x] **2. Starting inventory:** Inventory rows are copied from each template using `insert()` with `->value` for enum-backed columns (bypassing cast safety).
+- [ ] **2. Snapshot FK strategy:** `source_colony_id` and `planet_id` on snapshot tables are plain nullable integers, not foreign keys. Historical reports survive if live entities are deleted.
 
-- [x] **3. Starting population:** `colony_population` rows are created for each template's population entries with `rebel_quantity = 0`. Retrieved rows cast back correctly to `PopulationClass`.
+- [ ] **3. Report models:** Six Eloquent models exist with correct `#[Fillable]`, `casts()`, `$timestamps = false`, and relationship methods. Enum casts match the live model usage (`ColonyKind`, `UnitCode`, `PopulationClass`, `PlanetType`, `DepositResource`).
 
-- [x] **4. Turn 0 creation:** `GameGenerationController::activate()` creates Turn 0 with `TurnStatus::Pending` and `reports_locked_at = null` in the same transaction that sets the game to `Active`.
+- [ ] **4. Factories:** Six factory classes exist following existing conventions. All produce valid persisted records with correctly hydrating enum casts.
 
-- [x] **5. Turn behavior:** Turn 0 becomes the game's `currentTurn`. `Game::canGenerateReports()` returns `true` immediately after activation.
+- [ ] **5. Atomic status transition:** `SetupReportGenerator::generate()` uses a single guarded `UPDATE` to transition turn status from `pending`/`completed` to `generating`. It rejects `generating`, `closed`, and locked turns with `RuntimeException`.
 
-- [x] **6. Atomicity:** If Turn 0 creation fails, the game status change is rolled back. Failed activation does not create stray turns.
+- [ ] **6. Report generation:** The service creates one report per empire with colonies. Each report contains colony snapshots with denormalized star/planet data, inventory snapshots, population snapshots, a homeworld survey, and homeworld deposit snapshots with 1-based `deposit_no`.
 
-- [x] **7. Regression safety:** Single-template empire creation still works. Existing home-system assignment, capacity checks, and reassignment behavior unchanged. Existing activation authorization and rejection tests pass.
+- [ ] **7. Idempotency:** Re-running the generator deletes existing reports and recreates them. The delete-and-recreate pattern via cascade ensures clean results.
 
-- [x] **8. Scope control:** No changes to template upload logic. No changes to `Game::colonyTemplate()` or `colonyTemplateSummary()`. No new services, events, or jobs introduced.
+- [ ] **8. Completion:** Turn status is set to `completed` after successful generation. The return value is the number of empires processed.
 
-- [x] **9. Verification:** Pint clean. Focused Group E tests pass. Full test suite passes.
+- [ ] **9. No-colony handling:** Empires without colonies are skipped and not counted.
+
+- [ ] **10. Scope control:** No controllers, routes, policies, or frontend changes. No modifications to existing live models except the `Turn::reports()` relationship.
+
+- [ ] **11. Verification:** Pint clean. All Group F tests pass. Full test suite passes with no regressions.
