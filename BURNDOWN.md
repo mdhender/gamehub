@@ -438,7 +438,7 @@ class TurnReportSurveyDeposit extends Model
 
 ## Task F8 — Factories: `TurnReport` and colony report factories
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #29 (part 1 of 2)
 
@@ -517,10 +517,10 @@ return [
 - `test_turn_report_colony_population_factory_creates_with_enum_cast` — create, assert `population_code` is `PopulationClass` instance.
 
 **Acceptance criteria:**
-- [ ] All 4 factories exist and follow existing factory conventions
-- [ ] `TurnReport::factory()->create()` produces a persisted record
-- [ ] Enum-casted attributes hydrate correctly from factory values
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportFactoryTest`
+- [x] All 4 factories exist and follow existing factory conventions
+- [x] `TurnReport::factory()->create()` produces a persisted record
+- [x] Enum-casted attributes hydrate correctly from factory values
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportFactoryTest`
 
 ---
 
