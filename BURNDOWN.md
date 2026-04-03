@@ -62,7 +62,7 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 
 ## Task F2 — Migration: `turn_report_colonies` table
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Design task:** #24
 
@@ -102,12 +102,12 @@ Group F creates the **report schema**, **report models**, **factories**, and the
 - `test_deleting_turn_report_cascades_to_turn_report_colonies` — create parent + child, delete parent, assert child is gone.
 
 **Acceptance criteria:**
-- [ ] Table matches design schema exactly
-- [ ] `turn_report_id` FK cascades on delete
-- [ ] `source_colony_id` is nullable and is **not** a foreign key
-- [ ] `planet_id` is nullable and is **not** a foreign key
-- [ ] No timestamps columns
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
+- [x] Table matches design schema exactly
+- [x] `turn_report_id` FK cascades on delete
+- [x] `source_colony_id` is nullable and is **not** a foreign key
+- [x] `planet_id` is nullable and is **not** a foreign key
+- [x] No timestamps columns
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportSchemaTest`
 
 ---
 
