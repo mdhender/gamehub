@@ -871,9 +871,9 @@ For each empire:
    ```
 
 **Acceptance criteria:**
-- [ ] No Pint violations
-- [ ] All Group F tests pass
-- [ ] Full test suite passes (no regressions from Groups A–E)
+- [x] No Pint violations
+- [x] All Group F tests pass
+- [x] Full test suite passes (no regressions from Groups A–E)
 
 ---
 
@@ -881,24 +881,24 @@ For each empire:
 
 Group F is complete when **all** of the following are true:
 
-- [ ] **1. Report schema:** Five report tables exist (`turn_reports`, `turn_report_colonies`, `turn_report_colony_inventory`, `turn_report_colony_population`, `turn_report_surveys`, `turn_report_survey_deposits`) with correct columns, constraints, and cascade behavior.
+- [x] **1. Report schema:** Five report tables exist (`turn_reports`, `turn_report_colonies`, `turn_report_colony_inventory`, `turn_report_colony_population`, `turn_report_surveys`, `turn_report_survey_deposits`) with correct columns, constraints, and cascade behavior.
 
-- [ ] **2. Snapshot FK strategy:** `source_colony_id` and `planet_id` on snapshot tables are plain nullable integers, not foreign keys. Historical reports survive if live entities are deleted.
+- [x] **2. Snapshot FK strategy:** `source_colony_id` and `planet_id` on snapshot tables are plain nullable integers, not foreign keys. Historical reports survive if live entities are deleted.
 
-- [ ] **3. Report models:** Six Eloquent models exist with correct `#[Fillable]`, `casts()`, `$timestamps = false`, and relationship methods. Enum casts match the live model usage (`ColonyKind`, `UnitCode`, `PopulationClass`, `PlanetType`, `DepositResource`).
+- [x] **3. Report models:** Six Eloquent models exist with correct `#[Fillable]`, `casts()`, `$timestamps = false`, and relationship methods. Enum casts match the live model usage (`ColonyKind`, `UnitCode`, `PopulationClass`, `PlanetType`, `DepositResource`).
 
-- [ ] **4. Factories:** Six factory classes exist following existing conventions. All produce valid persisted records with correctly hydrating enum casts.
+- [x] **4. Factories:** Six factory classes exist following existing conventions. All produce valid persisted records with correctly hydrating enum casts.
 
-- [ ] **5. Atomic status transition:** `SetupReportGenerator::generate()` uses a single guarded `UPDATE` to transition turn status from `pending`/`completed` to `generating`. It rejects `generating`, `closed`, and locked turns with `RuntimeException`.
+- [x] **5. Atomic status transition:** `SetupReportGenerator::generate()` uses a single guarded `UPDATE` to transition turn status from `pending`/`completed` to `generating`. It rejects `generating`, `closed`, and locked turns with `RuntimeException`.
 
-- [ ] **6. Report generation:** The service creates one report per empire with colonies. Each report contains colony snapshots with denormalized star/planet data, inventory snapshots, population snapshots, a homeworld survey, and homeworld deposit snapshots with 1-based `deposit_no`.
+- [x] **6. Report generation:** The service creates one report per empire with colonies. Each report contains colony snapshots with denormalized star/planet data, inventory snapshots, population snapshots, a homeworld survey, and homeworld deposit snapshots with 1-based `deposit_no`.
 
-- [ ] **7. Idempotency:** Re-running the generator deletes existing reports and recreates them. The delete-and-recreate pattern via cascade ensures clean results.
+- [x] **7. Idempotency:** Re-running the generator deletes existing reports and recreates them. The delete-and-recreate pattern via cascade ensures clean results.
 
-- [ ] **8. Completion:** Turn status is set to `completed` after successful generation. The return value is the number of empires processed.
+- [x] **8. Completion:** Turn status is set to `completed` after successful generation. The return value is the number of empires processed.
 
-- [ ] **9. No-colony handling:** Empires without colonies are skipped and not counted.
+- [x] **9. No-colony handling:** Empires without colonies are skipped and not counted.
 
-- [ ] **10. Scope control:** No controllers, routes, policies, or frontend changes. No modifications to existing live models except the `Turn::reports()` relationship.
+- [x] **10. Scope control:** No controllers, routes, policies, or frontend changes. No modifications to existing live models except the `Turn::reports()` relationship.
 
-- [ ] **11. Verification:** Pint clean. All Group F tests pass. Full test suite passes with no regressions.
+- [x] **11. Verification:** Pint clean. All Group F tests pass. Full test suite passes with no regressions.
