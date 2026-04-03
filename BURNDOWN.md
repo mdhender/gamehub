@@ -582,7 +582,7 @@ Tests:
 
 ## Task G6 — Formatting and full test suite verification
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Steps:**
 
@@ -620,11 +620,11 @@ Tests:
    Confirm all four routes exist with correct methods, URIs, names, and scoped bindings.
 
 **Acceptance criteria:**
-- [ ] No Pint violations
-- [ ] All Group G tests pass
-- [ ] Existing report tests (Groups F, schema, models, factories) still pass
-- [ ] Full test suite passes (no regressions from Groups A–F)
-- [ ] Route list shows four report routes under the games group
+- [x] No Pint violations
+- [x] All Group G tests pass
+- [x] Existing report tests (Groups F, schema, models, factories) still pass
+- [x] Full test suite passes (no regressions from Groups A–F)
+- [x] Route list shows four report routes under the games group
 
 ---
 
@@ -632,22 +632,22 @@ Tests:
 
 Group G is complete when **all** of the following are true:
 
-- [ ] **1. Routes:** Four backend routes exist under the existing `games` route group: `generate` (POST), `lock` (POST), `show` (GET), `download` (GET).
+- [x] **1. Routes:** Four backend routes exist under the existing `games` route group: `generate` (POST), `lock` (POST), `show` (GET), `download` (GET).
 
-- [ ] **2. Scoped bindings:** `Turn` route model binding is scoped under `Game` via `scopeBindings()`. `Empire` game membership is verified with an explicit `abort_unless` guard.
+- [x] **2. Scoped bindings:** `Turn` route model binding is scoped under `Game` via `scopeBindings()`. `Empire` game membership is verified with an explicit `abort_unless` guard.
 
-- [ ] **3. Dedicated policy:** A `TurnReportPolicy` controls report access. No report-view logic is added to `GamePolicy`.
+- [x] **3. Dedicated policy:** A `TurnReportPolicy` controls report access. No report-view logic is added to `GamePolicy`.
 
-- [ ] **4. Generate action:** GM/admin-only. Validates game is active and turn is 0. Calls `SetupReportGenerator::generate()`. Redirects with success count. Service `RuntimeException` is surfaced as a validation error, not a 500.
+- [x] **4. Generate action:** GM/admin-only. Validates game is active and turn is 0. Calls `SetupReportGenerator::generate()`. Redirects with success count. Service `RuntimeException` is surfaced as a validation error, not a 500.
 
-- [ ] **5. Lock action:** GM/admin-only. Validates game is active and turn is 0. Atomically sets `reports_locked_at` and `status = closed`. Rejects already locked/closed/generating turns. `Game::canGenerateReports()` returns `false` after lock.
+- [x] **5. Lock action:** GM/admin-only. Validates game is active and turn is 0. Atomically sets `reports_locked_at` and `status = closed`. Rejects already locked/closed/generating turns. `Game::canGenerateReports()` returns `false` after lock.
 
-- [ ] **6. Show action:** GM can view any empire's report. Players can view only their own empire's report. Non-members are denied. Renders a browser-readable text report from a Blade view. Report data comes from snapshot tables, not live game state.
+- [x] **6. Show action:** GM can view any empire's report. Players can view only their own empire's report. Non-members are denied. Renders a browser-readable text report from a Blade view. Report data comes from snapshot tables, not live game state.
 
-- [ ] **7. Download action:** Same authorization as `show`. Returns a JSON attachment with filename `report-{game_id}-turn-{number}-empire-{empire_id}.json`. Payload contains structured snapshot data with colonies (nested inventory/population), surveys (nested deposits), and enum values serialized as strings.
+- [x] **7. Download action:** Same authorization as `show`. Returns a JSON attachment with filename `report-{game_id}-turn-{number}-empire-{empire_id}.json`. Payload contains structured snapshot data with colonies (nested inventory/population), surveys (nested deposits), and enum values serialized as strings.
 
-- [ ] **8. 404 handling:** Missing or mismatched resources return `404` — cross-game empire mismatches, missing reports, scoped binding violations.
+- [x] **8. 404 handling:** Missing or mismatched resources return `404` — cross-game empire mismatches, missing reports, scoped binding violations.
 
-- [ ] **9. Test style:** All controller tests follow the existing feature-test style: `LazilyRefreshDatabase`, `#[Test]` attributes, direct HTTP requests, session/status assertions.
+- [x] **9. Test style:** All controller tests follow the existing feature-test style: `LazilyRefreshDatabase`, `#[Test]` attributes, direct HTTP requests, session/status assertions.
 
-- [ ] **10. Verification:** Pint clean. All Group G tests pass. All Group F tests pass. Full test suite passes with no regressions.
+- [x] **10. Verification:** Pint clean. All Group G tests pass. All Group F tests pass. Full test suite passes with no regressions.
