@@ -112,7 +112,7 @@ Both population tables have composite unique keys (`colony_id + population_code`
 
 ### Task C14a — Create `ColonyPopulation` model and wire `Colony::population()`
 
-**Status:** TODO
+**Status:** DONE
 **Effort:** S
 **Depends on:** Groups A & B complete
 

@@ -50,4 +50,10 @@ class Colony extends Model
     {
         return $this->hasMany(ColonyInventory::class);
     }
+
+    /** @return HasMany<ColonyPopulation, $this> */
+    public function population(): HasMany
+    {
+        return $this->hasMany(ColonyPopulation::class);
+    }
 }
