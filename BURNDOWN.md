@@ -29,7 +29,7 @@ Group G wires setup reports into the application surface area: **backend routes*
 
 ## Task G1 — Policy: `TurnReportPolicy`
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Design task:** #32
 
@@ -103,13 +103,13 @@ Tests:
 - `test_download_matches_show_permissions` — verify download follows same rules as show (GM allowed for any, player only own, non-member denied).
 
 **Acceptance criteria:**
-- [ ] `TurnReportPolicy` exists at `app/Policies/TurnReportPolicy.php`
-- [ ] `generate` and `lock` are GM/admin only
-- [ ] `show` and `download` allow GM/admin for any empire
-- [ ] `show` and `download` allow players only for their own empire
-- [ ] Non-members are denied for all four abilities
-- [ ] No report-view logic is added to `GamePolicy`
-- [ ] Tests pass: `php artisan test --compact --filter=TurnReportPolicyTest`
+- [x] `TurnReportPolicy` exists at `app/Policies/TurnReportPolicy.php`
+- [x] `generate` and `lock` are GM/admin only
+- [x] `show` and `download` allow GM/admin for any empire
+- [x] `show` and `download` allow players only for their own empire
+- [x] Non-members are denied for all four abilities
+- [x] No report-view logic is added to `GamePolicy`
+- [x] Tests pass: `php artisan test --compact --filter=TurnReportPolicyTest`
 
 ---
 
