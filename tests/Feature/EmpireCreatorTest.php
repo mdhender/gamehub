@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
+use App\Enums\PopulationClass;
 use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Game;
@@ -52,6 +53,11 @@ class EmpireCreatorTest extends TestCase
             'tech_level' => 1,
             'quantity_assembled' => 5,
             'quantity_disassembled' => 0,
+        ]);
+        $colonyTemplate->population()->create([
+            'population_code' => PopulationClass::Unemployable,
+            'quantity' => 3500000,
+            'pay_rate' => 0.0,
         ]);
 
         (new HomeSystemCreator)->createRandom($game->fresh());
@@ -242,10 +248,68 @@ class EmpireCreatorTest extends TestCase
     }
 
     #[Test]
+    public function create_applies_colony_template_population(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $player = $this->addPlayer($game);
+
+        $empire = $this->creator->create($game, $player);
+
+        $population = $empire->colonies()->first()->population()->get();
+        $this->assertCount(1, $population);
+        $this->assertSame(PopulationClass::Unemployable, $population->first()->population_code);
+        $this->assertSame(3500000, $population->first()->quantity);
+        $this->assertSame(0.0, $population->first()->pay_rate);
+        $this->assertSame(0, $population->first()->rebel_quantity);
+    }
+
+    #[Test]
+    public function create_creates_one_colony_per_template_on_homeworld(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+
+        $template2 = $game->colonyTemplates()->create([
+            'kind' => ColonyKind::Orbital,
+            'tech_level' => 2,
+        ]);
+        $template2->items()->create([
+            'unit' => UnitCode::Farms,
+            'tech_level' => 1,
+            'quantity_assembled' => 3,
+            'quantity_disassembled' => 0,
+        ]);
+        $template2->population()->create([
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 1000000,
+            'pay_rate' => 0.125,
+        ]);
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $homeSystem = $game->homeSystems()->first();
+        $colonies = $empire->colonies()->get();
+        $this->assertCount(2, $colonies);
+        $this->assertTrue($colonies->every(fn ($c) => $c->planet_id === $homeSystem->homeworld_planet_id));
+
+        $kinds = $colonies->pluck('kind');
+        $this->assertTrue($kinds->contains(ColonyKind::OpenSurface));
+        $this->assertTrue($kinds->contains(ColonyKind::Orbital));
+
+        $openSurface = $colonies->firstWhere('kind', ColonyKind::OpenSurface);
+        $this->assertCount(1, $openSurface->inventory()->get());
+        $this->assertCount(1, $openSurface->population()->get());
+
+        $orbital = $colonies->firstWhere('kind', ColonyKind::Orbital);
+        $this->assertCount(1, $orbital->inventory()->get());
+        $this->assertCount(1, $orbital->population()->get());
+    }
+
+    #[Test]
     public function create_throws_when_no_colony_template(): void
     {
         $game = $this->activeGameWithHomeSystem();
-        $game->colonyTemplate()->delete();
+        $game->colonyTemplates()->delete();
 
         $player = $this->addPlayer($game);
 

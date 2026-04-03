@@ -89,7 +89,7 @@ Group E extends the setup-time business logic with two changes:
 
 ## Task E2 — Add `EmpireCreator` test coverage for multi-template and population
 
-**Status:** [ ] Not started
+**Status:** [x] Complete
 
 **Why:** The `EmpireCreator` changes from Task E1 need test coverage for the new multi-colony and population behavior, and the existing fixture needs a population row for realistic testing.
 
