@@ -1,0 +1,68 @@
+baseURL: "https://docs.epimethean.dev/"
+title: "EC Documentation"
+#languageCode: "en-us"
+
+defaultContentLanguage: en
+languages:
+  en:
+    languageName: English
+    weight: 1
+    title: "EC Documentation"
+
+module:
+  imports:
+    - path: github.com/imfing/hextra
+
+enableGitInfo: true
+
+markup:
+  goldmark:
+    extensions:
+      passthrough:
+        delimiters:
+          block:
+            - ['\[', '\]']
+            - ['$$', '$$']
+          inline:
+            - ['\(', '\)']
+        enable: true
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+
+params:
+  discord_url: "https://discord.com/invite/YAAfPDPfdp"
+  navbar:
+    displayTitle: true
+    displayLogo: false
+  sidebar:
+    autoCollapse: true
+
+menu:
+  main:
+    - identifier: players
+      name: Players
+      url: /players/
+      weight: 1
+    - identifier: referees
+      name: Referees
+      url: /referees/
+      weight: 2
+    - identifier: developers
+      name: Developers
+      url: /developers/
+      weight: 3
+    - identifier: reference
+      name: Reference
+      url: /reference/
+      weight: 4
+    - identifier: history
+      name: History
+      url: /history/
+      weight: 5
+    - name: GitHub
+      weight: 6
+      url: "https://github.com/mdhender/gamehub"
+      params:
+        icon: github

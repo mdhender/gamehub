@@ -1,0 +1,5 @@
+---
+title: Lorem Ipsum
+---
+
+Text

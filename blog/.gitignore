@@ -1,8 +1,0 @@
-*~
-*.lock
-*.swp
-.claude/
-.idea/
-.vscode/
-public/
-tmp/

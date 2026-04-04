@@ -1,0 +1,143 @@
+Epimethean Challenge
+
+GAME    # EC-4
+DATE    # Year 0, Quarter 0
+EMPIRE  # 21 "The Krill"
+RACE    #  8
+
+NOTES
+    This is your initial report for your Home colony/nation.
+
+^----------------------------
+COLONY   # 21 "Not Named"
+LOCATION # SYSTEM  29-02-18/0  ORBIT 3  PLANET 18
+
+Population Report
+  UNEMPLOYABLES        3,500,000 UNITS
+  UNSKILLED WORKERS    3,700,000 UNITS
+  PROFESSIONALS        1,000,000 UNITS
+  SOLDIERS             1,500,000 UNITS
+
+Inventory Report
+  Storage Report
+  *:::::::GOLD::::::::*:::NON-METALICS::::*::::::METALS:::::::*:::::::FUEL:::::::*
+  ^     50,000--UNITS^^  4,000,000--UNITS^^  4,000,000--UNITS^^  2,000,000--UNITS^
+  *::CONSUMER GOODS:::*:::::::FOOD::::::::*:ASSAULT WEAPONS:::*::ASSAULT CRAFT:::*
+  ^    500,000--UNITS^^  3,000,000--UNITS^^    400,000--UNITS^^    160,000--UNITS^
+  *::ANTI-MISSILES::::*::::STRUCTURAL:::::*:MILITARY SUPPLIES:*:::::MISSILES:::::*
+  ^    100,000--UNITS^^    600,000--UNITS^^  5,000,000--UNITS^^    100,000--UNITS^
+
+  Operational Units
+  *:MISSILE LAUNCHERS:*::::TRANSPORTS:::::*::::::FARMS::::::::*::::STRUCTURAL::::*
+  ^     32,000--UNITS^^     10,000--UNITS^^    100,000--UNITS^^ 35,000,000--UNITS^
+
+Mining Report
+*::::::GROUP #::::::*:::::::MINES:::::::*:::::::TL #::::::::*::::LOCATION #::::*
+^         1        ^^    200,000--UNITS^^         1        ^^        21        ^
+
+*::::::GROUP #::::::*::::DEPOSIT SIZE:::*:::::::TYPE::::::::*::::::YIELD %:::::*
+^         1        ^THIS PIT IS EMPTY****************************************
+
+Manufacturing Report
+
+GROUP  #  1 ----   150,000 FACTORY UNITS PRODUCING       CONSUMER GOODS.
+WORK IN PROCESS IS :   1,250,000 UNITS ONE QUARTER COMPLETE
+                       1,250,000 UNITS HALF COMPLETE
+                       1,250,000 UNITS THREE QUARTERS COMPLETE
+
+GROUP  #  2 ----    50,000 FACTORY UNITS PRODUCING TL-1  RESEARCH POINTS.
+WORK IN PROCESS IS :   12,500 UNITS ONE QUARTER COMPLETE
+                       12,500 UNITS HALF COMPLETE
+                       12,500 UNITS THREE QUARTERS COMPLETE
+
+GROUP  #  3 ----    50,000 FACTORY UNITS PRODUCING TL-1  RESEARCH POINTS.
+WORK IN PROCESS IS :   12,500 UNITS ONE QUARTER COMPLETE
+                       12,500 UNITS HALF COMPLETE
+                       12,500 UNITS THREE QUARTERS COMPLETE
+
+GROUP  #  4 ----    50,000 FACTORY UNITS PRODUCING TL-1  ASSAULT CRAFT.
+WORK IN PROCESS IS :   50,000 UNITS ONE QUARTER COMPLETE
+                       50,000 UNITS HALF COMPLETE
+                       50,000 UNITS THREE QUARTERS COMPLETE
+
+----------------------------
+
+Status Reports
+
+Game # EC-5               Turn # 1                                              Player #  13              Date 02/20/84
+
+
+^----------------------------
+Game   EC-4               Turn  1       Player   13     Date 2026/02/28
+
+Colony   13 "Not Named"                 System   00-00-00/0    Orbit  2
+  Kind: Orbital Colony            Tech Level:  1
+  Birth Rate:  0.0000%            Death Rate:  0.0625%
+  Standard of Living:  0.4881
+
+Census Report
+  Group  Quantity__  Employed_____  Pay Rate___  Rations__
+    UEM   5,900,000              0  0.0000 CNGD  100.0000%
+    USK   6,000,000      2,990,000  0.1250 CNGD  100.0000%
+    PRO   1,500,000      1,430,000  0.3750 CNGD  100.0000%
+    SLD   2,500,000      2,500,000  0.2500 CNGD  100.0000%
+    CNW      10,000         10,000  0.5000 CNGD  100.0000%
+    SPY          20             20  0.6250 CNGD  100.0000%
+  -----  15,920,040  -------------  -----------  --------- 3,980,010
+
+Other Statistics
+     400,000 TPT Capacity     15,920,040 Total POP          89,494,472 Total MASS
+   4,952,743 Space Avail.         65,000 FUEL used/FRM         150,000 FUEL used/MIN      500,000 FUEL mined
+     425,000 FUEL used/FCT     3,980,010 FOOD consumed       3,250,000 FOOD produced     2,750,000 METS mined
+   1,395,833 METS used/FCT     1,354,167 NMTS used/FCT       1,942,513 CNGD paid        2,083,333 CNGD produced
+   2,990,000 employed USKs     1,430,000 employed PROs         400,000 unused TPT cap
+
+Storage/Non-Assembly Items ********
+    2,400,000 ASW-1       150,000 ANM-1       150,000 MSS-1        20,000 TPT-1
+    5,354,167 METS      2,645,833 NMTS      1,360,000 FUEL         20,000 GOLD    4,269,990 FOOD     940,821 CNGD
+
+Storage/Unassembled Items *********
+       93,750 AUT-1        37,500 EWP-1        31,250 MIN-1           20 SEN-1   14,500,000 STUN
+
+Assembled Items *******************
+      130,000 FRM-1        50,000 MSL-1            20 SEN-1   60,000,000 STUN
+
+
+Mine # Units_____  TL  Dep. #  Deposit Qty.  Type  Yield   Mine # Units_____  TL  Dep. #  Deposit Qty.  Type  Yield
+    01    100,000   1      13    37,500,000  FUEL   20 %       02    200,000   1      28    35,000,000  METS   55 %
+
+
+Grp. #  # FCT Units  TL  ORDERS  WORK IN PROCESS ONE QUARTER  WORK IN PROCESS ONE HALF  WORK IN PROCESS THREE QUARTERS
+    01      250,000   1  CNGD          2,083,334 CNGD               2,083,333 CNGD            2,083,333 CNGD
+    02       75,000   1  MTSP          9,375,000 MTSP               9,375,000 MTSP            9,375,000 MTSP
+    03       75,000   1  AUT-1            93,750 AUT-1                 93,750 AUT-1              93,750 AUT-1
+    04       75,000   1  EWP-1            37,500 EWP-1                 37,500 EWP-1              37,500 EWP-1
+    05       75,000   1  MIN-1            31,250 MIN-1                 31,250 MIN-1              31,250 MIN-1
+    06      250,000   1  STUN         12,500,000 STUN              12,500,000 STUN           12,500,000 STUN
+    07       50,000   1  RSCH             12,500 RSCH                  12,500 RSCH               12,500 RSCH
+
+
+Domestic Espionage (Internal Spies)
+     10 Type A      0 Type B     10 Type C      0 Type D      0 Type E      0 Type F      0 Type G
+
+Group A, Report on the rebel situation: rebels =       0   rebel soldiers =       0
+Group C, Report on foreign espionage operations as you requested:
+
+Owner #    Type A Spies    Type B Spies    Type C Spies    Type D Spies    Type E Spies    Type F Spies    Type G Spies
+      0               0               0               0               0               0               0               0
+
+
+Survey Report for Planet # 2  in System  0 / 0 / 0
+  Habitability = 25              Farmland in use =    1,950,000              Population =    238,800,600
+  Deposits
+     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______
+     01  ****     %               10  ****     %               20  ****     %               30  ****     %
+     02  ****     %               11  ****     %               21  ****     %               31  ****     %
+     03  ****     %               12  ****     %               22  ****     %               32  ****     %
+     04  ****     %               13  ****     %               23  ****     %               33  ****     %
+     05  ****     %               14  ****     %               24  ****     %               34  ****     %
+     06  ****     %               15  ****     %               25  ****     %               35  ****     %
+     07  ****     %               16  ****     %               26  ****     %
+     08  ****     %               17  ****     %               27  ****     %
+     09  ****     %               18  ****     %               28  ****     %
+                                  19  ****     %               29  ****     %
