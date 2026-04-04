@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['turn_report_id', 'source_colony_id', 'name', 'kind', 'tech_level',
     'planet_id', 'orbit', 'star_x', 'star_y', 'star_z', 'star_sequence',
-    'is_on_surface', 'rations', 'sol', 'birth_rate', 'death_rate'])]
+    'rations', 'sol', 'birth_rate', 'death_rate'])]
 class TurnReportColony extends Model
 {
     use HasFactory;
@@ -25,7 +25,6 @@ class TurnReportColony extends Model
     {
         return [
             'kind' => ColonyKind::class,
-            'is_on_surface' => 'boolean',
             'rations' => 'float',
             'sol' => 'float',
             'birth_rate' => 'float',

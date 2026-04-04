@@ -31,7 +31,6 @@ class TurnReportColonyFactory extends Factory
             'star_y' => fake()->numberBetween(1, 30),
             'star_z' => fake()->numberBetween(1, 30),
             'star_sequence' => fake()->numberBetween(1, 4),
-            'is_on_surface' => fake()->boolean(),
             'rations' => 1.0,
             'sol' => 0.0,
             'birth_rate' => 0.0,

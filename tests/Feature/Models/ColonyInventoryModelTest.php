@@ -23,6 +23,7 @@ class ColonyInventoryModelTest extends TestCase
 
         return Colony::query()->create([
             'empire_id' => $empire->id,
+            'star_id' => $planet->star_id,
             'planet_id' => $planet->id,
             'kind' => ColonyKind::Enclosed,
             'tech_level' => 1,

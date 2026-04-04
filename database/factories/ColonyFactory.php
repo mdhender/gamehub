@@ -20,13 +20,15 @@ class ColonyFactory extends Factory
      */
     public function definition(): array
     {
+        $planet = Planet::factory()->create();
+
         return [
             'empire_id' => Empire::factory(),
-            'planet_id' => Planet::factory(),
+            'star_id' => $planet->star_id,
+            'planet_id' => $planet->id,
             'kind' => ColonyKind::OpenSurface,
             'tech_level' => fake()->numberBetween(1, 5),
             'name' => 'Not Named',
-            'is_on_surface' => true,
             'rations' => 1.0,
             'sol' => 0.0,
             'birth_rate' => 0.0,

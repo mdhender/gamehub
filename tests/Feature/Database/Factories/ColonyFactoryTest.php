@@ -36,7 +36,6 @@ class ColonyFactoryTest extends TestCase
         $fresh = $colony->fresh();
 
         $this->assertSame('Not Named', $fresh->name);
-        $this->assertTrue($fresh->is_on_surface);
         $this->assertSame(1.0, $fresh->rations);
         $this->assertSame(0.0, $fresh->sol);
         $this->assertSame(0.0, $fresh->birth_rate);
@@ -48,11 +47,9 @@ class ColonyFactoryTest extends TestCase
     {
         $colony = Colony::factory()->create([
             'kind' => ColonyKind::Orbital,
-            'is_on_surface' => false,
         ]);
 
         $fresh = $colony->fresh();
         $this->assertSame(ColonyKind::Orbital, $fresh->kind);
-        $this->assertFalse($fresh->is_on_surface);
     }
 }

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['empire_id', 'planet_id', 'kind', 'tech_level', 'name', 'is_on_surface', 'rations', 'sol', 'birth_rate', 'death_rate'])]
+#[Fillable(['empire_id', 'star_id', 'planet_id', 'kind', 'tech_level', 'name', 'rations', 'sol', 'birth_rate', 'death_rate'])]
 class Colony extends Model
 {
     /** @use HasFactory<ColonyFactory> */
@@ -25,7 +25,6 @@ class Colony extends Model
     {
         return [
             'kind' => ColonyKind::class,
-            'is_on_surface' => 'boolean',
             'rations' => 'float',
             'sol' => 'float',
             'birth_rate' => 'float',
@@ -37,6 +36,12 @@ class Colony extends Model
     public function empire(): BelongsTo
     {
         return $this->belongsTo(Empire::class);
+    }
+
+    /** @return BelongsTo<Star, $this> */
+    public function star(): BelongsTo
+    {
+        return $this->belongsTo(Star::class);
     }
 
     /** @return BelongsTo<Planet, $this> */

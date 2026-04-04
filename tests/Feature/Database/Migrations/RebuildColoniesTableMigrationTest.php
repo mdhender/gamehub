@@ -63,7 +63,7 @@ class RebuildColoniesTableMigrationTest extends TestCase
         $this->assertSame('COPN', $row->kind);
     }
 
-    public function test_adds_six_new_columns_with_correct_defaults(): void
+    public function test_adds_five_new_columns_with_correct_defaults(): void
     {
         $this->rebuildOldSchema();
 
@@ -75,7 +75,6 @@ class RebuildColoniesTableMigrationTest extends TestCase
 
         $row = DB::table('colonies')->first();
         $this->assertSame('Not Named', $row->name);
-        $this->assertSame(1, (int) $row->is_on_surface);
         $this->assertSame(1.0, (float) $row->rations);
         $this->assertSame(0.0, (float) $row->sol);
         $this->assertSame(0.0, (float) $row->birth_rate);
@@ -101,10 +100,10 @@ class RebuildColoniesTableMigrationTest extends TestCase
 
     // ── Structural test (post-RefreshDatabase state) ──────────────────────────
 
-    public function test_preserves_both_foreign_keys(): void
+    public function test_preserves_all_three_foreign_keys(): void
     {
         $fks = collect(DB::select("PRAGMA foreign_key_list('colonies')"));
-        $this->assertCount(2, $fks);
+        $this->assertCount(3, $fks);
 
         $byColumn = $fks->keyBy('from');
 
@@ -112,6 +111,11 @@ class RebuildColoniesTableMigrationTest extends TestCase
         $this->assertSame('empires', $byColumn['empire_id']->table);
         $this->assertSame('id', $byColumn['empire_id']->to);
         $this->assertSame('CASCADE', strtoupper($byColumn['empire_id']->on_delete));
+
+        $this->assertArrayHasKey('star_id', $byColumn->toArray());
+        $this->assertSame('stars', $byColumn['star_id']->table);
+        $this->assertSame('id', $byColumn['star_id']->to);
+        $this->assertSame('CASCADE', strtoupper($byColumn['star_id']->on_delete));
 
         $this->assertArrayHasKey('planet_id', $byColumn->toArray());
         $this->assertSame('planets', $byColumn['planet_id']->table);

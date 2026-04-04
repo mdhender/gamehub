@@ -8,6 +8,7 @@ use App\Models\ColonyPopulation;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\HomeSystem;
+use App\Models\Planet;
 use App\Models\Player;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -90,9 +91,14 @@ class EmpireCreator
                 throw new \RuntimeException('This home system is at full capacity ('.HomeSystem::MAX_EMPIRES_PER_HOME_SYSTEM.' empires).');
             }
 
+            $newHomeworld = Planet::findOrFail($homeSystem->homeworld_planet_id);
+
             $empire->colonies()
                 ->where('planet_id', $empire->homeSystem->homeworld_planet_id)
-                ->update(['planet_id' => $homeSystem->homeworld_planet_id]);
+                ->update([
+                    'star_id' => $newHomeworld->star_id,
+                    'planet_id' => $newHomeworld->id,
+                ]);
 
             $empire->home_system_id = $homeSystem->id;
             $empire->save();
@@ -109,10 +115,13 @@ class EmpireCreator
             throw new \RuntimeException('This game does not have a colony template.');
         }
 
+        $homeworldPlanet = Planet::findOrFail($homeSystem->homeworld_planet_id);
+
         foreach ($colonyTemplates as $colonyTemplate) {
             $colony = Colony::create([
                 'empire_id' => $empire->id,
-                'planet_id' => $homeSystem->homeworld_planet_id,
+                'star_id' => $homeworldPlanet->star_id,
+                'planet_id' => $homeworldPlanet->id,
                 'kind' => $colonyTemplate->kind,
                 'tech_level' => $colonyTemplate->tech_level,
             ]);

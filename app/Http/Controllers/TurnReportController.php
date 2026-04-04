@@ -128,7 +128,6 @@ class TurnReportController extends Controller
                 'star_y' => $colony->star_y,
                 'star_z' => $colony->star_z,
                 'star_sequence' => $colony->star_sequence,
-                'is_on_surface' => $colony->is_on_surface,
                 'rations' => $colony->rations,
                 'sol' => $colony->sol,
                 'birth_rate' => $colony->birth_rate,

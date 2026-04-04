@@ -67,7 +67,7 @@ class UploadColonyTemplateRequest extends FormRequest
                     if (! isset($template['kind'])) {
                         $validator->errors()->add('template', "{$prefix}: 'kind' is required.");
                     } elseif (! in_array($template['kind'], $validKinds, true)) {
-                        $validator->errors()->add('template', "{$prefix}: 'kind' must be a valid ColonyKind (COPN, CENC, CORB).");
+                        $validator->errors()->add('template', "{$prefix}: 'kind' must be a valid ColonyKind (COPN, CENC, CORB, CSHP).");
                     }
 
                     if (! isset($template['tech-level'])) {

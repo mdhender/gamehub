@@ -33,7 +33,8 @@ class SetupReportGenerator
                 ->whereHas('colonies')
                 ->with([
                     'colonies' => fn ($q) => $q->orderBy('id'),
-                    'colonies.planet.star',
+                    'colonies.star',
+                    'colonies.planet',
                     'colonies.inventory',
                     'colonies.population',
                     'homeSystem.homeworldPlanet.star',
@@ -57,7 +58,7 @@ class SetupReportGenerator
                 ]);
 
                 foreach ($empire->colonies as $colony) {
-                    $star = $colony->planet->star;
+                    $star = $colony->star;
 
                     $reportColony = $report->colonies()->create([
                         'source_colony_id' => $colony->id,
@@ -65,12 +66,11 @@ class SetupReportGenerator
                         'kind' => $colony->kind,
                         'tech_level' => $colony->tech_level,
                         'planet_id' => $colony->planet_id,
-                        'orbit' => $colony->planet->orbit,
+                        'orbit' => $colony->planet?->orbit ?? 0,
                         'star_x' => $star->x,
                         'star_y' => $star->y,
                         'star_z' => $star->z,
                         'star_sequence' => $star->sequence,
-                        'is_on_surface' => $colony->is_on_surface,
                         'rations' => $colony->rations,
                         'sol' => $colony->sol,
                         'birth_rate' => $colony->birth_rate,

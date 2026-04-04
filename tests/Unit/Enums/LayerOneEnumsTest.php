@@ -33,7 +33,7 @@ class LayerOneEnumsTest extends TestCase
     {
         $cases = ColonyKind::cases();
 
-        $this->assertCount(3, $cases);
+        $this->assertCount(4, $cases);
 
         $this->assertSame('OpenSurface', $cases[0]->name);
         $this->assertSame('COPN', $cases[0]->value);
@@ -43,6 +43,9 @@ class LayerOneEnumsTest extends TestCase
 
         $this->assertSame('Orbital', $cases[2]->name);
         $this->assertSame('CORB', $cases[2]->value);
+
+        $this->assertSame('Ship', $cases[3]->name);
+        $this->assertSame('CSHP', $cases[3]->value);
     }
 
     public function test_population_class_has_exactly_nine_cases(): void

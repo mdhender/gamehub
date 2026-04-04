@@ -23,11 +23,11 @@ class CreateColonyPopulationTableMigrationTest extends TestCase
         DB::table('colonies')->insert([
             'id' => $id,
             'empire_id' => 1,
+            'star_id' => 1,
             'planet_id' => 1,
             'kind' => 'COPN',
             'tech_level' => 1,
             'name' => 'Test Colony',
-            'is_on_surface' => 1,
             'rations' => 1.0,
             'sol' => 0.0,
             'birth_rate' => 0.0,

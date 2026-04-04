@@ -26,7 +26,7 @@ Generated: {{ $report->generated_at->toDateTimeString() }}</p>
 <h2>Colony: {{ $colony->name }}</h2>
 <p>Kind: {{ $colony->kind->value }}
 Tech Level: {{ $colony->tech_level }}
-Location: ({{ $colony->star_x }}, {{ $colony->star_y }}, {{ $colony->star_z }}) seq {{ $colony->star_sequence }}, orbit {{ $colony->orbit }}, {{ $colony->is_on_surface ? 'surface' : 'orbital' }}</p>
+Location: ({{ $colony->star_x }}, {{ $colony->star_y }}, {{ $colony->star_z }}) seq {{ $colony->star_sequence }}, orbit {{ $colony->orbit }}</p>
 
 <p>Rations: {{ $colony->rations }}
 SOL: {{ $colony->sol }}
