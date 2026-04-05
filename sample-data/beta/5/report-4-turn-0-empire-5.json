@@ -1,0 +1,296 @@
+{
+    "game": {
+        "id": 4,
+        "name": "EC-4"
+    },
+    "turn": {
+        "id": 1,
+        "number": 0,
+        "status": "completed",
+        "reports_locked_at": null
+    },
+    "empire": {
+        "id": 5,
+        "name": "Joe Camel's Empire"
+    },
+    "generated_at": "2026-04-03T20:35:07+00:00",
+    "colonies": [
+        {
+            "id": 1,
+            "source_colony_id": 5,
+            "name": "Not Named",
+            "kind": "COPN",
+            "tech_level": 1,
+            "planet_id": 1687,
+            "orbit": 5,
+            "star_x": 25,
+            "star_y": 1,
+            "star_z": 17,
+            "star_sequence": 1,
+            "rations": 1,
+            "sol": 0,
+            "birth_rate": 0,
+            "death_rate": 0,
+            "inventory": [
+                {
+                    "unit_code": "FCT",
+                    "tech_level": 1,
+                    "quantity_assembled": 300000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "FRM",
+                    "tech_level": 1,
+                    "quantity_assembled": 100000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "MIN",
+                    "tech_level": 1,
+                    "quantity_assembled": 200000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "MSL",
+                    "tech_level": 1,
+                    "quantity_assembled": 32000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "STU",
+                    "tech_level": 0,
+                    "quantity_assembled": 35000000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "TPT",
+                    "tech_level": 1,
+                    "quantity_assembled": 10000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "ASC",
+                    "tech_level": 1,
+                    "quantity_assembled": 160000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "ASW",
+                    "tech_level": 1,
+                    "quantity_assembled": 400000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "MSS",
+                    "tech_level": 1,
+                    "quantity_assembled": 100000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "CNGD",
+                    "tech_level": 0,
+                    "quantity_assembled": 500000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "FOOD",
+                    "tech_level": 0,
+                    "quantity_assembled": 3000000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "FUEL",
+                    "tech_level": 0,
+                    "quantity_assembled": 2000000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "GOLD",
+                    "tech_level": 0,
+                    "quantity_assembled": 50000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "METS",
+                    "tech_level": 0,
+                    "quantity_assembled": 4000000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "MTSP",
+                    "tech_level": 0,
+                    "quantity_assembled": 5000000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "NMTS",
+                    "tech_level": 0,
+                    "quantity_assembled": 4000000,
+                    "quantity_disassembled": 0
+                },
+                {
+                    "unit_code": "STU",
+                    "tech_level": 0,
+                    "quantity_assembled": 600000,
+                    "quantity_disassembled": 0
+                }
+            ],
+            "population": [
+                {
+                    "population_code": "PRO",
+                    "quantity": 1000000,
+                    "population": 1000000,
+                    "employed": 0,
+                    "pay_rate": 0.375,
+                    "cngd_paid": 375000,
+                    "ration_pct": 100,
+                    "food_consumed": 250000,
+                    "rebel_quantity": 0
+                },
+                {
+                    "population_code": "SLD",
+                    "quantity": 1500000,
+                    "population": 1500000,
+                    "employed": 0,
+                    "pay_rate": 0.25,
+                    "cngd_paid": 375000,
+                    "ration_pct": 100,
+                    "food_consumed": 375000,
+                    "rebel_quantity": 0
+                },
+                {
+                    "population_code": "UEM",
+                    "quantity": 3500000,
+                    "population": 3500000,
+                    "employed": 0,
+                    "pay_rate": 0,
+                    "cngd_paid": 0,
+                    "ration_pct": 100,
+                    "food_consumed": 875000,
+                    "rebel_quantity": 0
+                },
+                {
+                    "population_code": "USK",
+                    "quantity": 3750000,
+                    "population": 3750000,
+                    "employed": 0,
+                    "pay_rate": 0.125,
+                    "cngd_paid": 468750,
+                    "ration_pct": 100,
+                    "food_consumed": 937500,
+                    "rebel_quantity": 0
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "source_colony_id": 6,
+            "name": "Not Named",
+            "kind": "CORB",
+            "tech_level": 1,
+            "planet_id": 1687,
+            "orbit": 5,
+            "star_x": 25,
+            "star_y": 1,
+            "star_z": 17,
+            "star_sequence": 1,
+            "rations": 1,
+            "sol": 0,
+            "birth_rate": 0,
+            "death_rate": 0,
+            "inventory": [
+                {
+                    "unit_code": "STU",
+                    "tech_level": 0,
+                    "quantity_assembled": 5000000,
+                    "quantity_disassembled": 0
+                }
+            ],
+            "population": [
+                {
+                    "population_code": "PRO",
+                    "quantity": 100,
+                    "population": 100,
+                    "employed": 0,
+                    "pay_rate": 0.375,
+                    "cngd_paid": 38,
+                    "ration_pct": 100,
+                    "food_consumed": 25,
+                    "rebel_quantity": 0
+                },
+                {
+                    "population_code": "SLD",
+                    "quantity": 150,
+                    "population": 150,
+                    "employed": 0,
+                    "pay_rate": 0.25,
+                    "cngd_paid": 38,
+                    "ration_pct": 100,
+                    "food_consumed": 38,
+                    "rebel_quantity": 0
+                },
+                {
+                    "population_code": "UEM",
+                    "quantity": 10,
+                    "population": 10,
+                    "employed": 0,
+                    "pay_rate": 0,
+                    "cngd_paid": 0,
+                    "ration_pct": 100,
+                    "food_consumed": 3,
+                    "rebel_quantity": 0
+                },
+                {
+                    "population_code": "USK",
+                    "quantity": 1000,
+                    "population": 1000,
+                    "employed": 0,
+                    "pay_rate": 0.125,
+                    "cngd_paid": 125,
+                    "ration_pct": 100,
+                    "food_consumed": 250,
+                    "rebel_quantity": 0
+                }
+            ]
+        }
+    ],
+    "surveys": [
+        {
+            "id": 1,
+            "planet_id": 1687,
+            "orbit": 5,
+            "star_x": 25,
+            "star_y": 1,
+            "star_z": 17,
+            "star_sequence": 1,
+            "planet_type": "terrestrial",
+            "habitability": 25,
+            "deposits": [
+                {
+                    "deposit_no": 1,
+                    "resource": "GOLD",
+                    "yield_pct": 1,
+                    "quantity_remaining": 30000000
+                },
+                {
+                    "deposit_no": 2,
+                    "resource": "FUEL",
+                    "yield_pct": 9,
+                    "quantity_remaining": 99999999
+                },
+                {
+                    "deposit_no": 3,
+                    "resource": "METS",
+                    "yield_pct": 29,
+                    "quantity_remaining": 99999999
+                },
+                {
+                    "deposit_no": 4,
+                    "resource": "NMTS",
+                    "yield_pct": 29,
+                    "quantity_remaining": 99999999
+                }
+            ]
+        }
+    ]
+}

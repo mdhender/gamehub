@@ -1,0 +1,51 @@
+## Game Info
+game_id,game_name,turn_number,turn_status,empire_id,empire_name,generated_at
+4,EC-4,0,completed,5,Joe Camel's Empire,2026-04-03T20:35:07+00:00
+
+## Colonies
+colony_id,source_colony_id,name,kind,tech_level,planet_id,orbit,star_x,star_y,star_z,star_sequence,rations,sol,birth_rate,death_rate
+1,5,Not Named,COPN,1,1687,5,25,1,17,1,1,0,0,0
+2,6,Not Named,CORB,1,1687,5,25,1,17,1,1,0,0,0
+
+## Colony Inventory
+colony_id,unit_code,tech_level,quantity_assembled,quantity_disassembled
+1,FCT,1,300000,0
+1,FRM,1,100000,0
+1,MIN,1,200000,0
+1,MSL,1,32000,0
+1,STU,0,35000000,0
+1,TPT,1,10000,0
+1,ASC,1,160000,0
+1,ASW,1,400000,0
+1,MSS,1,100000,0
+1,CNGD,0,500000,0
+1,FOOD,0,3000000,0
+1,FUEL,0,2000000,0
+1,GOLD,0,50000,0
+1,METS,0,4000000,0
+1,MTSP,0,5000000,0
+1,NMTS,0,4000000,0
+1,STU,0,600000,0
+2,STU,0,5000000,0
+
+## Colony Population
+colony_id,population_code,quantity,population,employed,pay_rate,cngd_paid,ration_pct,food_consumed,rebel_quantity
+1,PRO,1000000,1000000,0,0.375,375000,100,250000,0
+1,SLD,1500000,1500000,0,0.25,375000,100,375000,0
+1,UEM,3500000,3500000,0,0,0,100,875000,0
+1,USK,3750000,3750000,0,0.125,468750,100,937500,0
+2,PRO,100,100,0,0.375,38,100,25,0
+2,SLD,150,150,0,0.25,38,100,38,0
+2,UEM,10,10,0,0,0,100,3,0
+2,USK,1000,1000,0,0.125,125,100,250,0
+
+## Surveys
+survey_id,planet_id,orbit,star_x,star_y,star_z,star_sequence,planet_type,habitability
+1,1687,5,25,1,17,1,terrestrial,25
+
+## Survey Deposits
+survey_id,deposit_no,resource,yield_pct,quantity_remaining
+1,1,GOLD,1,30000000
+1,2,FUEL,9,99999999
+1,3,METS,29,99999999
+1,4,NMTS,29,99999999

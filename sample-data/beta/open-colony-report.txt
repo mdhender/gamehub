@@ -1,5 +1,10 @@
 Game: EC-4                      Player: 13       Turn: 1      Date: 2026/02/28
 
+Notes:
+ This is your initial report for your open colony.
+
+------------------------------------------------------------------------------
+
 Colony: 13  "Not Named"                        System: 00-00-00/0   Orbit:  7
   Kind: Open Colony              Tech Level:  1
 
