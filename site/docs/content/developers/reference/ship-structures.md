@@ -49,7 +49,7 @@ Volume is measured in **volume units** (VU). Volume units reflect the amount of 
 | STU       | Structure         | 0.5              | 0.5              |
 | TPT       | Transports        | 4 × TL           | 4 × TL           |
 
-Population units have 1 VU per unit (each unit = 100 people). Cadre units (CNW, SPY) count as 2 population units, so each cadre unit = 2 VU.
+Population volume is based on head count: 100 population = 1 VU. Total population includes cadre units at 2 population each (CNW, SPY). The formula is `ceil(total_population / 100)`.
 
 Natural resource units (FUEL, GOLD, METS, NMTS) are each 1 MU and 1 VU per unit.
 Mass for RSCH, RPV, and PWP is not specified in the 1978 manual.
@@ -122,8 +122,7 @@ Where:
 - **operational_volume** = sum of (quantity × volume_per_unit) for all operational non-super-structure units
 - **stored_volume** = sum of (quantity × volume_per_unit × 0.5) for all stored items
 
-Population volume is counted in operational volume.
-Each population unit (100 people) has a volume determined by the population-to-volume ratio (100 people = 1 VU, i.e. 1 VU per 100-person unit). Cadre units (CNW, SPY) count as 2 population units each.
+Population volume is counted in operational volume. The volume is `ceil(total_population / 100)` where total population counts each base unit as 1 and each cadre unit (CNW, SPY) as 2.
 
 ---
 
@@ -153,15 +152,14 @@ A negative value means the ship/colony is over capacity.
 
 The enclosure section of the turn report summarizes structural units and enclosed volume:
 
-For example, the report for an open air colony might contain:
+For example, the report for an orbital colony might contain:
 
 ```
 Enclosure
-  Super-structure (VU Factor: 1)
-    Kind_  Units______  Volume_____ Enclosed Volume
-      STU    4,953,743    2,476,872       4,953,743
-      SLS            9            1               9
-    Total                 2,476,873       4,953,752
+  Super-structure (VU Factor: 10)
+    Kind_  Units______  Volume_____  Enclosed Volume
+      STU    4,953,743    2,476,872          495,374
+    Total                 2,476,872          495,374
 ```
 
 - **VU Factor**: The volume unit factor for the type of ship/colony
@@ -178,7 +176,7 @@ An orbital colony (CORB, VU Factor = 10) with:
 - 850,000 FCT-1 operational (volume each = 12 + 2×1 = 14) → 11,900,000 VU
 - 130,000 FRM-1 operational (volume each = 6 + 1 = 7) → 910,000 VU
 - 300,000 MIN-1 operational (volume each = 10 + 2×1 = 12) → 3,600,000 VU
-- 15,920,040 total population → 159,200.4 VU (rounded to 159,201 VU)
+- 15,920,040 total population → ceil(15,920,040 / 100) = 159,201 VU
 - Various stored items at half volume
 
 The total content volume determines the number of structural units needed:

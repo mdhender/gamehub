@@ -4,5 +4,6 @@ auth.json
 cluster.json
 game.json
 homeworld-template.json
+report-notes.txt
 orders.txt
 *.tgz

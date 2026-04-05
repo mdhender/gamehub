@@ -21,44 +21,56 @@ Census Report
     SPY           20            40                0    0.6250           13   100.00%              10
   Total                 15,920,040        7,640,020              1,942,513                 3,980,010
 
+  Employed Labor
+    Area_________   UEM  USK______  PRO______  SLD______  CNW  SPY
+    Farming           0    390,000    130,000          0    0    0
+    Mining            0    900,000    300,000          0    0    0
+    Manufacturing     0  2,550,000    850,000          0    0    0
+    Military          0          0          0  2,499,980    0    0
+    Espionage         0          0         20         20    0    0
+    Construction      0     10,000     10,000          0    0    0
+    Total             0  3,850,000  1,290,020  2,500,000    0    0
+
 
 Enclosure
-  Super-structure (VU Factor: 1)
+  Super-structure (VU Factor: 10)
     Kind_  Units______  Volume_____  Mass______  Enclosed Volume
-    STU      4,953,743    2,476,872           ?        4,953,743
-    SLS              9            1           ?                9
-    Total                 2,476,873           ?        4,953,752
+    STU      4,953,743    2,476,872           ?          495,374
+    Total                 2,476,872           ?          495,374
   Inventory (in_storage == false, assembly_required == false)
-    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
-    POP      15,920,040      159,201     159,201          159,201
-    Total
+    Kind__  Units______  Volume_____  Mass________  Enclosed Volume
+    POP      15,920,040      159,201       159,201          159,201
+    Total                    159,201       159,201          159,201
   Inventory (in_storage == false, assembly_required == true , assembled == true)
-    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
-    FRM-1       130,000
-    MSL-1        50,000
-    SEN-1            20
-    STUN     60,000,000
+    Kind__  Units______  Volume_____  Mass________  Enclosed Volume
+    FCT-1       850,000   11,900,000    11,900,000       11,900,000
+    FRM-1       130,000      910,000       910,000          910,000
+    MIN-1       300,000    3,600,000     3,600,000        3,600,000
+    MSL-1        50,000    1,250,000     1,250,000        1,250,000
+    SEN-1            20       60,000        60,000           60,000
+    STUN     60,000,000   30,000,000    30,000,000       30,000,000
+    Total                 47,720,000    47,720,000       47,720,000
   Inventory (in_storage == true , assembly_required == false)
-    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
-    ANM-1       150,000
-    ASW-1     2,400,000
-    CNGD        940,821
-    FOOD      4,269,990
-    FUEL      1,360,000
-    GOLD         20,000
-    METS      5,354,167
-    MSS-1       150,000
-    NMTS      2,645,833
-    TPT-1        20,000
-    Total
+    Kind__  Units______  Volume_____  Mass________  Enclosed Volume
+    ANM-1       150,000      600,000       600,000          300,000
+    ASW-1     2,400,000   48,000,000    48,000,000       24,000,000
+    CNGD        940,821      564,492       564,492          282,246
+    FOOD      4,269,990   25,619,940    25,619,940       12,809,970
+    FUEL      1,360,000    1,360,000     1,360,000          680,000
+    GOLD         20,000       20,000        20,000           10,000
+    METS      5,354,167    5,354,167     5,354,167        2,677,084
+    MSS-1       150,000      600,000       600,000          300,000
+    NMTS      2,645,833    2,645,833     2,645,833        1,322,917
+    TPT-1        20,000       80,000        80,000           40,000
+    Total                 84,844,432    84,844,432       42,422,217
   Inventory (in_storage == true , assembly_required == true , assembled == false)
-    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
-    AUT-1        93,750
-    EWP-1        37,500
-    MIN-1        31,250
-    SEN-1            20
-    STUN     14,500,000
-    Total
+    Kind__  Units______  Volume_____  Mass________  Enclosed Volume
+    AUT-1        93,750      375,000       375,000          187,500
+    EWP-1        37,500      375,000       375,000          187,500
+    MIN-1        31,250      375,000       375,000          187,500
+    SEN-1            20       60,000        60,000           30,000
+    STUN     14,500,000    7,250,000     7,250,000        3,625,000
+    Total                  8,435,000     8,435,000        4,217,500
   Inventory (in_storage == true , assembly_required == true , assembled == true)
 
 
@@ -87,16 +99,6 @@ Factories
   Total           850,000  850,000  2,550,000    0        425,000
 
 
-Employed Labor
-  Area_________   UEM  USK______  PRO______  SLD______  CNW  SPY
-  Farming           0    390,000    130,000          0    0    0
-  Mining            0    900,000    300,000          0    0    0
-  Manufacturing     0  2,550,000    850,000          0    0    0
-  Military          0          0          0  2,499,980    0    0
-  Espionage         0          0         20         20    0    0
-  Construction      0     10,000     10,000          0    0    0
-  Total             0  3,850,000  1,290,020  2,500,000    0    0
-
 Manufacturing
   Group  Units  Qty______  Orders   WIP 25%_________  WIP 50%_________  WIP 75%_________
       1  FCT-1    250,000  CNGD       2,083,333 CNGD    2,083,333 CNGD    2,083,333 CNGD
@@ -106,114 +108,3 @@ Manufacturing
       5  FCT-1     75,000  MIN-1         31,250 MIN-1      31,250 MIN-1      31,250 MIN-1
       6  FCT-1    250,000  STUN       2,500,000 STUN    2,500,000 STUN    2,500,000 STUN
       7  FCT-1     50,000  RSCH          12,500 RSCH       12,500 RSCH       12,500 RSCH
-
-------------------------------------------------------------------------------
-%%END HERE%%
-------------------------------------------------------------------------------
-------------------------------------------------------------------------------
-
-*** All numbers below here are suspect - they may have been added only to show the format of the output ***
-
-Other Statistics
-     400,000 TPT Capacity
-     400,000 unused TPT cap
-  89,494,472 Total MASS
-   4,952,743 Space Avail.
-
-     425,000 FUEL used/FCT     1,395,833 METS used/FCT       1,354,167 NMTS used/FCT       1,942,513 CNGD paid         2,083,333 CNGD produced
-
-Storage/Non-Assembly Items ********
-    2,400,000 ASW-1       150,000 ANM-1       150,000 MSS-1        20,000 TPT-1
-    4,269,990 FOOD        940,821 CNGD
-    5,354,167 METS      2,645,833 NMTS      1,360,000 FUEL         20,000 GOLD
-
-Storage/Unassembled Items *********
-       93,750 AUT-1        37,500 EWP-1        31,250 MIN-1           20 SEN-1   14,500,000 STUN
-
-Assembled Items *******************
-      130,000 FRM-1        50,000 MSL-1            20 SEN-1   60,000,000 STUN
-
-
-Domestic Espionage (Internal Spies)
-     10 Type A      0 Type B     10 Type C      0 Type D      0 Type E      0 Type F      0 Type G
-
-Group A, Report on the rebel situation: rebels =       0   rebel soldiers =       0
-Group C, Report on foreign espionage operations as you requested:
-
-Owner #    Type A Spies    Type B Spies    Type C Spies    Type D Spies    Type E Spies    Type F Spies    Type G Spies
-      0               0               0               0               0               0               0               0
-
-
-Survey Report for Planet # 2  in System  0 / 0 / 0
-  Habitability = 25              Farmland in use =    1,950,000              Population =    238,800,600
-  Deposits
-     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______
-     01  ****     %               10  ****     %               20  ****     %               30  ****     %
-     02  ****     %               11  ****     %               21  ****     %               31  ****     %
-     03  ****     %               12  ****     %               22  ****     %               32  ****     %
-     04  ****     %               13  ****     %               23  ****     %               33  ****     %
-     05  ****     %               14  ****     %               24  ****     %               34  ****     %
-     06  ****     %               15  ****     %               25  ****     %               35  ****     %
-     07  ****     %               16  ****     %               26  ****     %
-     08  ****     %               17  ****     %               27  ****     %
-     09  ****     %               18  ****     %               28  ****     %
-                                  19  ****     %               29  ****     %
-
-*** All data below this point is historical layout and should be ignored ***
-First generation format:
-
-  GROUP  #  1 ----   250,000 FACTORY UNITS PRODUCING       CONSUMER GOODS.
-  WORK IN PROCESS IS :   2,083,334 UNITS ONE QUARTER COMPLETE
-                         2,083,334 UNITS HALF COMPLETE
-                         2,083,334 UNITS THREE QUARTERS COMPLETE
-
-  GROUP  #  2 ----    75,000 FACTORY UNITS PRODUCING       MILITARY SUPPLIES.
-  WORK IN PROCESS IS :   9,375,000 UNITS ONE QUARTER COMPLETE
-                         9,375,000 UNITS HALF COMPLETE
-                         9,375,000 UNITS THREE QUARTERS COMPLETE
-
-  GROUP  #  3 ----    75,000 FACTORY UNITS PRODUCING TL-1  AUTOMATION.
-  WORK IN PROCESS IS :      93,750 UNITS ONE QUARTER COMPLETE
-                            93,750 UNITS HALF COMPLETE
-                            93,750 UNITS THREE QUARTERS COMPLETE
-
-  GROUP  #  4 ----    75,000 FACTORY UNITS PRODUCING TL-1  ENERGY WEAPONS.
-  WORK IN PROCESS IS :      37,500 UNITS ONE QUARTER COMPLETE
-                            37,500 UNITS HALF COMPLETE
-                            37,500 UNITS THREE QUARTERS COMPLETE
-
-  GROUP  #  5 ----    75,000 FACTORY UNITS PRODUCING TL-1  MINES.
-  WORK IN PROCESS IS :      31,250 UNITS ONE QUARTER COMPLETE
-                            31,250 UNITS HALF COMPLETE
-                            31,250 UNITS THREE QUARTERS COMPLETE
-
-  GROUP  #  6 ----   250,000 FACTORY UNITS PRODUCING       STRUCTURAL.
-  WORK IN PROCESS IS :   2,500,000 UNITS ONE QUARTER COMPLETE
-                         2,500,000 UNITS HALF COMPLETE
-                         2,500,000 UNITS THREE QUARTERS COMPLETE
-
-  GROUP  #  7 ----    50,000 FACTORY UNITS PRODUCING TL-1  RESEARCH POINTS.
-  WORK IN PROCESS IS :      12,500 UNITS ONE QUARTER COMPLETE
-                            12,500 UNITS HALF COMPLETE
-                            12,500 UNITS THREE QUARTERS COMPLETE
-
-Second generation format:
-  Group  Units  Qty______  ORDERS  WIP ONE QUARTER   WIP ONE HALF      WIP THREE QUARTERS
-      1  FCT-1    250,000  CNGD     2,083,334 CNGD    2,083,334 CNGD    2,083,334 CNGD
-      2  FCT-1     75,000  MTSP     9,375,000 MTSP    9,375,000 MTSP    9,375,000 MTSP
-      3  FCT-1     75,000  AUT-1       93,750 AUT-1      93,750 AUT-1      93,750 AUT-1
-      4  FCT-1     75,000  EWP-1       37,500 EWP-1      37,500 EWP-1      37,500 EWP-1
-      5  FCT-1     75,000  MIN-1       31,250 MIN-1      31,250 MIN-1      31,250 MIN-1
-      6  FCT-1    250,000  STUN     2,500,000 STUN    2,500,000 STUN    2,500,000 STUN
-      7  FCT-1     50,000  RSCH        12,500 RSCH       12,500 RSCH       12,500 RSCH
-
-Third generation format:
-  Group  Units  Qty______  Orders   WIP 25%_________  WIP 50%_________  WIP 75%_________
-      1  FCT-1    250,000  CNGD       2,083,333 CNGD    2,083,333 CNGD    2,083,333 CNGD
-      2  FCT-1     75,000  MTSP       9,375,000 MTSP    9,375,000 MTSP    9,375,000 MTSP
-      3  FCT-1     75,000  AUT-1         93,750 AUT-1      93,750 AUT-1      93,750 AUT-1
-      4  FCT-1     75,000  EWP-1         37,500 EWP-1      37,500 EWP-1      37,500 EWP-1
-      5  FCT-1     75,000  MIN-1         31,250 MIN-1      31,250 MIN-1      31,250 MIN-1
-      6  FCT-1    250,000  STUN       2,500,000 STUN    2,500,000 STUN    2,500,000 STUN
-      7  FCT-1     50,000  RSCH          12,500 RSCH       12,500 RSCH       12,500 RSCH
-
