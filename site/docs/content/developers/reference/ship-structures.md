@@ -76,6 +76,17 @@ Their **mass** does not change.
 For example, 5 SPD-1 units in storage occupy 63 VU (5 × 25 × 1 / 2).
 
 ---
+## Open Colony Exterior Storage
+
+Open colonies (COPN) may store certain items outside the colony, exempt from enclosed volume.
+
+**Natural resources** (GOLD, FUEL, METS, NMTS) can be dumped outside the colony. These units do not count toward content volume and do not require super-structure.
+
+**Farms** can operate outside the colony if the planet has Habitability > 0. The maximum number of exterior FRM units is `100,000 × Habitability`. Exterior farms on planets in orbits 1–5 are solar powered and do not consume FUEL.
+
+These exemptions apply only to COPN. Enclosed colonies, orbital colonies, and ships must enclose all contents.
+
+---
 ## Structural Unit Requirements
 
 Each ship/colony type has a VU Factor, which modifies the number of structural units needed to enclose the contents of the ship/colony:

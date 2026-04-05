@@ -6,7 +6,7 @@ Notes:
 ------------------------------------------------------------------------------
 
 Colony: 13  "Not Named"                        System: 00-00-00/0   Orbit:  7
-  Kind: Orbital Colony          Tech Level:  1
+  Kind: Open Colony              Tech Level:  1
 
 Census Report
   Standard of Living: 0.4881    Birth Rate: 0.0000%
@@ -33,10 +33,10 @@ Census Report
 
 
 Enclosure
-  Super-structure (VU Factor: 10)
-    Kind_  Units______  Volume_____  Mass______  Enclosed Volume
-    STU      4,953,743    2,476,872           ?          495,374
-    Total                 2,476,872           ?          495,374
+  Super-structure (VU Factor: 1)
+    Kind__  Units______  Volume_____  Mass________  Enclosed Volume
+    STU      50,357,496   25,178,748    25,178,748       50,357,496
+    Total                 25,178,748    25,178,748       50,357,496
   Inventory (in_storage == false, assembly_required == false)
     Kind__  Units______  Volume_____  Mass________  Enclosed Volume
     POP      15,920,040      159,201       159,201          159,201
@@ -46,32 +46,32 @@ Enclosure
     FCT-1       850,000   11,900,000    11,900,000       11,900,000
     FRM-1       130,000      910,000       910,000          910,000
     MIN-1       300,000    3,600,000     3,600,000        3,600,000
-    MSL-1        50,000    1,250,000     1,250,000        1,250,000
     SEN-1            20       60,000        60,000           60,000
-    STUN     60,000,000   30,000,000    30,000,000       30,000,000
-    Total                 47,720,000    47,720,000       47,720,000
+    STU      14,596,247    7,298,123     7,298,123        7,298,123
+    Total                 23,768,123    23,768,123       23,768,123
   Inventory (in_storage == true , assembly_required == false)
     Kind__  Units______  Volume_____  Mass________  Enclosed Volume
-    ANM-1       150,000      600,000       600,000          300,000
-    ASW-1     2,400,000   48,000,000    48,000,000       24,000,000
     CNGD        940,821      564,492       564,492          282,246
     FOOD      4,269,990   25,619,940    25,619,940       12,809,970
     FUEL      1,360,000    1,360,000     1,360,000          680,000
     GOLD         20,000       20,000        20,000           10,000
     METS      5,354,167    5,354,167     5,354,167        2,677,084
-    MSS-1       150,000      600,000       600,000          300,000
     NMTS      2,645,833    2,645,833     2,645,833        1,322,917
     TPT-1        20,000       80,000        80,000           40,000
-    Total                 84,844,432    84,844,432       42,422,217
+    Total                 35,644,432    35,644,432       17,822,217
   Inventory (in_storage == true , assembly_required == true , assembled == false)
     Kind__  Units______  Volume_____  Mass________  Enclosed Volume
     AUT-1        93,750      375,000       375,000          187,500
-    EWP-1        37,500      375,000       375,000          187,500
     MIN-1        31,250      375,000       375,000          187,500
     SEN-1            20       60,000        60,000           30,000
-    STUN     14,500,000    7,250,000     7,250,000        3,625,000
-    Total                  8,435,000     8,435,000        4,217,500
+    STU      14,500,000    7,250,000     7,250,000        3,625,000
+    Total                  8,060,000     8,060,000        4,030,000
   Inventory (in_storage == true , assembly_required == true , assembled == true)
+    Kind__  Units______  Volume_____  Mass________  Enclosed Volume
+    Total                  8,060,000     8,060,000        4,030,000
+  Summary
+    Total Mass___  Enclosed Volume  Used Volume__  Remaining Volume
+       92,810,504       50,357,496     45,779,541         4,577,955
 
 
 Farming
@@ -104,7 +104,7 @@ Manufacturing
       1  FCT-1    250,000  CNGD       2,083,333 CNGD    2,083,333 CNGD    2,083,333 CNGD
       2  FCT-1     75,000  MTSP       9,375,000 MTSP    9,375,000 MTSP    9,375,000 MTSP
       3  FCT-1     75,000  AUT-1         93,750 AUT-1      93,750 AUT-1      93,750 AUT-1
-      4  FCT-1     75,000  EWP-1         37,500 EWP-1      37,500 EWP-1      37,500 EWP-1
+      4  FCT-1     75,000  SLS        7,500,000 SLS     7,500,000 SLS     7,500,000 SLS
       5  FCT-1     75,000  MIN-1         31,250 MIN-1      31,250 MIN-1      31,250 MIN-1
-      6  FCT-1    250,000  STUN       2,500,000 STUN    2,500,000 STUN    2,500,000 STUN
+      6  FCT-1    250,000  STU        2,500,000 STU     2,500,000 STU     2,500,000 STU
       7  FCT-1     50,000  RSCH          12,500 RSCH       12,500 RSCH       12,500 RSCH
