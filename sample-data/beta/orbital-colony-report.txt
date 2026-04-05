@@ -1,0 +1,80 @@
+Game: EC-4                      Player: 13       Turn: 1      Date: 2026/02/28
+
+Notes:
+ This is your initial report for your orbital colony.
+
+------------------------------------------------------------------------------
+
+Colony: 14  "Not Named"                        System: 00-00-00/0   Orbit:  7
+  Kind: Orbital Colony           Tech Level:  1
+
+Census Report
+  Standard of Living: 1.0000      Birth Rate: 0.0000%
+                                  Death Rate: 0.0625%
+
+  Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
+    PRO        1,000         1,000            1,000    0.3750          375   100.00%             250
+    SLD          500           500              500    0.2500          125   100.00%             125
+    CNW          100           200                0    0.5000           50   100.00%              50
+    SPY           10            20                0    0.6250            7   100.00%               5
+  Total                      1,720            1,500                    557                       430
+
+  Employed Labor
+    Area_________   USK______  PRO______  SLD______
+    Farming                 0          0          0
+    Mining                  0          0          0
+    Manufacturing           0      1,000          0
+    Military                0          0        500
+    Espionage               0         10         10
+    Construction          100        100          0
+    Total                 100      1,110        510
+
+
+Enclosure
+  Super-structure (VU Factor: 10)
+    Kind__  Units______  Volume_____  Mass________  Enclosed Capacity
+    STU     200,000,000  100,000,000   100,000,000       20,000,000
+    Total                100,000,000   100,000,000       20,000,000
+  Inventory (in_storage == false, assembly_required == false)
+    Kind__  Units______  Volume_____  Mass________  Volume Used
+    POP           1,720           18            18           18
+    Total                         18            18           18
+  Inventory (in_storage == false, assembly_required == true , assembled == true)
+    Kind__  Units______  Volume_____  Mass________  Volume Used
+    AUT-1         3,000       12,000        12,000       12,000
+    FCT-1         1,000       14,000        14,000       14,000
+    LFS-1         1,720       13,760        13,760       13,760
+    Total                     39,760        39,760       39,760
+  Inventory (in_storage == true , assembly_required == false)
+    Kind__  Units______  Volume_____  Mass________  Volume Used
+    Total                          0             0            0
+  Inventory (in_storage == true , assembly_required == true , assembled == false)
+    Kind__  Units______  Volume_____  Mass________  Volume Used
+    Total                          0             0            0
+  Inventory (in_storage == true , assembly_required == true , assembled == true)
+    Kind__  Units______  Volume_____  Mass________  Volume Used
+    FCT-1       849,000   11,886,000    11,886,000    5,943,000
+    Total                 11,886,000    11,886,000    5,943,000
+  Summary
+    Total Mass___  Enclosed Capacity  Volume Used__  Remaining Volume
+      111,925,778         20,000,000      5,982,778        14,017,222
+
+
+Farming
+  ** No farms. Population fed via transport from Colony 13. **
+
+
+Mining
+  ** Orbital colonies cannot mine (surface-only activity). **
+
+
+Factories
+  Group  Units  Qty______  PRO____  USK______  AUT____  FUEL Consumed
+      1  FCT-1      1,000    1,000          0    3,000            500
+  Total             1,000    1,000          0    3,000            500
+
+
+Manufacturing
+  Group  Units  Qty______  Orders   WIP 25%_________  WIP 50%_________  WIP 75%_________
+      1  FCT-1      1,000  SLS          100,000 SLS      100,000 SLS      100,000 SLS
+
