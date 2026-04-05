@@ -105,30 +105,48 @@
         "population": [
             {
                 "population_code": "UEM",
-                "quantity": 10,
+                "quantity": 5900000,
                 "pay_rate": 0.0
             },
             {
                 "population_code": "USK",
-                "quantity": 1000,
+                "quantity": 6000000,
                 "pay_rate": 0.125
             },
             {
                 "population_code": "PRO",
-                "quantity": 100,
+                "quantity": 1500000,
                 "pay_rate": 0.375
             },
             {
                 "population_code": "SLD",
-                "quantity": 150,
+                "quantity": 2500000,
                 "pay_rate": 0.25
+            },
+            {
+                "population_code": "CNW",
+                "quantity": 10000,
+                "pay_rate": 0.5
+            },
+            {
+                "population_code": "SPY",
+                "quantity": 20,
+                "pay_rate": 0.625
             }
         ],
         "inventory": {
             "operational": [
                 {
-                    "unit": "STU",
-                    "quantity": 5000000
+                    "unit": "FCT-1",
+                    "quantity": 850000
+                },
+                {
+                    "unit": "FRM-1",
+                    "quantity": 130000
+                },
+                {
+                    "unit": "MIN-1",
+                    "quantity": 300000
                 }
             ]
         }
