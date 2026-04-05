@@ -122,7 +122,7 @@ class GameGenerationControllerTest extends TestCase
                 ->whereNot('homeSystemTemplate.homeworld_orbit', null)
                 ->has('colonyTemplate', 2)
                 ->where('colonyTemplate.0.unit_count', 17)
-                ->where('colonyTemplate.1.unit_count', 1)
+                ->where('colonyTemplate.1.unit_count', 3)
             );
     }
 
@@ -610,6 +610,101 @@ class GameGenerationControllerTest extends TestCase
     }
 
     #[Test]
+    public function upload_colony_template_computes_cnw_pay_rate_from_pro_and_usk(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $payload = [[
+            'kind' => 'COPN',
+            'tech-level' => 1,
+            'population' => [
+                ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.0],
+                ['population_code' => 'USK', 'quantity' => 1000, 'pay_rate' => 0.125],
+                ['population_code' => 'PRO', 'quantity' => 1000, 'pay_rate' => 0.375],
+                ['population_code' => 'CNW', 'quantity' => 100],
+            ],
+            'inventory' => [
+                'operational' => [['unit' => 'FCT-1', 'quantity' => 10]],
+            ],
+        ]];
+
+        $file = $this->jsonFile('colony.json', json_encode($payload));
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect();
+
+        $template = $game->colonyTemplates()->first();
+        $cnw = $template->population()->where('population_code', 'CNW')->first();
+        $this->assertNotNull($cnw);
+        $this->assertSame(0.5, $cnw->pay_rate); // PRO 0.375 + USK 0.125
+    }
+
+    #[Test]
+    public function upload_colony_template_computes_spy_pay_rate_from_pro_and_sld(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $payload = [[
+            'kind' => 'COPN',
+            'tech-level' => 1,
+            'population' => [
+                ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.0],
+                ['population_code' => 'PRO', 'quantity' => 1000, 'pay_rate' => 0.375],
+                ['population_code' => 'SLD', 'quantity' => 1000, 'pay_rate' => 0.25],
+                ['population_code' => 'SPY', 'quantity' => 20],
+            ],
+            'inventory' => [
+                'operational' => [['unit' => 'FCT-1', 'quantity' => 10]],
+            ],
+        ]];
+
+        $file = $this->jsonFile('colony.json', json_encode($payload));
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect();
+
+        $template = $game->colonyTemplates()->first();
+        $spy = $template->population()->where('population_code', 'SPY')->first();
+        $this->assertNotNull($spy);
+        $this->assertSame(0.625, $spy->pay_rate); // PRO 0.375 + SLD 0.25
+    }
+
+    #[Test]
+    public function upload_colony_template_ignores_pay_rate_in_file_for_cadres(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $payload = [[
+            'kind' => 'COPN',
+            'tech-level' => 1,
+            'population' => [
+                ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.0],
+                ['population_code' => 'USK', 'quantity' => 1000, 'pay_rate' => 0.125],
+                ['population_code' => 'PRO', 'quantity' => 1000, 'pay_rate' => 0.375],
+                ['population_code' => 'CNW', 'quantity' => 100, 'pay_rate' => 9.99],
+            ],
+            'inventory' => [
+                'operational' => [['unit' => 'FCT-1', 'quantity' => 10]],
+            ],
+        ]];
+
+        $file = $this->jsonFile('colony.json', json_encode($payload));
+
+        $this->actingAs($user)
+            ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
+            ->assertRedirect();
+
+        $template = $game->colonyTemplates()->first();
+        $cnw = $template->population()->where('population_code', 'CNW')->first();
+        $this->assertSame(0.5, $cnw->pay_rate); // computed, not 9.99
+    }
+
+    #[Test]
     public function upload_colony_template_with_real_sample_file(): void
     {
         $game = Game::factory()->create();
@@ -632,8 +727,8 @@ class GameGenerationControllerTest extends TestCase
 
         $corb = $game->colonyTemplates()->where('kind', 'CORB')->first();
         $this->assertNotNull($corb);
-        $this->assertSame(1, $corb->items()->count());
-        $this->assertSame(4, $corb->population()->count());
+        $this->assertSame(3, $corb->items()->count());
+        $this->assertSame(6, $corb->population()->count());
 
         $asw = $copn->items()->where('unit', 'ASW')->first();
         $this->assertNotNull($asw);

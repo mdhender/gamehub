@@ -125,13 +125,11 @@
             },
             {
                 "population_code": "CNW",
-                "quantity": 10000,
-                "pay_rate": 0.5
+                "quantity": 10000
             },
             {
                 "population_code": "SPY",
-                "quantity": 20,
-                "pay_rate": 0.625
+                "quantity": 20
             }
         ],
         "inventory": {

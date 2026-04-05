@@ -252,6 +252,39 @@ class UploadColonyTemplateValidationTest extends TestCase
     }
 
     #[Test]
+    public function cadre_population_without_pay_rate_passes_validation(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['population'] = [
+            ['population_code' => 'USK', 'quantity' => 1000, 'pay_rate' => 0.125],
+            ['population_code' => 'PRO', 'quantity' => 100, 'pay_rate' => 0.375],
+            ['population_code' => 'CNW', 'quantity' => 10],
+            ['population_code' => 'SPY', 'quantity' => 5],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function non_cadre_population_without_pay_rate_fails_validation(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['population'] = [
+            ['population_code' => 'USK', 'quantity' => 1000],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
     public function valid_consumable_without_tech_level_passes(): void
     {
         $game = Game::factory()->create();

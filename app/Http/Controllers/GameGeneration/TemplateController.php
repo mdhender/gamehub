@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\GameGeneration;
 
+use App\Enums\PopulationClass;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadColonyTemplateRequest;
 use App\Http\Requests\UploadHomeSystemTemplateRequest;
@@ -70,11 +71,31 @@ class TemplateController extends Controller
                     'tech_level' => $templateData['tech-level'],
                 ]);
 
+                $baseRates = collect($templateData['population'])
+                    ->whereIn('population_code', [
+                        PopulationClass::Unskilled->value,
+                        PopulationClass::Professional->value,
+                        PopulationClass::Soldier->value,
+                    ])
+                    ->pluck('pay_rate', 'population_code');
+
                 foreach ($templateData['population'] as $popData) {
+                    $code = $popData['population_code'];
+
+                    if ($code === PopulationClass::ConstructionWorker->value) {
+                        $payRate = ($baseRates[PopulationClass::Professional->value] ?? 0)
+                            + ($baseRates[PopulationClass::Unskilled->value] ?? 0);
+                    } elseif ($code === PopulationClass::Spy->value) {
+                        $payRate = ($baseRates[PopulationClass::Professional->value] ?? 0)
+                            + ($baseRates[PopulationClass::Soldier->value] ?? 0);
+                    } else {
+                        $payRate = $popData['pay_rate'];
+                    }
+
                     $template->population()->create([
-                        'population_code' => $popData['population_code'],
+                        'population_code' => $code,
                         'quantity' => $popData['quantity'],
-                        'pay_rate' => $popData['pay_rate'],
+                        'pay_rate' => $payRate,
                     ]);
                 }
 

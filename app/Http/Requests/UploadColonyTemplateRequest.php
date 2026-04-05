@@ -96,10 +96,14 @@ class UploadColonyTemplateRequest extends FormRequest
                                 $validator->errors()->add('template', "{$popPrefix}: 'quantity' must be an integer >= 0.");
                             }
 
-                            if (! isset($pop['pay_rate'])) {
-                                $validator->errors()->add('template', "{$popPrefix}: 'pay_rate' is required.");
-                            } elseif (! is_numeric($pop['pay_rate']) || $pop['pay_rate'] < 0) {
-                                $validator->errors()->add('template', "{$popPrefix}: 'pay_rate' must be numeric >= 0.");
+                            $isCadre = isset($pop['population_code']) && in_array($pop['population_code'], ['CNW', 'SPY'], true);
+
+                            if (! $isCadre) {
+                                if (! isset($pop['pay_rate'])) {
+                                    $validator->errors()->add('template', "{$popPrefix}: 'pay_rate' is required.");
+                                } elseif (! is_numeric($pop['pay_rate']) || $pop['pay_rate'] < 0) {
+                                    $validator->errors()->add('template', "{$popPrefix}: 'pay_rate' must be numeric >= 0.");
+                                }
                             }
                         }
                     }
