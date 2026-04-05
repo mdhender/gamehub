@@ -220,6 +220,7 @@ class SetupReportGeneratorTest extends TestCase
 
         $this->assertSame($livePop->population_code, $reportPop->population_code);
         $this->assertSame($livePop->quantity, $reportPop->quantity);
+        $this->assertSame(0, $reportPop->employed);
         $this->assertSame($livePop->pay_rate, $reportPop->pay_rate);
         $this->assertSame($livePop->rebel_quantity, $reportPop->rebel_quantity);
     }

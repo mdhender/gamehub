@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Models\Empire;
 use App\Models\Game;
@@ -138,12 +139,25 @@ class TurnReportController extends Controller
                     'quantity_assembled' => $item->quantity_assembled,
                     'quantity_disassembled' => $item->quantity_disassembled,
                 ])->values(),
-                'population' => $colony->population->map(fn ($pop) => [
-                    'population_code' => $pop->population_code->value,
-                    'quantity' => $pop->quantity,
-                    'pay_rate' => $pop->pay_rate,
-                    'rebel_quantity' => $pop->rebel_quantity,
-                ])->values(),
+                'population' => $colony->population->map(function ($pop) use ($colony) {
+                    $cadres = [PopulationClass::ConstructionWorker->value, PopulationClass::Spy->value];
+                    $isCadre = in_array($pop->population_code->value, $cadres);
+                    $population = $isCadre ? $pop->quantity * 2 : $pop->quantity;
+                    $cngdPaid = (int) ceil($pop->quantity * $pop->pay_rate);
+                    $foodConsumed = (int) ceil($population * $colony->rations * 0.25);
+
+                    return [
+                        'population_code' => $pop->population_code->value,
+                        'quantity' => $pop->quantity,
+                        'population' => $population,
+                        'employed' => $pop->employed,
+                        'pay_rate' => $pop->pay_rate,
+                        'cngd_paid' => $cngdPaid,
+                        'ration_pct' => $colony->rations * 100,
+                        'food_consumed' => $foodConsumed,
+                        'rebel_quantity' => $pop->rebel_quantity,
+                    ];
+                })->values(),
             ])->values(),
             'surveys' => $report->surveys->map(fn ($survey) => [
                 'id' => $survey->id,

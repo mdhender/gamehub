@@ -4,6 +4,7 @@ namespace Tests\Feature\TurnReports;
 
 use App\Enums\GameRole;
 use App\Enums\GameStatus;
+use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Models\Empire;
 use App\Models\Game;
@@ -276,5 +277,95 @@ class TurnReportControllerDownloadTest extends TestCase
 
         $this->assertNotEmpty($data['surveys']);
         $this->assertNotEmpty($data['surveys'][0]['deposits']);
+    }
+
+    #[Test]
+    public function test_download_payload_includes_census_fields(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 6000000,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->downloadUrl($game, $turn, $empire));
+
+        $response->assertOk();
+        $data = $response->json();
+
+        $pop = $data['colonies'][0]['population'][0];
+        $this->assertSame('USK', $pop['population_code']);
+        $this->assertSame(6000000, $pop['quantity']);
+        $this->assertSame(6000000, $pop['population']);
+        $this->assertSame(0, $pop['employed']);
+        $this->assertSame(0.125, $pop['pay_rate']);
+        $this->assertSame(750000, $pop['cngd_paid']);
+        $this->assertEquals(100.0, $pop['ration_pct']);
+        $this->assertSame(1500000, $pop['food_consumed']);
+        $this->assertSame(0, $pop['rebel_quantity']);
+    }
+
+    #[Test]
+    public function test_download_payload_doubles_population_for_cadres(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Spy,
+            'quantity' => 20,
+            'employed' => 0,
+            'pay_rate' => 0.625,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->downloadUrl($game, $turn, $empire));
+
+        $data = $response->json();
+        $pop = $data['colonies'][0]['population'][0];
+
+        $this->assertSame(20, $pop['quantity']);
+        $this->assertSame(40, $pop['population']);
+        $this->assertSame(13, $pop['cngd_paid']); // ceil(20 * 0.625) = 13
+        $this->assertSame(10, $pop['food_consumed']); // ceil(40 * 1.0 * 0.25) = 10
     }
 }

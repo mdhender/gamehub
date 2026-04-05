@@ -6,56 +6,85 @@
     <title>Turn Report — {{ $game->name }} — Turn {{ $turn->number }} — {{ $empire->name }}</title>
     <style>
         body { font-family: monospace; white-space: pre-wrap; max-width: 120ch; margin: 2rem auto; padding: 0 1rem; line-height: 1.4; }
-        h1, h2, h3 { font-family: monospace; }
-        table { border-collapse: collapse; margin: 0.5rem 0 1.5rem; }
-        th, td { padding: 0.15rem 1.5rem 0.15rem 0; text-align: left; }
-        th { border-bottom: 1px solid #666; }
         hr { border: none; border-top: 1px solid #999; margin: 1.5rem 0; }
+        .section-header { font-weight: bold; margin-top: 1.5rem; }
     </style>
 </head>
 <body>
-<h1>Turn Report</h1>
-<p>Game: {{ $game->name }}
-Turn: {{ $turn->number }}
-Empire: {{ $empire->name }}
-Generated: {{ $report->generated_at->toDateTimeString() }}</p>
+@php
+    $cadres = [
+        \App\Enums\PopulationClass::ConstructionWorker->value,
+        \App\Enums\PopulationClass::Spy->value,
+    ];
+    $standardRation = 0.25;
+@endphp
+Game: {{ str_pad($game->name, 32) }}Player: {{ str_pad($empire->id, 9) }}Turn: {{ str_pad($turn->number, 5) }}Date: {{ $report->generated_at->format('Y/m/d') }}
+
+Notes:
+@if ($turn->number === 0)
+ This is your initial report for your home colony/nation.
+@endif
 
 <hr>
-
 @forelse ($report->colonies as $colony)
-<h2>Colony: {{ $colony->name }}</h2>
-<p>Kind: {{ $colony->kind->value }}
-Tech Level: {{ $colony->tech_level }}
-Location: ({{ $colony->star_x }}, {{ $colony->star_y }}, {{ $colony->star_z }}) seq {{ $colony->star_sequence }}, orbit {{ $colony->orbit }}</p>
+@php
+    $system = sprintf('%02d-%02d-%02d/%d', $colony->star_x, $colony->star_y, $colony->star_z, $colony->star_sequence);
+@endphp
+Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ', max(1, 40 - strlen($colony->source_colony_id . $colony->name) - 5)) }}System: {{ $system }}   Orbit: {{ sprintf('%2d', $colony->orbit) }}
+  Kind: {{ str_pad($colony->kind->value, 24) }}Tech Level: {{ sprintf('%2d', $colony->tech_level) }}
 
-<p>Rations: {{ $colony->rations }}
-SOL: {{ $colony->sol }}
-Birth Rate: {{ $colony->birth_rate }}
-Death Rate: {{ $colony->death_rate }}</p>
+<span class="section-header">Census Report</span>
+  Standard of Living: {{ sprintf('%.4f', $colony->sol) }}    Birth Rate: {{ sprintf('%.4f%%', $colony->birth_rate * 100) }}
+                                Death Rate: {{ sprintf('%.4f%%', $colony->death_rate * 100) }}
 
 @if ($colony->population->isNotEmpty())
-<h3>Population</h3>
-<table>
-    <thead><tr><th>Class</th><th>Qty</th><th>Pay Rate</th><th>Rebels</th></tr></thead>
-    <tbody>
-    @foreach ($colony->population as $pop)
-        <tr><td>{{ $pop->population_code->value }}</td><td>{{ $pop->quantity }}</td><td>{{ $pop->pay_rate }}</td><td>{{ $pop->rebel_quantity }}</td></tr>
-    @endforeach
-    </tbody>
-</table>
+@php
+    $totalPopulation = 0;
+    $totalEmployed = 0;
+    $totalCngd = 0;
+    $totalFood = 0;
+
+    $rows = [];
+    foreach ($colony->population as $pop) {
+        $code = $pop->population_code->value;
+        $isCadre = in_array($code, $cadres);
+        $population = $isCadre ? $pop->quantity * 2 : $pop->quantity;
+        $cngdPaid = (int) ceil($pop->quantity * $pop->pay_rate);
+        $foodConsumed = (int) ceil($population * $colony->rations * $standardRation);
+
+        $totalPopulation += $population;
+        $totalEmployed += $pop->employed;
+        $totalCngd += $cngdPaid;
+        $totalFood += $foodConsumed;
+
+        $rows[] = (object) [
+            'code' => $code,
+            'quantity' => $pop->quantity,
+            'population' => $population,
+            'employed' => $pop->employed,
+            'pay_rate' => $pop->pay_rate,
+            'cngd_paid' => $cngdPaid,
+            'ration_pct' => $colony->rations * 100,
+            'food_consumed' => $foodConsumed,
+        ];
+    }
+@endphp
+  Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
+@foreach ($rows as $row)
+    {{ str_pad($row->code, 3) }}  {{ str_pad(number_format($row->quantity), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->population), 12, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->employed), 15, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.4f', $row->pay_rate), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->cngd_paid), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.2f%%', $row->ration_pct), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->food_consumed), 14, ' ', STR_PAD_LEFT) }}
+@endforeach
+  Total  {{ str_repeat(' ', 11) }}  {{ str_pad(number_format($totalPopulation), 12, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($totalEmployed), 15, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalCngd), 11, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalFood), 14, ' ', STR_PAD_LEFT) }}
 @endif
 
-@if ($colony->inventory->isNotEmpty())
-<h3>Inventory</h3>
-<table>
-    <thead><tr><th>Unit Code</th><th>TL</th><th>Assembled</th><th>Disassembled</th></tr></thead>
-    <tbody>
-    @foreach ($colony->inventory as $item)
-        <tr><td>{{ $item->unit_code->value }}</td><td>{{ $item->tech_level }}</td><td>{{ $item->quantity_assembled }}</td><td>{{ $item->quantity_disassembled }}</td></tr>
-    @endforeach
-    </tbody>
-</table>
-@endif
+
+<span class="section-header">Farming</span>
+  To Be Implemented Soon
+
+<span class="section-header">Mining</span>
+  To Be Implemented Soon
+
+<span class="section-header">Manufacturing</span>
+  To Be Implemented Soon
 
 <hr>
 @empty
@@ -63,21 +92,16 @@ Death Rate: {{ $colony->death_rate }}</p>
 @endforelse
 
 @forelse ($report->surveys as $survey)
-<h2>Survey: Orbit {{ $survey->orbit }}</h2>
-<p>Location: ({{ $survey->star_x }}, {{ $survey->star_y }}, {{ $survey->star_z }}) seq {{ $survey->star_sequence }}
-Planet Type: {{ $survey->planet_type->value }}
-Habitability: {{ $survey->habitability }}</p>
-
+@php
+    $surveySystem = sprintf('%02d-%02d-%02d/%d', $survey->star_x, $survey->star_y, $survey->star_z, $survey->star_sequence);
+@endphp
+<span class="section-header">Survey Report for Planet # {{ $survey->planet_id }}  in System {{ str_replace('-', ' / ', sprintf('%02d-%02d-%02d', $survey->star_x, $survey->star_y, $survey->star_z)) }}</span>
+  Habitability = {{ $survey->habitability }}
+  Deposits
 @if ($survey->deposits->isNotEmpty())
-<h3>Deposits</h3>
-<table>
-    <thead><tr><th>#</th><th>Resource</th><th>Yield %</th><th>Remaining</th></tr></thead>
-    <tbody>
-    @foreach ($survey->deposits as $dep)
-        <tr><td>{{ $dep->deposit_no }}</td><td>{{ $dep->resource->value }}</td><td>{{ $dep->yield_pct }}</td><td>{{ $dep->quantity_remaining }}</td></tr>
-    @endforeach
-    </tbody>
-</table>
+@foreach ($survey->deposits as $dep)
+     {{ str_pad($dep->deposit_no, 3, ' ', STR_PAD_LEFT) }}  {{ str_pad($dep->resource->value, 4) }}  {{ str_pad($dep->yield_pct, 3, ' ', STR_PAD_LEFT) }}%  {{ str_pad(number_format($dep->quantity_remaining), 12, ' ', STR_PAD_LEFT) }}
+@endforeach
 @endif
 
 <hr>

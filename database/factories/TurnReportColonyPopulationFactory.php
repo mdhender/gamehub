@@ -23,6 +23,7 @@ class TurnReportColonyPopulationFactory extends Factory
             'turn_report_colony_id' => TurnReportColony::factory(),
             'population_code' => fake()->randomElement(PopulationClass::cases()),
             'quantity' => fake()->numberBetween(1, 1000000),
+            'employed' => 0,
             'pay_rate' => fake()->randomFloat(3, 0, 10),
             'rebel_quantity' => 0,
         ];

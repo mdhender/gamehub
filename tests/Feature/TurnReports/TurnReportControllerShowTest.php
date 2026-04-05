@@ -4,6 +4,7 @@ namespace Tests\Feature\TurnReports;
 
 use App\Enums\GameRole;
 use App\Enums\GameStatus;
+use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Models\Empire;
 use App\Models\Game;
@@ -241,8 +242,119 @@ class TurnReportControllerShowTest extends TestCase
             ->assertOk();
 
         $response->assertSee('Alpha Colony');
-        $response->assertSee($inventory->unit_code->value);
         $response->assertSee($population->population_code->value);
         $response->assertSee($deposit->resource->value);
+    }
+
+    #[Test]
+    public function test_show_renders_census_report_with_computed_fields(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+            'sol' => 0.4881,
+            'birth_rate' => 0.0,
+            'death_rate' => 0.000625,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 6000000,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Census Report');
+        $response->assertSee('0.4881');
+        $response->assertSee('USK');
+        $response->assertSee('6,000,000');
+        $response->assertSee('750,000');
+        $response->assertSee('1,500,000');
+        $response->assertSee('100.00%');
+    }
+
+    #[Test]
+    public function test_show_renders_cadre_population_as_double_quantity(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::ConstructionWorker,
+            'quantity' => 10000,
+            'employed' => 0,
+            'pay_rate' => 0.5,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // Population should be 20,000 (2x quantity for cadres)
+        $response->assertSee('20,000');
+        // CNGD paid = ceil(10,000 * 0.5) = 5,000
+        $response->assertSee('5,000');
+        // FOOD consumed = ceil(20,000 * 1.0 * 0.25) = 5,000
+    }
+
+    #[Test]
+    public function test_show_renders_deferred_operational_sections(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        TurnReportColony::factory()->create(['turn_report_id' => $report->id]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('To Be Implemented Soon');
     }
 }

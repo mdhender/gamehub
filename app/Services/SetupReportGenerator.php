@@ -90,6 +90,7 @@ class SetupReportGenerator
                         $reportColony->population()->create([
                             'population_code' => $pop->population_code,
                             'quantity' => $pop->quantity,
+                            'employed' => 0,
                             'pay_rate' => $pop->pay_rate,
                             'rebel_quantity' => $pop->rebel_quantity,
                         ]);
