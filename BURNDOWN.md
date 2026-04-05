@@ -1,605 +1,520 @@
-# BURNDOWN — Layer 1, Groups H & I
+# BURNDOWN
 
-Setup Report: Tests and Frontend
+Code quality audit — dependency-ordered task plan.
 
-**Source:** `docs/SETUP_REPORT.md` — Build Plan, Tasks #34–37  
-**Prerequisite:** Groups A–G are complete (enums, migrations, models, factories, templates, business logic, report schema, service, routes, authorization, controller).
+**Audit date:** 2026-04-05  
+**Baseline:** 622 tests passing (3960 assertions), Pint clean, no deprecation warnings.
 
----
-
-## Architectural Decisions
-
-- **Keep `TurnReportController::show()` on Blade** for Layer 1. The existing `resources/views/turn-reports/show.blade.php` is a standalone monospace text report — do not convert it to Inertia.
-- **Use plain anchor tags** (`<a href=...>`) for show/download links since they return non-Inertia responses (Blade HTML and JSON attachment).
-- **Use Wayfinder** for POST routes (generate, lock) and for constructing typed hrefs.
-- **Prefer focused new test files** for new coverage rather than bloating existing tests.
-- **No JS component test framework** is needed — TypeScript typecheck + ESLint + PHPUnit covers this slice.
+**Notes:**
+- Tasks are ordered by **dependencies**, not severity.
+- Tasks in the same phase are parallelizable unless they touch the same file(s).
+- Prefer forward-fix migrations over editing historical migrations.
+- Do not check a task off until its acceptance criteria pass.
+- Run `vendor/bin/pint --dirty --format agent` after modifying any PHP files.
 
 ---
 
-## Group H — Tests
+## Phase 1 — Route Binding Foundations
 
-### H.1 — Audit existing test suites for schema regressions
+These tasks fix broken route model binding and enable scoped bindings so later work can rely on correct routing.
 
-**Build plan ref:** Task #34  
+### BD-01 — Add `empires()` relationship to Turn model and `turnReports()` to Empire model
+
+**Severity:** Critical — scoped route binding crashes with "Call to undefined method App\Models\Turn::empires()"  
 **Effort:** S  
 **Dependencies:** None
 
-**Goal:** Run all pre-existing test suites that may have been affected by Groups A–E schema changes. Record what passes and what fails. Do not fix anything yet.
-
-**Instructions:**
-1. Run each suite listed below independently and record pass/fail.
-2. Categorize failures into: (a) broken by schema change, (b) semantically stale but passing, (c) already aligned.
-3. Produce a summary of failures mapped to H.2, H.3, or H.4.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/EmpireCreatorTest.php
-php artisan test --compact tests/Feature/GameGenerationControllerTest.php
-php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php
-php artisan test --compact tests/Feature/GameGenerationControllerActivateTest.php
-php artisan test --compact tests/Feature/Models/TemplateTest.php
-php artisan test --compact tests/Feature/Models/TurnModelTest.php
-php artisan test --compact tests/Feature/Models/GameTurnRelationshipTest.php
-php artisan test --compact tests/Feature/Models/ColonyModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyPopulationModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyTemplatePopulationModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyInventoryModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyTemplateItemModelTest.php
-```
-
-**Acceptance criteria:**
-- [x] All listed suites have been executed
-- [x] A failure/staleness list exists with each failure mapped to H.2, H.3, or H.4
-- [x] No production code is changed in this task
-
-**Audit result (2026-04-03):** All 13 suites pass — 137 tests, 468 assertions, zero failures. All suites are category (c) already aligned. No regressions from Groups A–E schema changes. H.2, H.3, H.4 may require no fixes.
-
----
-
-### H.2 — Fix template relationship and fixture assumptions in model tests
-
-**Build plan ref:** Task #34  
-**Effort:** S  
-**Dependencies:** H.1
-
-**Goal:** Fix any model/template tests that still assume the old single-template or integer-column schema.
-
-**Files to potentially modify:**
-- `tests/Feature/Models/TemplateTest.php`
-- `tests/Feature/Models/ColonyTemplateModelTest.php`
-- `tests/Feature/Models/ColonyTemplateItemModelTest.php`
-- `tests/Feature/Models/ColonyInventoryModelTest.php`
-- `tests/Feature/Models/ColonyModelTest.php`
-
-**Instructions:**
-1. Fix any tests that assume `colony_inventory.unit` is an integer — it is now a string cast to `UnitCode` enum.
-2. Fix any tests that assume `colony_template_items.unit` is an integer — same change.
-3. Fix any tests that assume `colonies.kind` is an integer — it is now a string cast to `ColonyKind` enum.
-4. Fix any tests that assume `colony_templates.kind` is an integer — same change.
-5. Update `TemplateTest::game_has_one_colony_template` if it fails — the `Game::colonyTemplate()` hasOne relationship still exists alongside `colonyTemplates()` hasMany, so it should still work with a single template. If this test is semantically stale but passing, leave it.
-6. If tests use factories, ensure those factories produce enum-compatible values (they should already from Group B work).
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/Models/TemplateTest.php
-php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyTemplateItemModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyInventoryModelTest.php
-php artisan test --compact tests/Feature/Models/ColonyModelTest.php
-```
-
-**Acceptance criteria:**
-- [x] All model tests pass with the current schema
-- [x] No test relies on integer values for `unit`, `kind`, or `population_code` columns
-- [x] Factory-produced values are enum-compatible
-
----
-
-### H.3 — Fix upload-template and generation controller tests
-
-**Build plan ref:** Task #34  
-**Effort:** M  
-**Dependencies:** H.1
-
-**Goal:** Fix pre-existing template upload and generation controller tests to match the current JSON contract:
-- Colony template is an array of colony definitions
-- `kind` is a string enum code (e.g., `COPN`)
-- `inventory` items use `CODE-TL` format for tech-level units (e.g., `FCT-1`) and plain codes for consumables (e.g., `FUEL`)
-- `population` section is required
-
-**Files to potentially modify:**
-- `tests/Feature/UploadColonyTemplateValidationTest.php`
-- `tests/Feature/GameGenerationControllerTest.php`
-
-**Instructions:**
-1. Read `sample-data/beta/colony-template.json` for the current valid template format.
-2. Read `app/Http/Requests/UploadColonyTemplateRequest.php` for current validation rules.
-3. Update all "valid payload" helpers in these tests to use the current array-based format with population section.
-4. Update validation tests so invalid-payload assertions reflect the current rules (array structure, `CODE-TL` format, string kind, population required).
-5. For upload controller tests, assert both inventory and population persistence after upload.
-6. For replacement tests, assert delete-and-recreate semantics for multiple templates.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php
-php artisan test --compact tests/Feature/GameGenerationControllerTest.php
-```
-
-**Acceptance criteria:**
-- [x] Validation tests use the current array-based colony template format with population
-- [x] Controller upload tests assert both inventory and population persistence
-- [x] Replacement tests verify old templates are deleted and new ones created
-- [x] All upload-related tests pass
-
----
-
-### H.4 — Fix EmpireCreator and activation test regressions
-
-**Build plan ref:** Task #34  
-**Effort:** S  
-**Dependencies:** H.2, H.3
-
-**Goal:** Ensure EmpireCreator and activation tests pass after the fixture fixes in H.2/H.3. Only fix what is broken.
-
-**Files to potentially modify:**
-- `tests/Feature/EmpireCreatorTest.php`
-- `tests/Feature/GameGenerationControllerActivateTest.php`
-
-**Instructions:**
-1. Run both suites after H.2 and H.3 are complete.
-2. If they pass, skip this task — mark all acceptance criteria as done.
-3. If they fail:
-   - Update helper methods so colony template fixtures include population rows (the `activeGameWithHomeSystem()` and `gameWithHomeSystem()` helpers).
-   - Keep Turn 0 assertions aligned with the current `activate()` behavior.
-   - Do not refactor beyond fixing the setup helpers.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/EmpireCreatorTest.php
-php artisan test --compact tests/Feature/GameGenerationControllerActivateTest.php
-```
-
-**Acceptance criteria:**
-- [x] `EmpireCreatorTest` passes (all 12 tests)
-- [x] `GameGenerationControllerActivateTest` passes (all 5 tests)
-- [x] No unnecessary fixture churn was introduced
-
----
-
-### H.5 — Add SetupReportGenerator snapshot lifecycle tests
-
-**Build plan ref:** Task #35  
-**Effort:** M  
-**Dependencies:** H.4
-
-**Goal:** Cover the highest-value untested behaviors in the report materialization lifecycle: snapshot immutability, historical survival after live data deletion, and rerun content refresh.
+**Problem:** Routes at `routes/games.php:27-34` use `->scopeBindings()` on `{game}/turns/{turn}/reports`. The `show` and `download` routes use `->withoutScopedBindings()` and manually check `$empire->game_id === $game->id` in the controller. The `Turn` model lacks an `empires()` relationship, which breaks Laravel's scoped binding resolution.
 
 **Files to modify:**
-- `tests/Feature/Services/SetupReportGeneratorTest.php`
+- `app/Models/Turn.php` — add `empires()` relationship. Since `turn_reports` has both `turn_id` and `empire_id`, this is a `HasManyThrough` via `TurnReport`:
+  ```php
+  public function empires(): HasManyThrough
+  {
+      return $this->hasManyThrough(Empire::class, TurnReport::class, 'turn_id', 'id', 'id', 'empire_id');
+  }
+  ```
+- `app/Models/Empire.php` — add `turnReports()` relationship. The `turn_reports` table has `empire_id` FK:
+  ```php
+  public function turnReports(): HasMany
+  {
+      return $this->hasMany(TurnReport::class);
+  }
+  ```
+- `routes/games.php:32-33` — remove `->withoutScopedBindings()` from `show` and `download` routes so the group-level `->scopeBindings()` applies naturally
+- `app/Http/Controllers/TurnReportController.php:82,98` — remove manual `abort_unless($empire->game_id === $game->id, 404)` from `show()` and `download()` — scoped binding handles this now
 
-**Instructions:**
-Add these focused tests to the existing test file (it already has the heavy setup helpers):
-
-1. **Snapshot immutability after live data changes:**
-   - Generate report.
-   - Mutate live colony name, inventory quantity, and population quantity.
-   - Assert report tables still contain the original snapshot values.
-
-2. **Historical survival after live colony deletion:**
-   - Generate report.
-   - Delete the live colony (cascade deletes live inventory/population).
-   - Assert the report still exists and exposes snapshot data.
-
-3. **Rerun refreshes stale snapshot content:**
-   - Generate report, record original snapshot values.
-   - Change live colony name and inventory quantity.
-   - Re-run generator on the same turn (call `$turn->fresh()` before second run).
-   - Assert snapshot values update to the new live values.
-   - Assert stale child rows are replaced (count checks), not accumulated.
-
-4. **Multi-colony snapshot with multiple templates:**
-   - Create a second colony template (e.g., `ColonyKind::Orbital`).
-   - Create empire — it gets two colonies.
-   - Generate report.
-   - Assert report contains two `turn_report_colonies` rows, each with correct kind and own inventory/population.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/Services/SetupReportGeneratorTest.php
-```
-
-**Acceptance criteria:**
-- [x] Snapshot immutability test proves report data is stable after live data mutation
-- [x] Historical survival test proves reports survive live colony deletion
-- [x] Rerun test asserts snapshot content refreshes, not just row counts
-- [x] Multi-colony test verifies multiple templates produce distinct report colony entries
-- [x] All `SetupReportGeneratorTest` tests pass
+**Acceptance:**
+- [ ] `Turn::empires()` relationship exists and returns `HasManyThrough`
+- [ ] `Empire::turnReports()` relationship exists and returns `HasMany`
+- [ ] A valid `{empire}` from another game returns 404 via binding, not controller abort
+- [ ] `php artisan test --compact tests/Feature/TurnReports/`
 
 ---
 
-### H.6 — Fill remaining controller test gaps
+### BD-02 — Enable scoped bindings on generation sub-routes
 
-**Build plan ref:** Task #35  
+**Severity:** Important  
 **Effort:** S  
-**Dependencies:** None (can run in parallel with H.5)
+**Dependencies:** None (parallel with BD-01)
 
-**Goal:** Add targeted controller-level test coverage for gaps not already handled by the existing extensive suites.
+**Problem:** Routes at `routes/games.php:36-52` for `{game}/generate/stars/{star}`, `{game}/generate/planets/{planet}`, and `{game}/generate/empires/{empire}` lack `->scopeBindings()`. Controllers manually verify `$star->game_id !== $game->id` etc. instead of using Laravel's built-in scoped bindings.
 
 **Files to modify:**
-- `tests/Feature/TurnReports/TurnReportControllerGenerateTest.php`
-- `tests/Feature/TurnReports/TurnReportControllerLockTest.php`
-- `tests/Feature/TurnReports/TurnReportControllerShowTest.php`
-- `tests/Feature/TurnReports/TurnReportControllerDownloadTest.php`
+- `routes/games.php:36` — add `->scopeBindings()` to the `{game}/generate` route group
+- `app/Http/Controllers/GameGeneration/StarController.php` — remove manual `abort(404)` for `$star->game_id !== $game->id`
+- `app/Http/Controllers/GameGeneration/PlanetController.php` — remove manual `abort(404)` for `$planet->game_id !== $game->id`
+- `app/Http/Controllers/GameGeneration/EmpireController.php` — remove manual `abort(404)` for `$empire->game_id !== $game->id` in `reassign()`
 
-**Instructions:**
-Add only the missing gaps:
+**Note:** Keep any manual checks for request-body IDs that are NOT route params (e.g., `player_id`, `home_system_id` in form payloads — those can't be scoped by routing).
 
-1. **Generate — admin happy path:**
-   - Admin user (no game role) can generate reports.
-   - Use `User::factory()->create(['is_admin' => true])`.
-
-2. **Lock — admin happy path:**
-   - Admin user can lock reports.
-
-3. **Show — turn route scoping:**
-   - Show returns 404 when `{turn}` belongs to another game (the existing test only checks empire cross-game, not turn cross-game).
-
-4. **Download — turn route scoping:**
-   - Download returns 404 when `{turn}` belongs to another game.
-
-Do not duplicate policy coverage already in `TurnReportPolicyTest.php`.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/TurnReports/TurnReportControllerGenerateTest.php
-php artisan test --compact tests/Feature/TurnReports/TurnReportControllerLockTest.php
-php artisan test --compact tests/Feature/TurnReports/TurnReportControllerShowTest.php
-php artisan test --compact tests/Feature/TurnReports/TurnReportControllerDownloadTest.php
-```
-
-**Acceptance criteria:**
-- [x] Admin generate/lock paths are covered
-- [x] Show/download turn-scoping 404 tests exist
-- [x] No policy-logic duplication is added
-- [x] All four controller test files pass
+**Acceptance:**
+- [ ] Cross-game nested resource IDs return 404 via binding
+- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerEmpireTest.php`
 
 ---
 
-## Group I — Frontend
+## Phase 2 — Request and Security Hardening
 
-### I.1 — Run Wayfinder generation for new report routes
+These tasks harden validation and authorization. They do not depend on Phase 1 and can run in parallel with each other.
 
-**Build plan ref:** Task #36  
+### BD-03 — Validate JSON structure in template upload FormRequests
+
+**Severity:** Critical — `Undefined array key "kind"` errors at `TemplateController.php:70`  
+**Effort:** M  
+**Dependencies:** None
+
+**Problem:** `UploadColonyTemplateRequest` and `UploadHomeSystemTemplateRequest` validate the file upload (MIME type, extension) but NOT the decoded JSON structure. When the JSON is missing expected keys like `kind`, `tech-level`, `population`, `inventory`, the controller crashes with undefined array key errors.
+
+**Files to modify:**
+- `app/Http/Requests/UploadColonyTemplateRequest.php` — add validation rules for the decoded JSON structure:
+  - Top-level must be an array of objects
+  - Each entry must have `kind` (string, in valid enum values), `tech-level` (integer), `population` (required array), `inventory` (required object with `operational`/`stored` arrays)
+  - Each population entry must have `population_code`, `quantity`, `pay_rate`
+  - Each inventory item must have `unit`, `quantity`
+- `app/Http/Requests/UploadHomeSystemTemplateRequest.php` — add validation rules for decoded JSON:
+  - Must have `planets` array
+  - Each planet must have `orbit`, `type`, `habitability`
+  - Each deposit must have `resource`, `yield_pct`, `quantity_remaining`
+  - Exactly one planet must have `homeworld: true`
+- `app/Http/Controllers/GameGeneration/TemplateController.php:27,63` — use the validated/parsed payload from the FormRequest instead of raw `json_decode(file_get_contents(...))`
+
+**Acceptance:**
+- [ ] Malformed JSON structure returns 422 validation errors, not PHP undefined array key errors
+- [ ] `php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php tests/Feature/GameGenerationControllerTest.php`
+
+---
+
+### BD-04 — Add `authorize()` to game/generation FormRequests and create `GenerateStarsRequest`
+
+**Severity:** Important  
+**Effort:** M  
+**Dependencies:** None
+
+**Problem:** 11 FormRequests lack `authorize()` methods, relying solely on controller-level `Gate::authorize()`. `GenerationStepController::generateStars()` uses inline `$request->validate()` at line 30 instead of a FormRequest. `CreateEmpireRequest` is missing `exists:players,id` validation.
+
+**Files to modify:**
+- Add `authorize()` methods to these FormRequests (check `GamePolicy` for existing gate definitions):
+  - `app/Http/Requests/StoreGameRequest.php` — admin only
+  - `app/Http/Requests/UpdateGameRequest.php` — `user()->can('update', $this->route('game'))`
+  - `app/Http/Requests/StoreGameMemberRequest.php` — can update game
+  - `app/Http/Requests/CreateEmpireRequest.php` — can update game; also add `exists:players,id` rule scoped to current game
+  - `app/Http/Requests/ReassignEmpireRequest.php` — can update game
+  - `app/Http/Requests/UpdateStarRequest.php` — can update game
+  - `app/Http/Requests/UpdatePlanetRequest.php` — can update game
+  - `app/Http/Requests/CreateHomeSystemManualRequest.php` — can update game
+  - `app/Http/Requests/UploadHomeSystemTemplateRequest.php` — can update game
+  - `app/Http/Requests/UploadColonyTemplateRequest.php` — can update game
+- Create `app/Http/Requests/GenerateStarsRequest.php` with seed validation rules
+- `app/Http/Controllers/GameGeneration/GenerationStepController.php:28-35` — replace inline validation with `GenerateStarsRequest` type-hint
+
+**Acceptance:**
+- [ ] Unauthorized requests fail with 403 before controller logic
+- [ ] Unknown `player_id` in CreateEmpireRequest rejected by validation, not `findOrFail()`
+- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php`
+
+---
+
+### BD-05 — Require verified email for profile edit/update and add `authorize()` to admin/settings FormRequests
+
+**Severity:** Critical (security)  
 **Effort:** S  
 **Dependencies:** None
 
-**Goal:** Generate typed frontend route helpers for the `TurnReportController` actions.
-
-**Instructions:**
-1. Run `php artisan wayfinder:generate`.
-2. Verify a file is generated at `resources/js/actions/App/Http/Controllers/TurnReportController.ts` (or similar path).
-3. Confirm the generated file exposes typed helpers for: `generate`, `lock`, `show`, `download`.
-4. Do not hand-edit generated files.
-
-**Test commands:**
-```bash
-php artisan wayfinder:generate
-bun run build
-```
-
-**Acceptance criteria:**
-- [x] `TurnReportController` Wayfinder file exists with typed helpers
-- [x] Helpers cover `generate`, `lock`, `show`, `download` actions
-- [x] TypeScript compiles without errors after generation
-
----
-
-### I.2 — Expose report state props to the generate page
-
-**Build plan ref:** Task #37  
-**Effort:** M  
-**Dependencies:** I.1
-
-**Goal:** Add backend props so the generate page has the data needed for a GM Turn Reports section.
+**Problem:** In `routes/settings.php:7-12`, profile edit/update only require `auth` middleware, but profile destroy and security routes require `['auth', 'verified']`. An unverified user can modify their profile. Admin FormRequests also lack `authorize()`.
 
 **Files to modify:**
-- `app/Http/Controllers/GameGenerationController.php`
-- `resources/js/pages/games/generate/types.ts`
+- `routes/settings.php:7-12` — move profile edit and update routes into the `['auth', 'verified']` middleware group (lines 14-24), or add `verified` to the first group
+- `app/Http/Requests/Admin/SendInvitationRequest.php` — add `authorize()` requiring admin
+- `app/Http/Requests/Admin/HandleUpdateRequest.php` — verify it has proper `authorize()` (it may already)
 
-**Files to create:**
-- `tests/Feature/GameGenerationReportPropsTest.php`
-
-**Instructions:**
-
-1. **Add `reportTurn` prop** to `GameGenerationController::show()`:
-   ```php
-   'reportTurn' => $this->reportTurnPayload($game),
-   ```
-
-2. **Implement `reportTurnPayload()` private method:**
-   - If the game has no current turn, return `null`.
-   - Otherwise return:
-     ```php
-     [
-         'id' => $currentTurn->id,
-         'number' => $currentTurn->number,
-         'status' => $currentTurn->status->value,
-         'reports_locked_at' => $currentTurn->reports_locked_at?->toIso8601String(),
-         'can_generate' => $game->canGenerateReports(),
-         'can_lock' => $game->isActive()
-             && $currentTurn->status === TurnStatus::Completed
-             && $currentTurn->reports_locked_at === null,
-     ]
-     ```
-
-3. **Enrich `members` payload** — add `has_report` to the empire object:
-   - Query `turn_reports` for the current turn, keyed by `empire_id`.
-   - When an empire exists in the member data, include `'has_report' => $reportsByEmpireId->has($empire->id)`.
-
-4. **Update `types.ts`** — add these types:
-   ```typescript
-   export type ReportTurn = {
-       id: number;
-       number: number;
-       status: string;
-       reports_locked_at: string | null;
-       can_generate: boolean;
-       can_lock: boolean;
-   };
-   ```
-   And extend `MemberItem.empire` to include `has_report: boolean`.
-
-5. **Write focused prop tests** in `tests/Feature/GameGenerationReportPropsTest.php`:
-   - Generate page returns `reportTurn: null` when game has no turn.
-   - Active game with pending Turn 0 returns `reportTurn` with `can_generate: true`, `can_lock: false`.
-   - Active game with completed Turn 0 returns `can_generate: true`, `can_lock: true`.
-   - Active game with closed Turn 0 returns `can_generate: false`, `can_lock: false`.
-   - Member with empire and generated report has `has_report: true`.
-   - Member with empire but no report has `has_report: false`.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/GameGenerationReportPropsTest.php
-bun run build
-```
-
-**Acceptance criteria:**
-- [x] `reportTurn` prop is returned from the generate page endpoint
-- [x] `members[*].empire.has_report` is available when an empire exists
-- [x] `types.ts` is updated with `ReportTurn` type and `has_report` on `MemberItem.empire`
-- [x] Prop tests pass
-- [x] TypeScript compiles without errors
+**Acceptance:**
+- [ ] Unverified users cannot access `profile.edit` or `profile.update` routes
+- [ ] `php artisan test --compact tests/Feature/Settings/ProfileUpdateTest.php`
 
 ---
 
-### I.3 — Build the GM Turn Reports section component
+### BD-06 — Add rate limiting to admin and generation mutation routes
 
-**Build plan ref:** Task #37  
+**Severity:** Critical (security)  
 **Effort:** M  
-**Dependencies:** I.2
+**Dependencies:** None
 
-**Goal:** Add a Turn Reports section to the generate page with Generate Reports / Lock Reports buttons and per-empire report links.
-
-**Files to create:**
-- `resources/js/pages/games/generate/TurnReportsSection.tsx`
+**Problem:** POST/PATCH/DELETE routes in `routes/admin.php:11-16` (password reset, invitations) and `routes/games.php:30-31,39-51` (generate, lock, activate, template uploads, star/planet/deposit generation, home-systems, empires, delete-step) have no `throttle` middleware. Heavy DB operations and email-sending actions are unprotected.
 
 **Files to modify:**
-- `resources/js/pages/games/generate.tsx` (add the new section after `EmpiresSection`)
+- `routes/admin.php` — add `throttle` middleware to mutation routes (POST/PATCH/DELETE)
+- `routes/games.php` — add `throttle` middleware to mutation routes in the generation and turn-report groups
+- Optionally define named rate limiters in `app/Providers/AppServiceProvider.php` or use built-in `throttle:x,y`
 
-**Instructions:**
-
-1. **Create `TurnReportsSection.tsx`** following the same patterns as `EmpiresSection.tsx`:
-   - Accept props: `game: Game`, `reportTurn: ReportTurn | null`, `members: MemberItem[]`
-   - If `reportTurn` is `null`, render "Not yet available." (same pattern as other sections)
-   - Show turn status and lock state in a summary line
-
-2. **Generate Reports button:**
-   - Use `useForm({})` for the POST
-   - Post to `TurnReportController.generate.url({ game, turn: reportTurn })` via Wayfinder
-   - Disable when `!reportTurn.can_generate` or form is processing
-   - Show validation errors from `game` and `turn` error keys
-
-3. **Lock Reports button:**
-   - Use a separate `useForm({})` for the POST
-   - Post to `TurnReportController.lock.url({ game, turn: reportTurn })` via Wayfinder
-   - Disable when `!reportTurn.can_lock` or form is processing
-   - Use destructive variant since locking is irreversible
-
-4. **Empire report table:**
-   - Show only members who have empires
-   - Columns: Player, Empire, Report Status, Actions
-   - Report Status: "Generated" badge when `has_report`, "Pending" otherwise
-   - Actions column when `has_report`:
-     - "View report" — plain `<a>` link to `TurnReportController.show.url({ game, turn: reportTurn, empire: member.empire })`, opens in new tab (`target="_blank"`)
-     - "Download JSON" — plain `<a>` link to `TurnReportController.download.url({ game, turn: reportTurn, empire: member.empire })`, download attribute
-   - Reason for plain anchors: `show` returns Blade HTML, `download` returns JSON attachment — neither is an Inertia response
-
-5. **Wire into `generate.tsx`:**
-   - Import and render `TurnReportsSection` after `EmpiresSection`
-   - Pass `reportTurn` and `members` props
-   - Add `reportTurn` to the destructured props with type `ReportTurn | null`
-
-**Test commands:**
-```bash
-bun run build
-```
-
-**Manual smoke test:**
-1. As GM, visit `/games/{id}/generate` for an active game with Turn 0
-2. Confirm Turn Reports section appears after Empires section
-3. Click "Generate Reports" — verify redirect with success flash
-4. Confirm "View report" and "Download JSON" links appear for empires with reports
-5. Click "Lock Reports" — verify redirect with success flash
-6. Confirm buttons disable after lock
-
-**Acceptance criteria:**
-- [x] `TurnReportsSection.tsx` exists and follows existing section component patterns
-- [x] `generate.tsx` renders the new section after `EmpiresSection`
-- [x] Generate Reports button posts to correct Wayfinder route with error display
-- [x] Lock Reports button posts to correct Wayfinder route with destructive styling
-- [x] Empire table shows report status and links for empires with reports
-- [x] Report links use plain `<a>` tags (not `<Link>`) since targets are non-Inertia
-- [x] TypeScript compiles without errors
-- [x] ESLint passes
+**Acceptance:**
+- [ ] Repeated rapid requests eventually return 429
+- [ ] Normal single requests still succeed
+- [ ] `php artisan test --compact tests/Feature/Admin/SendPasswordResetLinkTest.php tests/Feature/GameGenerationControllerActivateTest.php`
 
 ---
 
-### I.4 — Add player-side setup report access on the game show page
+## Phase 3 — Model and Schema Completeness
 
-**Build plan ref:** Task #37  
-**Effort:** M  
-**Dependencies:** I.1
+These tasks fix model gaps and database schema issues. Migration tasks should NOT run in parallel with each other.
 
-**Goal:** Give players a non-GM entry point to view and download their own setup report from the game show page.
+### BD-07 — Create PlayerFactory and add HasFactory to Player model
 
-**Files to modify:**
-- `app/Http/Controllers/GameController.php`
-- `resources/js/pages/games/show.tsx`
-
-**Files to create:**
-- `tests/Feature/GameShowSetupReportTest.php`
-
-**Instructions:**
-
-1. **Add `setupReport` prop to `GameController::show()`:**
-   ```php
-   'setupReport' => $this->setupReportPayload($game, $request->user()),
-   ```
-
-2. **Implement `setupReportPayload()` private method:**
-   - Find the authenticated user's player record for this game.
-   - Find the empire associated with that player record.
-   - If no empire exists, return `null`.
-   - Load the game's current turn.
-   - If no current turn exists, return `null`.
-   - Check if a `turn_reports` row exists for this `(turn_id, empire_id)`.
-   - Return:
-     ```php
-     [
-         'turn_id' => $currentTurn->id,
-         'turn_number' => $currentTurn->number,
-         'empire_id' => $empire->id,
-         'empire_name' => $empire->name,
-         'available' => $hasReport,
-     ]
-     ```
-   - GMs/admins viewing the page but without their own empire should get `null`.
-
-3. **Update `games/show.tsx`:**
-   - Add a "Setup Report" section that renders only when `setupReport` is not null.
-   - If `setupReport.available === false`: show "Setup report has not been generated yet."
-   - If `setupReport.available === true`: show:
-     - "View setup report" — plain `<a>` to `TurnReportController.show.url(...)`, new tab
-     - "Download JSON" — plain `<a>` to `TurnReportController.download.url(...)`, download
-   - Position this section above or below the Members section.
-   - Use Wayfinder imports for URL construction but plain anchor tags for the links.
-
-4. **Write focused tests** in `tests/Feature/GameShowSetupReportTest.php`:
-   - Player with own empire and existing report gets `setupReport.available === true`.
-   - Player with own empire but no report gets `setupReport.available === false`.
-   - Player without empire gets `setupReport === null`.
-   - GM viewer (no player empire) gets `setupReport === null`.
-   - Non-active game returns `setupReport === null`.
-
-**Test commands:**
-```bash
-php artisan test --compact tests/Feature/GameShowSetupReportTest.php
-bun run build
-```
-
-**Acceptance criteria:**
-- [x] `GameController::show()` returns a `setupReport` prop
-- [x] Prop is `null` for GMs/admins without their own empire, and for players without empires
-- [x] Prop has `available: true` when a turn report exists for the player's empire
-- [x] `games/show.tsx` renders a setup report card when `setupReport` is present
-- [x] Links use plain anchors to Blade report view and JSON download
-- [x] Focused prop tests pass
-- [x] TypeScript compiles without errors
-
----
-
-### I.5 — Final integration verification
-
-**Build plan ref:** Wrap-up for Tasks #34–37  
+**Severity:** Critical — only model without factory support  
 **Effort:** S  
-**Dependencies:** H.1–H.6, I.1–I.4
+**Dependencies:** None
 
-**Goal:** Run the full verification suite to confirm everything works end-to-end.
+**Problem:** `app/Models/Player.php` does not `use HasFactory` and has no `PlayerFactory` in `database/factories/`. Every other model has both. Also missing `@return array<string, string>` PHPDoc on `casts()`.
 
-**Instructions:**
-1. Run all targeted PHPUnit suites.
-2. Run TypeScript and ESLint checks.
-3. Run Pint on modified PHP files.
-4. Perform manual smoke tests.
+**Files to create:**
+- `database/factories/PlayerFactory.php` — factory should create a valid `Game` and `User` association, set `role` to `GameRole::Player` and `is_active` to `true`
 
-**Test commands:**
-```bash
-# All report-related PHP tests
-php artisan test --compact tests/Feature/Reports
-php artisan test --compact tests/Feature/Services/SetupReportGeneratorTest.php
-php artisan test --compact tests/Feature/TurnReports
-php artisan test --compact tests/Feature/Models/TurnModelTest.php
-php artisan test --compact tests/Feature/Models/GameTurnRelationshipTest.php
+**Files to modify:**
+- `app/Models/Player.php` — add `use HasFactory;` with `/** @use HasFactory<PlayerFactory> */` annotation; add `@return` PHPDoc on `casts()`
 
-# All legacy suites that were fixed
-php artisan test --compact tests/Feature/EmpireCreatorTest.php
-php artisan test --compact tests/Feature/GameGenerationControllerTest.php
-php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php
-php artisan test --compact tests/Feature/GameGenerationControllerActivateTest.php
-php artisan test --compact tests/Feature/Models/TemplateTest.php
+**Acceptance:**
+- [ ] `Player::factory()->create()` works
+- [ ] `php artisan test --compact --filter=Player`
 
-# New prop tests
-php artisan test --compact tests/Feature/GameGenerationReportPropsTest.php
-php artisan test --compact tests/Feature/GameShowSetupReportTest.php
+---
 
-# Frontend checks
-bun run build
+### BD-08 — Fix historical migration: replace Eloquent model with DB facade
 
-# PHP formatting
-vendor/bin/pint --dirty --format agent
-```
+**Severity:** Critical — `Game::all()` in migration will break if model changes  
+**Effort:** S  
+**Dependencies:** None (but do NOT run in parallel with BD-09, BD-10, BD-18)
 
-**Manual smoke — GM flow:**
-1. Visit game generate page for an active game with Turn 0
-2. Assign an empire to a player
-3. Click "Generate Reports" → success flash
-4. Open Blade text report via "View report" link → renders correctly
-5. Download JSON via "Download JSON" link → correct filename and structure
-6. Click "Lock Reports" → success flash, buttons disable
+**Problem:** `database/migrations/2026_03_30_170742_add_prng_columns_to_games_table.php` uses `App\Models\Game` (line 4, 22) with `Game::all()`. If the model adds new scopes, accessors, or casts later, this migration will break. Also mixes DDL (Schema::table) and DML (Game update) in the same `up()`.
 
-**Manual smoke — Player flow:**
-1. Log in as a player with an assigned empire
-2. Visit `/games/{id}` → see "Setup Report" card
-3. Click "View setup report" → Blade report opens in new tab
-4. Click "Download JSON" → JSON file downloads
-5. Confirm another player's report is not accessible (403)
+**Files to modify:**
+- `database/migrations/2026_03_30_170742_add_prng_columns_to_games_table.php` — replace `use App\Models\Game; Game::all()` with `DB::table('games')->get()` and update column references accordingly
 
-**Acceptance criteria:**
-- [x] All targeted PHPUnit suites pass
-- [x] TypeScript compiles without errors
-- [x] ESLint passes
-- [x] Pint reports no formatting issues
-- [x] GM end-to-end report workflow verified
-- [x] Player self-service report access verified
+**Also check:** `database/migrations/2026_04_03_174100_add_handle_to_users_table.php` — verify it uses `DB::table()` not Eloquent models (it uses `DB::table` already per audit, but confirm).
+
+**Acceptance:**
+- [ ] No `use App\Models\*` imports in any migration file
+- [ ] `php artisan migrate:fresh --env=testing` succeeds
+- [ ] `php artisan test --compact`
+
+---
+
+### BD-09 — Add missing FK indexes on rebuilt SQLite tables and games.status index
+
+**Severity:** Important — performance at scale  
+**Effort:** M  
+**Dependencies:** None (but do NOT run in parallel with BD-08, BD-10, BD-18)
+
+**Problem:** SQLite rebuild migrations created tables via raw SQL without indexes on FK columns. These columns are frequently used in WHERE/JOIN clauses.
+
+**Files to create:**
+- New migration: `php artisan make:migration add_missing_indexes --no-interaction`
+
+**Indexes to add:**
+- `colonies.empire_id`
+- `colonies.star_id`
+- `colonies.planet_id`
+- `colony_inventory.colony_id`
+- `colony_template_items.colony_template_id`
+- `colony_templates.game_id`
+- `games.status`
+
+**Acceptance:**
+- [ ] `php artisan migrate:fresh --env=testing` succeeds
+- [ ] Verify indexes exist using `PRAGMA index_list(colonies)` etc. in a test or tinker
+- [ ] `php artisan test --compact`
+
+---
+
+### BD-10 — Investigate and potentially add missing FK constraints and indexes to turn-report sub-tables
+
+**Severity:** Important  
+**Effort:** M  
+**Dependencies:** None (but do NOT run in parallel with BD-08, BD-09, BD-18)
+
+**Problem:** `turn_report_colonies.source_colony_id`, `turn_report_colonies.planet_id`, and `turn_report_surveys.planet_id` are plain `integer()->nullable()` columns (created at `2026_04_03_142010` and `2026_04_03_142638`) without FK constraints or indexes.
+
+**⚠️ IMPORTANT — Investigate before adding FK constraints:**  
+Turn reports are **historical snapshots** — they must survive even if the referenced game entity (colony, planet, ship, etc.) is deleted during gameplay. Adding FK constraints with `cascadeOnDelete()` would destroy historical report data when a source entity is removed. Before writing any migration:
+
+1. Check whether colonies, planets, or other referenced entities can be deleted during normal gameplay (not just `migrate:fresh`). Search controllers, services, and commands for `->delete()`, `->forceDelete()`, `destroy()`, or `DB::table(...)->delete()` on `colonies`, `planets`, and related tables.
+2. If entities **can** be deleted during gameplay, FK constraints on turn-report tables are **intentionally omitted** — do NOT add them. Only add **indexes** (without FK constraints) for query performance.
+3. If entities are **never** deleted during gameplay (only via fresh migration), then `nullOnDelete()` FK constraints are safe.
+4. **Present findings to the developer and ask for confirmation** before creating any migration. Do not proceed without approval.
+
+**Indexes are safe to add regardless** — they improve query performance without affecting deletion behavior. At minimum, add indexes on `turn_report_colonies.source_colony_id`, `turn_report_colonies.planet_id`, `turn_report_colonies.turn_report_id`, and `turn_report_surveys.planet_id`.
+
+**Files to create:**
+- New migration for indexes (always safe)
+- New SQLite rebuild migration(s) for FK constraints **only if developer approves** after investigation
+
+**Note:** SQLite requires a full table rebuild to add FK constraints. Follow the existing pattern in `2026_04_04_184259_add_star_id_and_ship_kind_to_colonies.php` using `PRAGMA defer_foreign_keys = ON` and raw SQL.
+
+**Acceptance:**
+- [ ] Investigation results documented: can referenced entities be deleted during gameplay?
+- [ ] Developer has confirmed whether FK constraints should be added or only indexes
+- [ ] Indexes added for query performance on all nullable reference columns
+- [ ] `php artisan migrate:fresh --env=testing` succeeds
+- [ ] Turn report generation and download tests still pass
+- [ ] `php artisan test --compact tests/Feature/TurnReports/ tests/Feature/Services/SetupReportGeneratorTest.php`
+
+---
+
+### BD-11 — Add missing policies for game-owned models
+
+**Severity:** Important  
+**Effort:** M  
+**Dependencies:** None
+
+**Problem:** Only `GamePolicy`, `TurnReportPolicy`, and `UserPolicy` exist. Models that are directly accessed via routes (`Empire`, `Star`, `Planet`) lack policies. Controllers use inline authorization checks instead.
+
+**Files to create (use `php artisan make:policy`):**
+- `app/Policies/EmpirePolicy.php`
+- `app/Policies/PlayerPolicy.php`
+- `app/Policies/StarPolicy.php`
+- `app/Policies/PlanetPolicy.php`
+- `app/Policies/HomeSystemPolicy.php`
+- `app/Policies/InvitationPolicy.php`
+
+**Authorization rules (reference `app/Policies/GamePolicy.php` and `app/Policies/TurnReportPolicy.php` for patterns):**
+- Game-owned models (Empire, Star, Planet, HomeSystem): admin or GM of the game can mutate; active game members can view
+- Player: admin or GM of the game can manage
+- Invitation: admin only
+
+**Files to create:**
+- `tests/Feature/Policies/` — focused policy tests covering admin, GM, active player, and unrelated user cases
+
+**Acceptance:**
+- [ ] Each new policy has at least `view` and `update` methods
+- [ ] Policy tests pass for all authorization scenarios
+- [ ] `php artisan test --compact --filter=Policy`
+
+---
+
+### BD-12 — Remove phantom `is_gm` cast from User model
+
+**Severity:** Important  
+**Effort:** S  
+**Dependencies:** None
+
+**Problem:** `app/Models/User.php:42` casts `'is_gm' => 'boolean'` but there is no `is_gm` column in the `users` table. This is a virtual attribute loaded via `withExists(['games as is_gm' => ...])` in `HandleInertiaRequests` middleware. The cast is misleading and could mask bugs.
+
+**Files to modify:**
+- `app/Models/User.php:42` — remove `'is_gm' => 'boolean'` from `casts()`
+
+**Verify:** Check `app/Http/Controllers/Admin/UserController.php` and `app/Http/Middleware/HandleInertiaRequests.php` to confirm `is_gm` is loaded via `withExists`/`loadExists` which already returns a boolean — no cast needed.
+
+**Acceptance:**
+- [ ] `is_gm` still works correctly as a boolean in templates/responses
+- [ ] `php artisan test --compact tests/Feature/Admin/ tests/Feature/HandleInertiaRequestsTest.php`
+
+---
+
+### BD-13 — Add missing `@use HasFactory` annotations to TurnReport-family models
+
+**Severity:** Minor  
+**Effort:** S  
+**Dependencies:** None
+
+**Problem:** Six TurnReport-family models use bare `use HasFactory;` without the `/** @use HasFactory<XFactory> */` generic annotation. Every other model in the codebase has this annotation.
+
+**Files to modify:**
+- `app/Models/TurnReport.php` — add `/** @use HasFactory<TurnReportFactory> */`
+- `app/Models/TurnReportColony.php` — add `/** @use HasFactory<TurnReportColonyFactory> */`
+- `app/Models/TurnReportColonyInventory.php` — add `/** @use HasFactory<TurnReportColonyInventoryFactory> */`
+- `app/Models/TurnReportColonyPopulation.php` — add `/** @use HasFactory<TurnReportColonyPopulationFactory> */`
+- `app/Models/TurnReportSurvey.php` — add `/** @use HasFactory<TurnReportSurveyFactory> */`
+- `app/Models/TurnReportSurveyDeposit.php` — add `/** @use HasFactory<TurnReportSurveyDepositFactory> */`
+
+**Note:** Also add the corresponding `use Database\Factories\XFactory;` import if not already present. Check the factory class names in `database/factories/` to use the correct names.
+
+**Acceptance:**
+- [ ] All 6 models have the annotation matching their factory
+- [ ] `php artisan test --compact tests/Feature/TurnReports/ tests/Feature/Reports/`
+
+---
+
+## Phase 4 — Controller Slimming and Cleanup
+
+These tasks extract business logic from fat controllers. They depend on Phase 2 (validation hardening) being complete so refactors happen on stable behavior.
+
+### BD-14 — Extract template upload business logic from TemplateController
+
+**Severity:** Important  
+**Effort:** M  
+**Dependencies:** BD-03
+
+**Problem:** `app/Http/Controllers/GameGeneration/TemplateController.php` has two fat methods: `uploadHomeSystem()` (lines 17-50, 34 lines of template parsing) and `uploadColony()` (lines 53-128, 75 lines including pay-rate calculations, population parsing, and inventory parsing).
+
+**Files to create:**
+- Action/service class(es), e.g. `app/Actions/GameGeneration/ImportHomeSystemTemplate.php` and `app/Actions/GameGeneration/ImportColonyTemplates.php`
+
+**Files to modify:**
+- `app/Http/Controllers/GameGeneration/TemplateController.php` — controller should only: authorize, reject active games, hand off validated payload to action, return redirect with flash
+
+**Change:** Move colony template persistence logic (DB transaction, colonyTemplates deletion, pay-rate calculation for ConstructionWorker/Spy, item parsing with CODE-TL format) into the action class. Move home system template persistence (planet creation, deposit creation) into its action class.
+
+**Acceptance:**
+- [ ] Controller methods are under 15 lines each
+- [ ] Business logic lives in action classes
+- [ ] `php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php tests/Feature/GameGenerationControllerTest.php`
+
+---
+
+### BD-15 — Extract TurnReportController::download() export logic
+
+**Severity:** Important  
+**Effort:** M  
+**Dependencies:** BD-01
+
+**Problem:** `app/Http/Controllers/TurnReportController.php:96-205` has `download()` with 90+ lines of inline JSON payload assembly including business logic (cadre detection, pay calculation, food consumption math at lines ~142-159).
+
+**Files to create:**
+- Exporter class, e.g. `app/Support/TurnReports/TurnReportJsonExporter.php`
+
+**Files to modify:**
+- `app/Http/Controllers/TurnReportController.php` — controller `download()` should only: authorize, load report, delegate to exporter, return response
+
+**Acceptance:**
+- [ ] Controller `download()` is under 15 lines
+- [ ] Export logic and business calculations live in the exporter class
+- [ ] `php artisan test --compact tests/Feature/TurnReports/TurnReportControllerDownloadTest.php`
+
+---
+
+### BD-16 — Slim GameGenerationController by extracting payload builders
+
+**Severity:** Important  
+**Effort:** L  
+**Dependencies:** None
+
+**Problem:** `app/Http/Controllers/GameGenerationController.php` is 339 lines with 12 private helper methods used by `show()` (assembles 12 props) and `download()` (46 lines of cluster JSON export).
+
+**Files to create:**
+- Presenter/read-model class(es), e.g. `app/Support/GameGeneration/GenerationPagePresenter.php` and/or `app/Support/GameGeneration/ClusterExporter.php`
+
+**Files to modify:**
+- `app/Http/Controllers/GameGenerationController.php` — move private helpers (`starsSummary`, `planetsSummary`, `depositsSummary`, `starList`, `planetList`, `homeSystemsList`, `availableStarsList`, `membersList`, `reportTurnPayload`, etc.) into presenter class(es)
+
+**Acceptance:**
+- [ ] Controller is under 60 lines
+- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerDownloadTest.php tests/Feature/GameGenerationControllerCreateHomeSystemTest.php tests/Feature/GameGenerationReportPropsTest.php`
+
+---
+
+### BD-17 — Normalize route names to consistent dot-notation
+
+**Severity:** Minor  
+**Effort:** M  
+**Dependencies:** BD-02, BD-06 (to avoid merge conflicts on route files)
+
+**Problem:** Route names are inconsistent — some use kebab-case segments, others use dot-notation:
+- `admin.users.update-handle` (kebab)
+- `admin.users.send-password-reset` (kebab)
+- `games.generate.update-star` (kebab)
+- `games.generate.update-planet` (kebab)
+- `games.generate.delete-step` (kebab)
+- `games.generate.empires.create` (should be `store` per resource convention — POST = store, GET = create)
+
+**Files to modify:**
+- `routes/admin.php:11-12` — rename to dot-notation (e.g., `admin.users.handle.update`, `admin.users.password-reset.send`)
+- `routes/games.php:43,45,49,51` — rename to dot-notation (e.g., `games.generate.stars.update`, `games.generate.planets.update`, `games.generate.empires.store`, `games.generate.steps.destroy`)
+- Search all test files and frontend code for old route names and update them: `grep -r "update-handle\|update-star\|update-planet\|delete-step\|empires.create" tests/ resources/`
+
+**Acceptance:**
+- [ ] `php artisan route:list` shows only new canonical names
+- [ ] `php artisan test --compact tests/Feature/Admin/HandleUpdateTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerDeleteStepTest.php tests/Feature/GameGenerationControllerEmpireTest.php`
+- [ ] `bun run build` succeeds (Wayfinder regenerated)
+
+---
+
+### BD-18 — Remove redundant `Schema::disableForeignKeyConstraints()` from SQLite rebuild migrations
+
+**Severity:** Minor  
+**Effort:** S  
+**Dependencies:** None (but do NOT run in parallel with BD-08, BD-09, BD-10)
+
+**Problem:** Four SQLite rebuild migrations wrap their `up()` in `Schema::disableForeignKeyConstraints()` / `enableForeignKeyConstraints()` AND also use `PRAGMA defer_foreign_keys = ON`. The `Schema::disable...` call is a no-op inside a transaction (which migrations run in), making it redundant.
+
+**Files to modify:**
+- `database/migrations/2026_04_02_192424_rebuild_colonies_for_string_kind_and_setup_report_columns.php`
+- `database/migrations/2026_04_02_185842_rebuild_colony_inventory_colony_template_items_and_colony_templates_for_string_codes.php`
+- `database/migrations/2026_04_04_184259_add_star_id_and_ship_kind_to_colonies.php`
+- `database/migrations/2026_04_04_184420_drop_is_on_surface_from_turn_report_colonies.php`
+
+**Change:** Remove `Schema::disableForeignKeyConstraints()` and `Schema::enableForeignKeyConstraints()` calls. Keep `DB::statement('PRAGMA defer_foreign_keys = ON')` and any explanatory comments.
+
+**Acceptance:**
+- [ ] `php artisan migrate:fresh --env=testing` succeeds
+- [ ] `php artisan test --compact`
+
+---
+
+### BD-19 — Remove default `inspire` console command
+
+**Severity:** Minor  
+**Effort:** S  
+**Dependencies:** None
+
+**Problem:** `routes/console.php:3-8` still contains the Laravel starter `inspire` command. The app does not use it.
+
+**Files to modify:**
+- `routes/console.php` — remove the `inspire` Artisan command closure; keep the file with just the `<?php` tag and `use` statements if other commands exist, or leave it minimal
+
+**Acceptance:**
+- [ ] `php artisan list` no longer includes `inspire`
+- [ ] `php artisan test --compact`
 
 ---
 
 ## Execution Order
 
-Tasks should be completed in this order. Tasks at the same level can be parallelized.
+Tasks should be completed in this order. Tasks at the same indentation level can be parallelized unless noted.
 
 ```
-H.1  (audit)
- ├── H.2  (model test fixes)
- ├── H.3  (upload/generation test fixes)
- │    └── H.4  (empire/activate regression fixes)
- │         └── H.5  (generator lifecycle tests)
- └── H.6  (controller test gaps)      ← parallel with H.5
-I.1  (wayfinder generate)             ← parallel with H.*
- ├── I.2  (generate page props)
- │    └── I.3  (TurnReportsSection)
- └── I.4  (player show page)          ← parallel with I.2/I.3
-I.5  (final verification)             ← after all H.* and I.*
+Phase 1 (route foundations):
+  BD-01  (Turn empires relationship)
+  BD-02  (scoped bindings on generate routes)      ← parallel with BD-01
+
+Phase 2 (security hardening):                      ← after Phase 1 route files are stable
+  BD-03  (template JSON validation)                ← parallel
+  BD-04  (FormRequest authorize + GenerateStarsRequest) ← parallel
+  BD-05  (verified middleware + admin authorize)    ← parallel
+  BD-06  (rate limiting)                           ← parallel
+
+Phase 3 (model/schema completeness):               ← parallel with Phase 2
+  BD-07  (PlayerFactory)                           ← parallel
+  BD-08  (fix Eloquent in migration)               ← migration: serialize
+  BD-09  (add FK indexes)                          ← migration: serialize after BD-08
+  BD-10  (turn-report FK constraints)              ← migration: serialize after BD-09
+  BD-11  (missing policies)                        ← parallel
+  BD-12  (remove is_gm cast)                       ← parallel
+  BD-13  (HasFactory annotations)                  ← parallel
+
+Phase 4 (controller slimming + cleanup):            ← after Phases 2-3
+  BD-14  (extract TemplateController logic)        ← after BD-03
+  BD-15  (extract download export logic)           ← after BD-01
+  BD-16  (slim GameGenerationController)           ← parallel
+  BD-17  (normalize route names)                   ← after BD-02, BD-06
+  BD-18  (remove redundant Schema calls)           ← migration: serialize
+  BD-19  (remove inspire command)                  ← parallel
 ```
