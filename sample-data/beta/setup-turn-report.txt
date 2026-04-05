@@ -22,6 +22,46 @@ Census Report
   Total                 15,920,040        7,640,020              1,942,513                 3,980,010
 
 
+Enclosure
+  Super-structure (VU Factor: 1)
+    Kind_  Units______  Volume_____  Mass______  Enclosed Volume
+    STU      4,953,743    2,476,872           ?        4,953,743
+    SLS              9            1           ?                9
+    Total                 2,476,873           ?        4,953,752
+  Inventory (in_storage == false, assembly_required == false)
+    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
+    POP      15,920,040      159,201     159,201          159,201
+    Total
+  Inventory (in_storage == false, assembly_required == true , assembled == true)
+    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
+    FRM-1       130,000
+    MSL-1        50,000
+    SEN-1            20
+    STUN     60,000,000
+  Inventory (in_storage == true , assembly_required == false)
+    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
+    ANM-1       150,000
+    ASW-1     2,400,000
+    CNGD        940,821
+    FOOD      4,269,990
+    FUEL      1,360,000
+    GOLD         20,000
+    METS      5,354,167
+    MSS-1       150,000
+    NMTS      2,645,833
+    TPT-1        20,000
+    Total
+  Inventory (in_storage == true , assembly_required == true , assembled == false)
+    Kind__  Units______  Volume_____  Mass______  Enclosed Volume
+    AUT-1        93,750
+    EWP-1        37,500
+    MIN-1        31,250
+    SEN-1            20
+    STUN     14,500,000
+    Total
+  Inventory (in_storage == true , assembly_required == true , assembled == true)
+
+
 Farming
   Group  Units  Qty_____  PRO____  USK____  AUT  FUEL Consumed  Qty_Produced______
       1  FRM-1   130,000  130,000  390,000    0         65,000      3,250,000 FOOD
@@ -74,6 +114,52 @@ Manufacturing
 
 *** All numbers below here are suspect - they may have been added only to show the format of the output ***
 
+Other Statistics
+     400,000 TPT Capacity
+     400,000 unused TPT cap
+  89,494,472 Total MASS
+   4,952,743 Space Avail.
+
+     425,000 FUEL used/FCT     1,395,833 METS used/FCT       1,354,167 NMTS used/FCT       1,942,513 CNGD paid         2,083,333 CNGD produced
+
+Storage/Non-Assembly Items ********
+    2,400,000 ASW-1       150,000 ANM-1       150,000 MSS-1        20,000 TPT-1
+    4,269,990 FOOD        940,821 CNGD
+    5,354,167 METS      2,645,833 NMTS      1,360,000 FUEL         20,000 GOLD
+
+Storage/Unassembled Items *********
+       93,750 AUT-1        37,500 EWP-1        31,250 MIN-1           20 SEN-1   14,500,000 STUN
+
+Assembled Items *******************
+      130,000 FRM-1        50,000 MSL-1            20 SEN-1   60,000,000 STUN
+
+
+Domestic Espionage (Internal Spies)
+     10 Type A      0 Type B     10 Type C      0 Type D      0 Type E      0 Type F      0 Type G
+
+Group A, Report on the rebel situation: rebels =       0   rebel soldiers =       0
+Group C, Report on foreign espionage operations as you requested:
+
+Owner #    Type A Spies    Type B Spies    Type C Spies    Type D Spies    Type E Spies    Type F Spies    Type G Spies
+      0               0               0               0               0               0               0               0
+
+
+Survey Report for Planet # 2  in System  0 / 0 / 0
+  Habitability = 25              Farmland in use =    1,950,000              Population =    238,800,600
+  Deposits
+     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______
+     01  ****     %               10  ****     %               20  ****     %               30  ****     %
+     02  ****     %               11  ****     %               21  ****     %               31  ****     %
+     03  ****     %               12  ****     %               22  ****     %               32  ****     %
+     04  ****     %               13  ****     %               23  ****     %               33  ****     %
+     05  ****     %               14  ****     %               24  ****     %               34  ****     %
+     06  ****     %               15  ****     %               25  ****     %               35  ****     %
+     07  ****     %               16  ****     %               26  ****     %
+     08  ****     %               17  ****     %               27  ****     %
+     09  ****     %               18  ****     %               28  ****     %
+                                  19  ****     %               29  ****     %
+
+*** All data below this point is historical layout and should be ignored ***
 First generation format:
 
   GROUP  #  1 ----   250,000 FACTORY UNITS PRODUCING       CONSUMER GOODS.
@@ -131,52 +217,3 @@ Third generation format:
       6  FCT-1    250,000  STUN       2,500,000 STUN    2,500,000 STUN    2,500,000 STUN
       7  FCT-1     50,000  RSCH          12,500 RSCH       12,500 RSCH       12,500 RSCH
 
-Enclosure
-  Kind_  Units______  Mass__________ Enclosed Volume
-   STU    4,953,743                        4,953,743
-  Total                   89,494,472       4,953,743
-
-
-Other Statistics
-     400,000 TPT Capacity
-     400,000 unused TPT cap
-  89,494,472 Total MASS
-   4,952,743 Space Avail.
-
-     425,000 FUEL used/FCT     1,395,833 METS used/FCT       1,354,167 NMTS used/FCT       1,942,513 CNGD paid         2,083,333 CNGD produced
-
-Storage/Non-Assembly Items ********
-    2,400,000 ASW-1       150,000 ANM-1       150,000 MSS-1        20,000 TPT-1
-    5,354,167 METS      2,645,833 NMTS      1,360,000 FUEL         20,000 GOLD    4,269,990 FOOD     940,821 CNGD
-
-Storage/Unassembled Items *********
-       93,750 AUT-1        37,500 EWP-1        31,250 MIN-1           20 SEN-1   14,500,000 STUN
-
-Assembled Items *******************
-      130,000 FRM-1        50,000 MSL-1            20 SEN-1   60,000,000 STUN
-
-
-Domestic Espionage (Internal Spies)
-     10 Type A      0 Type B     10 Type C      0 Type D      0 Type E      0 Type F      0 Type G
-
-Group A, Report on the rebel situation: rebels =       0   rebel soldiers =       0
-Group C, Report on foreign espionage operations as you requested:
-
-Owner #    Type A Spies    Type B Spies    Type C Spies    Type D Spies    Type E Spies    Type F Spies    Type G Spies
-      0               0               0               0               0               0               0               0
-
-
-Survey Report for Planet # 2  in System  0 / 0 / 0
-  Habitability = 25              Farmland in use =    1,950,000              Population =    238,800,600
-  Deposits
-     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______     No. Type Yield Qty______
-     01  ****     %               10  ****     %               20  ****     %               30  ****     %
-     02  ****     %               11  ****     %               21  ****     %               31  ****     %
-     03  ****     %               12  ****     %               22  ****     %               32  ****     %
-     04  ****     %               13  ****     %               23  ****     %               33  ****     %
-     05  ****     %               14  ****     %               24  ****     %               34  ****     %
-     06  ****     %               15  ****     %               25  ****     %               35  ****     %
-     07  ****     %               16  ****     %               26  ****     %
-     08  ****     %               17  ****     %               27  ****     %
-     09  ****     %               18  ****     %               28  ****     %
-                                  19  ****     %               29  ****     %
