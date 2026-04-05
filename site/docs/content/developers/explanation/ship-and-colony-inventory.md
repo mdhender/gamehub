@@ -43,6 +43,40 @@ These are separate from assembly state. A unit may be:
 
 The important point is that "inventory" should not be read as synonymous with "cargo".
 
+## Inventory Categories
+
+The turn report groups inventory into five categories. Each category has distinct rules for assembly state and volume calculation.
+
+### Super-structure
+
+Contains only structural units (STU, SLS) that form the hull or enclosure of the ship or colony. These units are assembled and use full volume. Their enclosed capacity determines how much the ship or colony can hold — see [Enclosed Volume Calculation]({{< relref "/developers/reference/ship-structures#enclosed-volume-calculation" >}}).
+
+Super-structure units are not counted as contents when computing volume used.
+
+### Structure
+
+Contains units that are part of the ship or colony's operating infrastructure but are not structural. Examples include life support (LFS) on orbital colonies and ships, and sensors (SEN).
+
+These units are assembled and use full volume.
+
+### Crew and Passengers
+
+Contains only population units. Volume is computed as `ceil(total_population / 100)` where cadre units (CNW, SPY) count as 2 population each.
+
+Individual population types (UEM, USK, PRO, SLD) are listed after cadre decomposition — the counts reflect the actual people, not the census groups.
+
+### Operational
+
+Contains units that are not in storage. If a unit requires assembly, it is assembled. These units use full volume.
+
+This includes production equipment (factories, farms, mines), automation (AUT), and any other assembled units that are active or deployed but not part of the super-structure or colony infrastructure.
+
+### Cargo
+
+Contains units that are in storage. If a unit requires assembly, it is not assembled. These units use **half volume** (rounded up).
+
+Cargo includes raw materials, consumer goods, food, fuel, and any equipment being stockpiled or transported.
+
 ## Why This Matters
 
 This distinction matters because it changes how we reason about the same unit code in different contexts.
