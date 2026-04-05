@@ -70,7 +70,7 @@ The column formerly called "Enclosed Volume" was split into two names: **Enclose
 
 ## Cadre Pay Rates
 
-A smaller change: the template loader now computes CNW and SPY pay rates from their base types on import. CNW pay = average of PRO + USK rates. SPY pay = average of PRO + SLD rates. These are engine-derived values that players cannot set, so ignoring any `pay_rate` in the template file prevents data entry errors.
+A smaller change: the template loader now computes CNW and SPY pay rates from their base types on import. CNW pay = PRO rate + USK rate. SPY pay = PRO rate + SLD rate. These are engine-derived values that players cannot set, so ignoring any `pay_rate` in the template file prevents data entry errors.
 
 ---
 
