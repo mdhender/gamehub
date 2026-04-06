@@ -88,7 +88,28 @@ export default function GameShow({
     const isAdmin = auth.user?.is_admin;
     const [deactivatingMember, setDeactivatingMember] = useState<Member | null>(null);
     const [removingMember, setRemovingMember] = useState<Member | null>(null);
-    const [activeTab, setActiveTab] = useState<Tab>('members');
+
+    const allShowTabs: Tab[] = ['members', 'empires', 'turn-reports'];
+
+    function resolveShowTab(): Tab {
+        const param = new URLSearchParams(window.location.search).get('tab');
+        if (param && allShowTabs.includes(param as Tab)) {
+            if ((param === 'empires' || param === 'turn-reports') && !game.is_active) {
+                return 'members';
+            }
+            return param as Tab;
+        }
+        return 'members';
+    }
+
+    const [activeTab, setActiveTabState] = useState<Tab>(resolveShowTab);
+
+    function setActiveTab(tab: Tab) {
+        setActiveTabState(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState(null, '', url.toString());
+    }
 
     const editForm = useForm({
         name: game.name,

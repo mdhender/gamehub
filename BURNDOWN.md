@@ -190,13 +190,13 @@ The existing **Generate** link remains as navigation to the generate page. The *
   - Invalid values like `?tab=empires` on inactive games fall back to `members`
 
 **Acceptance:**
-- [ ] Reloading the page preserves the selected tab
-- [ ] Copy/pasting the URL opens the correct tab
-- [ ] Invalid `?tab=` values do not break the page (falls back to default)
-- [ ] Disabled generate tabs cannot become the active panel via URL manipulation
-- [ ] Show page accepts `?tab=empires` and `?tab=turn-reports` on active games
-- [ ] Client-side tab switching does not cause an Inertia visit
-- [ ] `bun run build` succeeds
+- [x] Reloading the page preserves the selected tab
+- [x] Copy/pasting the URL opens the correct tab
+- [x] Invalid `?tab=` values do not break the page (falls back to default)
+- [x] Disabled generate tabs cannot become the active panel via URL manipulation
+- [x] Show page accepts `?tab=empires` and `?tab=turn-reports` on active games
+- [x] Client-side tab switching does not cause an Inertia visit
+- [x] `bun run build` succeeds
 
 ---
 

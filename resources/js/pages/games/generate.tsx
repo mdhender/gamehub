@@ -96,15 +96,6 @@ export default function GameGenerate({
 
     const deleteForm = useForm({});
     const [deleteConfirm, setDeleteConfirm] = useState<DeleteStep | null>(null);
-    const [activeTab, setActiveTab] = useState<GenerateTab>('templates');
-
-    function handleDeleteConfirm() {
-        if (deleteConfirm === null) { return; }
-
-        deleteForm.delete(GenerationStepController.deleteStep.url({ game, step: deleteConfirm }), {
-            onSuccess: () => setDeleteConfirm(null),
-        });
-    }
 
     const tabEnabled: Record<GenerateTab, boolean> = {
         templates: true,
@@ -113,6 +104,33 @@ export default function GameGenerate({
         deposits: game.can_generate_deposits || !['setup', 'stars_generated', 'planets_generated'].includes(game.status),
         'home-systems': game.can_create_home_systems || game.can_activate || game.can_assign_empires,
     };
+
+    const allGenerateTabs: GenerateTab[] = ['templates', 'stars', 'planets', 'deposits', 'home-systems'];
+
+    function resolveGenerateTab(): GenerateTab {
+        const param = new URLSearchParams(window.location.search).get('tab');
+        if (param && allGenerateTabs.includes(param as GenerateTab) && tabEnabled[param as GenerateTab]) {
+            return param as GenerateTab;
+        }
+        return 'templates';
+    }
+
+    const [activeTab, setActiveTabState] = useState<GenerateTab>(resolveGenerateTab);
+
+    function setActiveTab(tab: GenerateTab) {
+        setActiveTabState(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState(null, '', url.toString());
+    }
+
+    function handleDeleteConfirm() {
+        if (deleteConfirm === null) { return; }
+
+        deleteForm.delete(GenerationStepController.deleteStep.url({ game, step: deleteConfirm }), {
+            onSuccess: () => setDeleteConfirm(null),
+        });
+    }
 
     const tabs: { key: GenerateTab; label: string }[] = [
         { key: 'templates', label: 'Templates' },
