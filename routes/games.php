@@ -27,8 +27,10 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
     Route::prefix('{game}/turns/{turn}/reports')->name('turns.reports.')
         ->scopeBindings()
         ->group(function () {
-            Route::post('generate', [TurnReportController::class, 'generate'])->name('generate');
-            Route::post('lock', [TurnReportController::class, 'lock'])->name('lock');
+            Route::middleware('throttle:game-mutations')->group(function () {
+                Route::post('generate', [TurnReportController::class, 'generate'])->name('generate');
+                Route::post('lock', [TurnReportController::class, 'lock'])->name('lock');
+            });
             Route::get('empires/{empire}', [TurnReportController::class, 'show'])->name('show');
             Route::get('empires/{empire}/download', [TurnReportController::class, 'download'])->name('download');
         });
@@ -36,18 +38,21 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
     Route::prefix('{game}/generate')->name('generate.')->scopeBindings()->group(function () {
         Route::get('/', [GameGenerationController::class, 'show'])->name('show');
         Route::get('download', [GameGenerationController::class, 'download'])->name('download');
-        Route::post('activate', [GameGenerationController::class, 'activate'])->name('activate');
-        Route::post('templates/home-system', [TemplateController::class, 'uploadHomeSystem'])->name('templates.home-system');
-        Route::post('templates/colony', [TemplateController::class, 'uploadColony'])->name('templates.colony');
-        Route::post('stars', [GenerationStepController::class, 'generateStars'])->name('stars');
-        Route::put('stars/{star}', [StarController::class, 'update'])->name('update-star');
-        Route::post('planets', [GenerationStepController::class, 'generatePlanets'])->name('planets');
-        Route::put('planets/{planet}', [PlanetController::class, 'update'])->name('update-planet');
-        Route::post('deposits', [GenerationStepController::class, 'generateDeposits'])->name('deposits');
-        Route::post('home-systems/random', [HomeSystemController::class, 'createRandom'])->name('home-systems.random');
-        Route::post('home-systems/manual', [HomeSystemController::class, 'createManual'])->name('home-systems.manual');
-        Route::post('empires', [EmpireController::class, 'store'])->name('empires.create');
-        Route::put('empires/{empire}', [EmpireController::class, 'reassign'])->name('empires.reassign');
-        Route::delete('{step}', [GenerationStepController::class, 'deleteStep'])->name('delete-step');
+
+        Route::middleware('throttle:game-mutations')->group(function () {
+            Route::post('activate', [GameGenerationController::class, 'activate'])->name('activate');
+            Route::post('templates/home-system', [TemplateController::class, 'uploadHomeSystem'])->name('templates.home-system');
+            Route::post('templates/colony', [TemplateController::class, 'uploadColony'])->name('templates.colony');
+            Route::post('stars', [GenerationStepController::class, 'generateStars'])->name('stars');
+            Route::put('stars/{star}', [StarController::class, 'update'])->name('update-star');
+            Route::post('planets', [GenerationStepController::class, 'generatePlanets'])->name('planets');
+            Route::put('planets/{planet}', [PlanetController::class, 'update'])->name('update-planet');
+            Route::post('deposits', [GenerationStepController::class, 'generateDeposits'])->name('deposits');
+            Route::post('home-systems/random', [HomeSystemController::class, 'createRandom'])->name('home-systems.random');
+            Route::post('home-systems/manual', [HomeSystemController::class, 'createManual'])->name('home-systems.manual');
+            Route::post('empires', [EmpireController::class, 'store'])->name('empires.create');
+            Route::put('empires/{empire}', [EmpireController::class, 'reassign'])->name('empires.reassign');
+            Route::delete('{step}', [GenerationStepController::class, 'deleteStep'])->name('delete-step');
+        });
     });
 });

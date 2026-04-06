@@ -168,9 +168,9 @@ These tasks harden validation and authorization. They do not depend on Phase 1 a
 - Optionally define named rate limiters in `app/Providers/AppServiceProvider.php` or use built-in `throttle:x,y`
 
 **Acceptance:**
-- [ ] Repeated rapid requests eventually return 429
-- [ ] Normal single requests still succeed
-- [ ] `php artisan test --compact tests/Feature/Admin/SendPasswordResetLinkTest.php tests/Feature/GameGenerationControllerActivateTest.php`
+- [x] Repeated rapid requests eventually return 429
+- [x] Normal single requests still succeed
+- [x] `php artisan test --compact tests/Feature/Admin/SendPasswordResetLinkTest.php tests/Feature/GameGenerationControllerActivateTest.php`
 
 ---
 
