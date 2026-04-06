@@ -2,7 +2,7 @@
     {
         "kind": "COPN",
         "tech-level": 1,
-        "standard-of-living": 1.0,
+        "sol": 1.0,
         "birth-rate-pct": 0.0625,
         "death-rate-pct": 0.0625,
         "population": [
@@ -298,7 +298,7 @@
     {
         "kind": "CORB",
         "tech-level": 1,
-        "standard-of-living": 1.0,
+        "sol": 1.0,
         "birth-rate-pct": 0.0625,
         "death-rate-pct": 0.0625,
         "population": [
@@ -404,6 +404,7 @@
     },
     {
         "kind": "SHIP",
+        "tech-level": 1,
         "inventory": {
             "super-structure": [
                 {

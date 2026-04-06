@@ -26,11 +26,13 @@ Phase 4 — Architecture
 
 ## Agent prompting
 
-    We prefer to work from BURNDOWN.md.
-    Replace the contents with all these findings then consult the Oracle to create a plan to address.
-    Tasks should be ordered based on dependencies, not priorities.
-    They should be small and sized to fit in a coding agents context window.
-    They should contain enough information for the agent to find and fix the problem.
-    They should specify acceptance criteria or tests to verify the fix.
-    They should have a status that the agents can check off as they complete the work.
-    Add the plan to the BURNDOWN.
+```text
+We prefer to work from BURNDOWN.md.
+Replace the contents with these findings,s then consult the Oracle to create a plan to address.
+Tasks should be ordered based on dependencies, not priorities.
+They should be small and sized to fit in a coding agents context window.
+They should contain enough information for the agent to find and fix the problem.
+They should specify acceptance criteria or tests to verify the fix.
+They should have a status that the agents can check off as they complete the work.
+Add the plan to the BURNDOWN.
+```
