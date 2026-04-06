@@ -26,6 +26,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import EmpiresSection from './generate/EmpiresSection';
+import TurnReportsSection from './generate/TurnReportsSection';
+import { Game as GenerateGame, HomeSystemItem, MemberItem, ReportTurn } from './generate/types';
 
 type Game = {
     id: number;
@@ -34,6 +37,8 @@ type Game = {
     prng_seed: string;
     created_at: string;
     updated_at: string;
+    can_assign_empires: boolean;
+    can_generate_reports: boolean;
 };
 
 type Member = {
@@ -58,7 +63,7 @@ type SetupReport = {
     available: boolean;
 };
 
-type Tab = 'members';
+type Tab = 'members' | 'empires' | 'turn-reports';
 
 export default function GameShow({
     game,
@@ -66,12 +71,18 @@ export default function GameShow({
     inactiveMembers,
     availableUsers,
     setupReport,
+    empireMembers,
+    empireHomeSystems,
+    reportTurn,
 }: {
     game: Game;
     members: Member[];
     inactiveMembers: Member[];
     availableUsers: AvailableUser[];
     setupReport: SetupReport | null;
+    empireMembers?: MemberItem[];
+    empireHomeSystems?: HomeSystemItem[];
+    reportTurn?: ReportTurn | null;
 }) {
     const { auth } = usePage().props;
     const isAdmin = auth.user?.is_admin;
@@ -163,6 +174,32 @@ export default function GameShow({
                             >
                                 Members
                             </button>
+                            {game.is_active && (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('empires')}
+                                    className={`pb-3 text-sm font-medium transition-colors ${
+                                        activeTab === 'empires'
+                                            ? 'border-b-2 border-primary text-primary'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    Empires
+                                </button>
+                            )}
+                            {game.is_active && (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('turn-reports')}
+                                    className={`pb-3 text-sm font-medium transition-colors ${
+                                        activeTab === 'turn-reports'
+                                            ? 'border-b-2 border-primary text-primary'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    Turn Reports
+                                </button>
+                            )}
                             <Link
                                 href={GameGenerationController.show.url(game)}
                                 className="pb-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -445,6 +482,28 @@ export default function GameShow({
                                     </div>
                                 </section>
                             )}
+                        </div>
+                    )}
+
+                    {/* Empires tab */}
+                    {activeTab === 'empires' && game.is_active && empireMembers && empireHomeSystems && (
+                        <div className="mt-6">
+                            <EmpiresSection
+                                game={game as unknown as GenerateGame}
+                                members={empireMembers}
+                                homeSystems={empireHomeSystems}
+                            />
+                        </div>
+                    )}
+
+                    {/* Turn Reports tab */}
+                    {activeTab === 'turn-reports' && game.is_active && empireMembers && (
+                        <div className="mt-6">
+                            <TurnReportsSection
+                                game={game as unknown as GenerateGame}
+                                reportTurn={reportTurn ?? null}
+                                members={empireMembers}
+                            />
                         </div>
                     )}
 

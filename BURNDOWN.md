@@ -101,14 +101,14 @@ The existing **Generate** link remains as navigation to the generate page. The *
 **Note:** The `Game` type in `show.tsx` needs to be extended with `can_assign_empires: boolean` and `can_generate_reports: boolean` (or import the `Game` type from `generate/types.ts` and merge). Keep the existing Generate link as navigation. Leave the Setup Report section outside the tabs.
 
 **Acceptance:**
-- [ ] Inactive game show page: only Members tab visible, no Empires or Turn Reports tabs
-- [ ] Active game show page: Members, Empires, and Turn Reports tabs all render
-- [ ] Switching tabs does not trigger a server visit
-- [ ] Empires tab renders assignments and assignment/reassignment actions
-- [ ] Turn Reports tab renders generate/lock buttons and report links
-- [ ] Generate link still navigates to `/games/{id}/generate`
-- [ ] Setup Report section still appears for players as before
-- [ ] `bun run build` succeeds
+- [x] Inactive game show page: only Members tab visible, no Empires or Turn Reports tabs
+- [x] Active game show page: Members, Empires, and Turn Reports tabs all render
+- [x] Switching tabs does not trigger a server visit
+- [x] Empires tab renders assignments and assignment/reassignment actions
+- [x] Turn Reports tab renders generate/lock buttons and report links
+- [x] Generate link still navigates to `/games/{id}/generate`
+- [x] Setup Report section still appears for players as before
+- [x] `bun run build` succeeds
 
 ---
 
