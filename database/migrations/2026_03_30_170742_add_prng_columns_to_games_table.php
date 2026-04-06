@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Game;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -19,8 +19,8 @@ return new class extends Migration
         });
 
         // Back-fill existing games with random seeds.
-        foreach (Game::all() as $game) {
-            $game->update(['prng_seed' => Str::random(32)]);
+        foreach (DB::table('games')->get() as $game) {
+            DB::table('games')->where('id', $game->id)->update(['prng_seed' => Str::random(32)]);
         }
     }
 

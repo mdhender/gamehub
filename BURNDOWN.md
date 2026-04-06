@@ -212,9 +212,9 @@ These tasks fix model gaps and database schema issues. Migration tasks should NO
 **Also check:** `database/migrations/2026_04_03_174100_add_handle_to_users_table.php` — verify it uses `DB::table()` not Eloquent models (it uses `DB::table` already per audit, but confirm).
 
 **Acceptance:**
-- [ ] No `use App\Models\*` imports in any migration file
-- [ ] `php artisan migrate:fresh --env=testing` succeeds
-- [ ] `php artisan test --compact`
+- [x] No `use App\Models\*` imports in any migration file
+- [x] `php artisan migrate:fresh --env=testing` succeeds
+- [x] `php artisan test --compact`
 
 ---
 
