@@ -8,16 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::disableForeignKeyConstraints();
-
         // defer_foreign_keys works inside transactions; foreign_keys pragma does not
         DB::statement('PRAGMA defer_foreign_keys = ON');
 
-        try {
-            $this->rebuild();
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
+        $this->rebuild();
     }
 
     private function rebuild(): void

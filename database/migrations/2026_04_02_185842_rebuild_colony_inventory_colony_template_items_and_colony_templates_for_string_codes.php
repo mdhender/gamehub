@@ -8,19 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::disableForeignKeyConstraints();
-
         // Defer FK enforcement to commit so the INSERT…SELECT from old tables
         // can reference parent rows that may not exist in tests.  Works inside
         // an active transaction (unlike PRAGMA foreign_keys which cannot be
         // changed inside a transaction in SQLite).
         DB::statement('PRAGMA defer_foreign_keys = ON');
 
-        try {
-            $this->rebuild();
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
+        $this->rebuild();
     }
 
     private function rebuild(): void

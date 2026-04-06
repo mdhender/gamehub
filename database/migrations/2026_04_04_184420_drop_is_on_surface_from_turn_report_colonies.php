@@ -8,14 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::disableForeignKeyConstraints();
         DB::statement('PRAGMA defer_foreign_keys = ON');
 
-        try {
-            $this->rebuild();
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
+        $this->rebuild();
     }
 
     private function rebuild(): void

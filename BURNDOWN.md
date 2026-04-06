@@ -466,8 +466,8 @@ These tasks extract business logic from fat controllers. They depend on Phase 2 
 **Change:** Remove `Schema::disableForeignKeyConstraints()` and `Schema::enableForeignKeyConstraints()` calls. Keep `DB::statement('PRAGMA defer_foreign_keys = ON')` and any explanatory comments.
 
 **Acceptance:**
-- [ ] `php artisan migrate:fresh --env=testing` succeeds
-- [ ] `php artisan test --compact`
+- [x] `php artisan migrate:fresh --env=testing` succeeds
+- [x] `php artisan test --compact`
 
 ---
 
