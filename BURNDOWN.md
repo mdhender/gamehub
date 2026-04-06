@@ -239,9 +239,9 @@ These tasks fix model gaps and database schema issues. Migration tasks should NO
 - `games.status`
 
 **Acceptance:**
-- [ ] `php artisan migrate:fresh --env=testing` succeeds
-- [ ] Verify indexes exist using `PRAGMA index_list(colonies)` etc. in a test or tinker
-- [ ] `php artisan test --compact`
+- [x] `php artisan migrate:fresh --env=testing` succeeds
+- [x] Verify indexes exist using `PRAGMA index_list(colonies)` etc. in a test or tinker
+- [x] `php artisan test --compact`
 
 ---
 
