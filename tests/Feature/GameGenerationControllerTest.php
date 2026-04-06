@@ -741,7 +741,7 @@ class GameGenerationControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/stars")
-            ->assertRedirect();
+            ->assertRedirect("/games/{$game->id}/generate?tab=planets");
 
         $this->assertSame(100, $game->stars()->count());
         $this->assertSame(GameStatus::StarsGenerated, $game->fresh()->status);
@@ -825,7 +825,7 @@ class GameGenerationControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/planets")
-            ->assertRedirect();
+            ->assertRedirect("/games/{$game->id}/generate?tab=deposits");
 
         $this->assertGreaterThan(0, $game->planets()->count());
         $this->assertSame(GameStatus::PlanetsGenerated, $game->fresh()->status);
@@ -885,7 +885,7 @@ class GameGenerationControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/deposits")
-            ->assertRedirect();
+            ->assertRedirect("/games/{$game->id}/generate?tab=home-systems");
 
         $this->assertGreaterThan(0, $game->deposits()->count());
         $this->assertSame(GameStatus::DepositsGenerated, $game->fresh()->status);

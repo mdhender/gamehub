@@ -57,7 +57,7 @@ class GameGenerationControllerActivateTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/activate")
-            ->assertRedirect();
+            ->assertRedirect("/games/{$game->id}?tab=empires");
 
         $this->assertSame(GameStatus::Active, $game->fresh()->status);
     }
@@ -70,7 +70,7 @@ class GameGenerationControllerActivateTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/activate")
-            ->assertRedirect();
+            ->assertRedirect("/games/{$game->id}?tab=empires");
 
         $this->assertSame(GameStatus::Active, $game->fresh()->status);
         $this->assertDatabaseCount('turns', 1);

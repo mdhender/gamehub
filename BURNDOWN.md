@@ -251,12 +251,12 @@ The existing **Generate** link remains as navigation to the generate page. The *
   - Optionally add assertions for the new active-game props (`empireMembers`, `empireHomeSystems`, `reportTurn`)
 
 **Acceptance:**
-- [ ] All generate page tests no longer expect moved props (`members`, `reportTurn`)
-- [ ] Active-game empire/report props are covered on the show route
-- [ ] Redirect-to-next-tab behavior is covered
-- [ ] Setup report tests still pass unchanged
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerActivateTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameGenerationControllerCreateHomeSystemTest.php tests/Feature/GameGenerationControllerDeleteStepTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All generate page tests no longer expect moved props (`members`, `reportTurn`)
+- [x] Active-game empire/report props are covered on the show route
+- [x] Redirect-to-next-tab behavior is covered
+- [x] Setup report tests still pass unchanged
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerActivateTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameGenerationControllerCreateHomeSystemTest.php tests/Feature/GameGenerationControllerDeleteStepTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
