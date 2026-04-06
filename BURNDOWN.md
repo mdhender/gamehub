@@ -326,8 +326,8 @@ Turn reports are **historical snapshots** — they must survive even if the refe
 **Verify:** Check `app/Http/Controllers/Admin/UserController.php` and `app/Http/Middleware/HandleInertiaRequests.php` to confirm `is_gm` is loaded via `withExists`/`loadExists` which already returns a boolean — no cast needed.
 
 **Acceptance:**
-- [ ] `is_gm` still works correctly as a boolean in templates/responses
-- [ ] `php artisan test --compact tests/Feature/Admin/ tests/Feature/HandleInertiaRequestsTest.php`
+- [x] `is_gm` still works correctly as a boolean in templates/responses
+- [x] `php artisan test --compact tests/Feature/Admin/ tests/Feature/HandleInertiaRequestsTest.php`
 
 ---
 
