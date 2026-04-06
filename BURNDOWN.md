@@ -100,8 +100,8 @@ These tasks harden validation and authorization. They do not depend on Phase 1 a
 - `app/Http/Controllers/GameGeneration/TemplateController.php:27,63` — use the validated/parsed payload from the FormRequest instead of raw `json_decode(file_get_contents(...))`
 
 **Acceptance:**
-- [ ] Malformed JSON structure returns 422 validation errors, not PHP undefined array key errors
-- [ ] `php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php tests/Feature/GameGenerationControllerTest.php`
+- [x] Malformed JSON structure returns 422 validation errors, not PHP undefined array key errors
+- [x] `php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php tests/Feature/GameGenerationControllerTest.php`
 
 ---
 

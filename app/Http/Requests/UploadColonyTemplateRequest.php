@@ -25,6 +25,16 @@ class UploadColonyTemplateRequest extends FormRequest
     }
 
     /**
+     * Get the decoded template data.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function templateData(): array
+    {
+        return json_decode(file_get_contents($this->file('template')->getRealPath()), true);
+    }
+
+    /**
      * Get the "after" validation callables for the request.
      *
      * @return array<int, \Closure>

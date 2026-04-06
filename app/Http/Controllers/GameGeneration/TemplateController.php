@@ -24,7 +24,7 @@ class TemplateController extends Controller
             ]);
         }
 
-        $data = json_decode(file_get_contents($request->file('template')->getRealPath()), true);
+        $data = $request->templateData();
 
         $game->homeSystemTemplate()->delete();
 
@@ -60,7 +60,7 @@ class TemplateController extends Controller
             ]);
         }
 
-        $templatesData = json_decode(file_get_contents($request->file('template')->getRealPath()), true);
+        $templatesData = $request->templateData();
 
         DB::transaction(function () use ($game, $templatesData) {
             $game->colonyTemplates()->delete();
