@@ -2,106 +2,9 @@
     {
         "kind": "COPN",
         "tech-level": 1,
-        "population": [
-            {
-                "population_code": "UEM",
-                "quantity": 3500000,
-                "pay_rate": 0.0
-            },
-            {
-                "population_code": "USK",
-                "quantity": 3750000,
-                "pay_rate": 0.125
-            },
-            {
-                "population_code": "PRO",
-                "quantity": 1000000,
-                "pay_rate": 0.375
-            },
-            {
-                "population_code": "SLD",
-                "quantity": 1500000,
-                "pay_rate": 0.25
-            }
-        ],
-        "inventory": {
-            "operational": [
-                {
-                    "unit": "FCT-1",
-                    "quantity": 300000
-                },
-                {
-                    "unit": "FRM-1",
-                    "quantity": 100000
-                },
-                {
-                    "unit": "MIN-1",
-                    "quantity": 200000
-                },
-                {
-                    "unit": "MSL-1",
-                    "quantity": 32000
-                },
-                {
-                    "unit": "STU",
-                    "quantity": 35000000
-                },
-                {
-                    "unit": "TPT-1",
-                    "quantity": 10000
-                }
-            ],
-            "stored": [
-                {
-                    "unit": "ASC-1",
-                    "quantity": 160000
-                },
-                {
-                    "unit": "ASW-1",
-                    "quantity": 400000
-                },
-                {
-                    "unit": "MSS-1",
-                    "quantity": 100000
-                },
-                {
-                    "unit": "CNGD",
-                    "quantity": 500000
-                },
-                {
-                    "unit": "FOOD",
-                    "quantity": 3000000
-                },
-                {
-                    "unit": "FUEL",
-                    "quantity": 2000000
-                },
-                {
-                    "unit": "GOLD",
-                    "quantity": 50000
-                },
-                {
-                    "unit": "METS",
-                    "quantity": 4000000
-                },
-                {
-                    "unit": "MTSP",
-                    "quantity": 5000000
-                },
-                {
-                    "unit": "NMTS",
-                    "quantity": 4000000
-                },
-                {
-                    "unit": "STU",
-                    "quantity": 600000
-                }
-            ]
-        }
-    },
-    {
-        "kind": "CORB",
-        "tech-level": 1,
+        "standard-of-living": 1.0,
+        "birth-rate-pct": 0.0625,
+        "death-rate-pct": 0.0625,
         "population": [
             {
                 "population_code": "UEM",
@@ -125,14 +28,28 @@
             },
             {
                 "population_code": "CNW",
-                "quantity": 10000
+                "quantity": 10000,
+                "pay_rate": 0.5
             },
             {
                 "population_code": "SPY",
-                "quantity": 20
+                "quantity": 20,
+                "pay_rate": 0.625
             }
         ],
         "inventory": {
+            "super-structure": [
+                {
+                    "unit": "STU",
+                    "quantity": 50357496
+                }
+            ],
+            "structure": [
+                {
+                    "unit": "SEN-1",
+                    "quantity": 20
+                }
+            ],
             "operational": [
                 {
                     "unit": "FCT-1",
@@ -145,6 +62,374 @@
                 {
                     "unit": "MIN-1",
                     "quantity": 300000
+                }
+            ],
+            "cargo": [
+                {
+                    "unit": "AUT-1",
+                    "quantity": 93750
+                },
+                {
+                    "unit": "CNGD",
+                    "quantity": 940821
+                },
+                {
+                    "unit": "FOOD",
+                    "quantity": 4269990
+                },
+                {
+                    "unit": "FUEL",
+                    "quantity": 1360000
+                },
+                {
+                    "unit": "GOLD",
+                    "quantity": 20000
+                },
+                {
+                    "unit": "METS",
+                    "quantity": 5354167
+                },
+                {
+                    "unit": "MIN-1",
+                    "quantity": 31250
+                },
+                {
+                    "unit": "NMTS",
+                    "quantity": 2645833
+                },
+                {
+                    "unit": "SEN-1",
+                    "quantity": 20
+                },
+                {
+                    "unit": "STU",
+                    "quantity": 14500000
+                },
+                {
+                    "unit": "TPT-1",
+                    "quantity": 20000
+                }
+            ]
+        },
+        "production": {
+            "farms": [
+                {
+                    "group": 1,
+                    "units": [
+                        {
+                            "unit": "FRM-1",
+                            "quantity": 130000
+                        }
+                    ]
+                }
+            ],
+            "factories": [
+                {
+                    "group": 1,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 250000,
+                            "orders": "CNGD",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "CNGD",
+                                    "quantity": 2083333
+                                },
+                                "q2": {
+                                    "unit": "CNGD",
+                                    "quantity": 2083333
+                                },
+                                "q3": {
+                                    "unit": "CNGD",
+                                    "quantity": 2083333
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "group": 2,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 75000,
+                            "orders": "MTSP",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "MTSP",
+                                    "quantity": 9375000
+                                },
+                                "q2": {
+                                    "unit": "MTSP",
+                                    "quantity": 9375000
+                                },
+                                "q3": {
+                                    "unit": "MTSP",
+                                    "quantity": 9375000
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "group": 3,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 75000,
+                            "orders": "AUT-1",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "AUT-1",
+                                    "quantity": 93750
+                                },
+                                "q2": {
+                                    "unit": "AUT-1",
+                                    "quantity": 93750
+                                },
+                                "q3": {
+                                    "unit": "AUT-1",
+                                    "quantity": 93750
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "group": 4,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 75000,
+                            "orders": "SLS",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "SLS",
+                                    "quantity": 7500000
+                                },
+                                "q2": {
+                                    "unit": "SLS",
+                                    "quantity": 7500000
+                                },
+                                "q3": {
+                                    "unit": "SLS",
+                                    "quantity": 7500000
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "group": 5,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 75000,
+                            "orders": "MIN-1",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "MIN-1",
+                                    "quantity": 31250
+                                },
+                                "q2": {
+                                    "unit": "MIN-1",
+                                    "quantity": 31250
+                                },
+                                "q3": {
+                                    "unit": "MIN-1",
+                                    "quantity": 31250
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "group": 6,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 250000,
+                            "orders": "STU",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "STU",
+                                    "quantity": 2500000
+                                },
+                                "q2": {
+                                    "unit": "STU",
+                                    "quantity": 2500000
+                                },
+                                "q3": {
+                                    "unit": "STU",
+                                    "quantity": 2500000
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "group": 7,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 50000,
+                            "orders": "RSCH",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "RSCH",
+                                    "quantity": 12500
+                                },
+                                "q2": {
+                                    "unit": "RSCH",
+                                    "quantity": 12500
+                                },
+                                "q3": {
+                                    "unit": "RSCH",
+                                    "quantity": 12500
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "kind": "CORB",
+        "tech-level": 1,
+        "standard-of-living": 1.0,
+        "birth-rate-pct": 0.0625,
+        "death-rate-pct": 0.0625,
+        "population": [
+            {
+                "population_code": "PRO",
+                "quantity": 3000,
+                "pay_rate": 0.375
+            },
+            {
+                "population_code": "SLD",
+                "quantity": 500,
+                "pay_rate": 0.25
+            },
+            {
+                "population_code": "CNW",
+                "quantity": 100,
+                "pay_rate": 0.5
+            },
+            {
+                "population_code": "SPY",
+                "quantity": 10,
+                "pay_rate": 0.625
+            }
+        ],
+        "inventory": {
+            "super-structure": [
+                {
+                    "unit": "STU",
+                    "quantity": 1080000
+                }
+            ],
+            "structure": [
+                {
+                    "unit": "LFS-1",
+                    "quantity": 3720
+                },
+                {
+                    "unit": "SEN-1",
+                    "quantity": 1
+                }
+            ],
+            "operational": [
+                {
+                    "unit": "AUT-1",
+                    "quantity": 9000
+                },
+                {
+                    "unit": "FCT-1",
+                    "quantity": 1000
+                }
+            ],
+            "cargo": [
+                {
+                    "unit": "CNGD",
+                    "quantity": 1307
+                },
+                {
+                    "unit": "FOOD",
+                    "quantity": 930
+                },
+                {
+                    "unit": "FUEL",
+                    "quantity": 4221
+                },
+                {
+                    "unit": "METS",
+                    "quantity": 4000
+                },
+                {
+                    "unit": "NMTS",
+                    "quantity": 16000
+                }
+            ]
+        },
+        "production": {
+            "factories": [
+                {
+                    "group": 1,
+                    "units": [
+                        {
+                            "unit": "FCT-1",
+                            "quantity": 1000,
+                            "orders": "SLS",
+                            "work-in-progress": {
+                                "q1": {
+                                    "unit": "SLS",
+                                    "quantity": 100000
+                                },
+                                "q2": {
+                                    "unit": "SLS",
+                                    "quantity": 100000
+                                },
+                                "q3": {
+                                    "unit": "SLS",
+                                    "quantity": 100000
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "kind": "SHIP",
+        "inventory": {
+            "super-structure": [
+                {
+                    "unit": "SLS",
+                    "quantity": 500000
+                }
+            ],
+            "structure": [
+                {
+                    "unit": "LFS-1",
+                    "quantity": 500
+                },
+                {
+                    "unit": "SEN-1",
+                    "quantity": 5
+                },
+                {
+                    "unit": "SPD-1",
+                    "quantity": 5
+                }
+            ],
+            "operational": [],
+            "cargo": [
+                {
+                    "unit": "FUEL",
+                    "quantity": 5000
                 }
             ]
         }

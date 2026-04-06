@@ -9,7 +9,7 @@ Colony: 13  "Not Named"                        System: 00-00-00/0   Orbit:  7
   Kind: Open Colony              Tech Level:  1
 
 Census Report
-  Standard of Living: 0.4881    Birth Rate: 0.0000%
+  Standard of Living: 1.0000    Birth Rate: 0.0625%
                                 Death Rate: 0.0625%
 
   Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
