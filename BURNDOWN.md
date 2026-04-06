@@ -269,13 +269,15 @@ Turn reports are **historical snapshots** — they must survive even if the refe
 
 **Note:** SQLite requires a full table rebuild to add FK constraints. Follow the existing pattern in `2026_04_04_184259_add_star_id_and_ship_kind_to_colonies.php` using `PRAGMA defer_foreign_keys = ON` and raw SQL.
 
+**Investigation outcome:** Colonies, planets, and stars are never deleted during active gameplay — only during setup-phase rollbacks and full game deletion. FK constraints would be safe (`nullOnDelete()`) but require complex SQLite table rebuilds for minimal practical benefit. **Developer confirmed: indexes only, no FK constraints.**
+
 **Acceptance:**
-- [ ] Investigation results documented: can referenced entities be deleted during gameplay?
-- [ ] Developer has confirmed whether FK constraints should be added or only indexes
-- [ ] Indexes added for query performance on all nullable reference columns
-- [ ] `php artisan migrate:fresh --env=testing` succeeds
-- [ ] Turn report generation and download tests still pass
-- [ ] `php artisan test --compact tests/Feature/TurnReports/ tests/Feature/Services/SetupReportGeneratorTest.php`
+- [x] Investigation results documented: can referenced entities be deleted during gameplay?
+- [x] Developer has confirmed whether FK constraints should be added or only indexes
+- [x] Indexes added for query performance on all nullable reference columns
+- [x] `php artisan migrate:fresh --env=testing` succeeds
+- [x] Turn report generation and download tests still pass
+- [x] `php artisan test --compact tests/Feature/TurnReports/ tests/Feature/Services/SetupReportGeneratorTest.php`
 
 ---
 
