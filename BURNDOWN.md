@@ -483,8 +483,8 @@ These tasks extract business logic from fat controllers. They depend on Phase 2 
 - `routes/console.php` — remove the `inspire` Artisan command closure; keep the file with just the `<?php` tag and `use` statements if other commands exist, or leave it minimal
 
 **Acceptance:**
-- [ ] `php artisan list` no longer includes `inspire`
-- [ ] `php artisan test --compact`
+- [x] `php artisan list` no longer includes `inspire`
+- [x] `php artisan test --compact`
 
 ---
 
