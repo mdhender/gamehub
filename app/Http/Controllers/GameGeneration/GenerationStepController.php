@@ -29,7 +29,7 @@ class GenerationStepController extends Controller
 
         app(StarGenerator::class)->generate($game, $seed);
 
-        return back()->with('success', 'Stars generated successfully.');
+        return redirect()->to(route('games.generate.show', $game).'?tab=planets')->with('success', 'Stars generated successfully.');
     }
 
     public function generatePlanets(Game $game): RedirectResponse
@@ -44,7 +44,7 @@ class GenerationStepController extends Controller
 
         app(PlanetGenerator::class)->generate($game);
 
-        return back()->with('success', 'Planets generated successfully.');
+        return redirect()->to(route('games.generate.show', $game).'?tab=deposits')->with('success', 'Planets generated successfully.');
     }
 
     public function generateDeposits(Game $game): RedirectResponse
@@ -59,7 +59,7 @@ class GenerationStepController extends Controller
 
         app(DepositGenerator::class)->generate($game);
 
-        return back()->with('success', 'Deposits generated successfully.');
+        return redirect()->to(route('games.generate.show', $game).'?tab=home-systems')->with('success', 'Deposits generated successfully.');
     }
 
     public function deleteStep(Game $game, string $step): RedirectResponse

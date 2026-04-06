@@ -218,13 +218,13 @@ The existing **Generate** link remains as navigation to the generate page. The *
 **Keep `return back()` for:** template uploads, star edits, planet edits, delete-step, home system creation, empire assignment/reassignment, report actions. These should stay on the current tab (the `?tab=` in the referer URL handles this naturally).
 
 **Acceptance:**
-- [ ] After Stars generation → user lands on Planets tab (`?tab=planets`)
-- [ ] After Planets generation → user lands on Deposits tab (`?tab=deposits`)
-- [ ] After Deposits generation → user lands on Home Systems tab (`?tab=home-systems`)
-- [ ] After game activation → user lands on game show page Empires tab (`?tab=empires`)
-- [ ] Template uploads, edits, and deletes still return to the current tab
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerActivateTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] After Stars generation → user lands on Planets tab (`?tab=planets`)
+- [x] After Planets generation → user lands on Deposits tab (`?tab=deposits`)
+- [x] After Deposits generation → user lands on Home Systems tab (`?tab=home-systems`)
+- [x] After game activation → user lands on game show page Empires tab (`?tab=empires`)
+- [x] Template uploads, edits, and deletes still return to the current tab
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerActivateTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

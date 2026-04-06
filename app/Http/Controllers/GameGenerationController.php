@@ -53,6 +53,6 @@ class GameGenerationController extends Controller
         Gate::authorize('update', $game);
         (new ActivateGame)->execute($game);
 
-        return back()->with('success', 'Game activated.');
+        return redirect()->to(route('games.show', $game).'?tab=empires')->with('success', 'Game activated.');
     }
 }
