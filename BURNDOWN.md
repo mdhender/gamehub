@@ -418,8 +418,8 @@ These tasks extract business logic from fat controllers. They depend on Phase 2 
 - `app/Http/Controllers/GameGenerationController.php` — move private helpers (`starsSummary`, `planetsSummary`, `depositsSummary`, `starList`, `planetList`, `homeSystemsList`, `availableStarsList`, `membersList`, `reportTurnPayload`, etc.) into presenter class(es)
 
 **Acceptance:**
-- [ ] Controller is under 60 lines
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerDownloadTest.php tests/Feature/GameGenerationControllerCreateHomeSystemTest.php tests/Feature/GameGenerationReportPropsTest.php`
+- [x] Controller is under 60 lines
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerDownloadTest.php tests/Feature/GameGenerationControllerCreateHomeSystemTest.php tests/Feature/GameGenerationReportPropsTest.php`
 
 ---
 
