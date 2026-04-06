@@ -16,10 +16,6 @@ class StarController extends Controller
     {
         Gate::authorize('update', $game);
 
-        if ($star->game_id !== $game->id) {
-            abort(404);
-        }
-
         if (! $game->isStarsGenerated()) {
             throw ValidationException::withMessages([
                 'star' => 'Stars can only be edited when the game is in stars generated status.',

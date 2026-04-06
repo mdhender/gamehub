@@ -16,10 +16,6 @@ class PlanetController extends Controller
     {
         Gate::authorize('update', $game);
 
-        if ($planet->game_id !== $game->id) {
-            abort(404);
-        }
-
         if (! $game->isPlanetsGenerated()) {
             throw ValidationException::withMessages([
                 'planet' => 'Planets can only be edited when the game is in planets generated status.',

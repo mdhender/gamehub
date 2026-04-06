@@ -33,7 +33,7 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
             Route::get('empires/{empire}/download', [TurnReportController::class, 'download'])->name('download');
         });
 
-    Route::prefix('{game}/generate')->name('generate.')->group(function () {
+    Route::prefix('{game}/generate')->name('generate.')->scopeBindings()->group(function () {
         Route::get('/', [GameGenerationController::class, 'show'])->name('show');
         Route::get('download', [GameGenerationController::class, 'download'])->name('download');
         Route::post('activate', [GameGenerationController::class, 'activate'])->name('activate');

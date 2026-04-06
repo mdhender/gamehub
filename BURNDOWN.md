@@ -69,8 +69,8 @@ These tasks fix broken route model binding and enable scoped bindings so later w
 **Note:** Keep any manual checks for request-body IDs that are NOT route params (e.g., `player_id`, `home_system_id` in form payloads — those can't be scoped by routing).
 
 **Acceptance:**
-- [ ] Cross-game nested resource IDs return 404 via binding
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerEmpireTest.php`
+- [x] Cross-game nested resource IDs return 404 via binding
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerEmpireTest.php`
 
 ---
 

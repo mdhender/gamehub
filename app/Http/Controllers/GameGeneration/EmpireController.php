@@ -63,10 +63,6 @@ class EmpireController extends Controller
             ]);
         }
 
-        if ($empire->game_id !== $game->id) {
-            abort(404);
-        }
-
         $validated = $request->validated();
 
         $homeSystem = HomeSystem::findOrFail($validated['home_system_id']);
