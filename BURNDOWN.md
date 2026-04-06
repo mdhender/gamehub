@@ -443,9 +443,9 @@ These tasks extract business logic from fat controllers. They depend on Phase 2 
 - Search all test files and frontend code for old route names and update them: `grep -r "update-handle\|update-star\|update-planet\|delete-step\|empires.create" tests/ resources/`
 
 **Acceptance:**
-- [ ] `php artisan route:list` shows only new canonical names
-- [ ] `php artisan test --compact tests/Feature/Admin/HandleUpdateTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerDeleteStepTest.php tests/Feature/GameGenerationControllerEmpireTest.php`
-- [ ] `bun run build` succeeds (Wayfinder regenerated)
+- [x] `php artisan route:list` shows only new canonical names
+- [x] `php artisan test --compact tests/Feature/Admin/HandleUpdateTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerDeleteStepTest.php tests/Feature/GameGenerationControllerEmpireTest.php`
+- [x] `bun run build` succeeds (Wayfinder regenerated)
 
 ---
 

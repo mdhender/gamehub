@@ -11,8 +11,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('invitations', [InvitationController::class, 'index'])->name('invitations.index');
 
         Route::middleware('throttle:admin-mutations')->group(function () {
-            Route::patch('users/{user}/handle', [UserController::class, 'updateHandle'])->name('users.update-handle');
-            Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordResetLink'])->name('users.send-password-reset');
+            Route::patch('users/{user}/handle', [UserController::class, 'updateHandle'])->name('users.handle.update');
+            Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordResetLink'])->name('users.password-reset.send');
             Route::post('invitations', [InvitationController::class, 'store'])->name('invitations.store');
             Route::delete('invitations/{invitation}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
             Route::post('invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('invitations.resend');

@@ -16,7 +16,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create(['handle' => 'oldhandle']);
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => 'newhandle',
             ]);
 
@@ -30,7 +30,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => 'MyHandle',
             ]);
 
@@ -44,7 +44,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => 'Taken',
             ]);
 
@@ -57,7 +57,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => "o'neil-test_123",
             ]);
 
@@ -71,7 +71,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => 'has space',
             ]);
 
@@ -84,7 +84,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => '<script>',
             ]);
 
@@ -97,7 +97,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => '',
             ]);
 
@@ -110,7 +110,7 @@ class HandleUpdateTest extends TestCase
         $user = User::factory()->create(['handle' => 'myhandle']);
 
         $response = $this->actingAs($admin)
-            ->patch(route('admin.users.update-handle', $user), [
+            ->patch(route('admin.users.handle.update', $user), [
                 'handle' => 'myhandle',
             ]);
 
@@ -123,7 +123,7 @@ class HandleUpdateTest extends TestCase
         $target = User::factory()->create(['handle' => 'original']);
 
         $response = $this->actingAs($user)
-            ->patch(route('admin.users.update-handle', $target), [
+            ->patch(route('admin.users.handle.update', $target), [
                 'handle' => 'changed',
             ]);
 
@@ -135,7 +135,7 @@ class HandleUpdateTest extends TestCase
     {
         $user = User::factory()->create(['handle' => 'original']);
 
-        $response = $this->patch(route('admin.users.update-handle', $user), [
+        $response = $this->patch(route('admin.users.handle.update', $user), [
             'handle' => 'changed',
         ]);
 
