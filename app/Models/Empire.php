@@ -38,4 +38,10 @@ class Empire extends Model
     {
         return $this->hasMany(Colony::class);
     }
+
+    /** @return HasMany<TurnReport, $this> */
+    public function turnReports(): HasMany
+    {
+        return $this->hasMany(TurnReport::class);
+    }
 }

@@ -79,8 +79,6 @@ class TurnReportController extends Controller
 
     public function show(Game $game, Turn $turn, Empire $empire): View
     {
-        abort_unless($empire->game_id === $game->id, 404);
-
         Gate::authorize('show', [TurnReport::class, $game, $empire]);
 
         $report = $this->loadReport($game, $turn, $empire);
@@ -95,8 +93,6 @@ class TurnReportController extends Controller
 
     public function download(Game $game, Turn $turn, Empire $empire): Response
     {
-        abort_unless($empire->game_id === $game->id, 404);
-
         Gate::authorize('download', [TurnReport::class, $game, $empire]);
 
         $report = $this->loadReport($game, $turn, $empire);

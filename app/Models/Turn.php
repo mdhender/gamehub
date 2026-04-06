@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['game_id', 'number', 'status', 'reports_locked_at'])]
 class Turn extends Model
@@ -37,5 +38,11 @@ class Turn extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(TurnReport::class);
+    }
+
+    /** @return HasManyThrough<Empire, TurnReport, $this> */
+    public function empires(): HasManyThrough
+    {
+        return $this->hasManyThrough(Empire::class, TurnReport::class, 'turn_id', 'id', 'id', 'empire_id');
     }
 }

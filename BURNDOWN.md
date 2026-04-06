@@ -45,10 +45,10 @@ These tasks fix broken route model binding and enable scoped bindings so later w
 - `app/Http/Controllers/TurnReportController.php:82,98` — remove manual `abort_unless($empire->game_id === $game->id, 404)` from `show()` and `download()` — scoped binding handles this now
 
 **Acceptance:**
-- [ ] `Turn::empires()` relationship exists and returns `HasManyThrough`
-- [ ] `Empire::turnReports()` relationship exists and returns `HasMany`
-- [ ] A valid `{empire}` from another game returns 404 via binding, not controller abort
-- [ ] `php artisan test --compact tests/Feature/TurnReports/`
+- [x] `Turn::empires()` relationship exists and returns `HasManyThrough`
+- [x] `Empire::turnReports()` relationship exists and returns `HasMany`
+- [x] A valid `{empire}` from another game returns 404 via binding, not controller abort
+- [x] `php artisan test --compact tests/Feature/TurnReports/`
 
 ---
 
