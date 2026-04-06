@@ -306,9 +306,9 @@ Turn reports are **historical snapshots** — they must survive even if the refe
 - `tests/Feature/Policies/` — focused policy tests covering admin, GM, active player, and unrelated user cases
 
 **Acceptance:**
-- [ ] Each new policy has at least `view` and `update` methods
-- [ ] Policy tests pass for all authorization scenarios
-- [ ] `php artisan test --compact --filter=Policy`
+- [x] Each new policy has at least `view` and `update` methods
+- [x] Policy tests pass for all authorization scenarios
+- [x] `php artisan test --compact --filter=Policy`
 
 ---
 
