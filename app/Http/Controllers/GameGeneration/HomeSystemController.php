@@ -36,8 +36,6 @@ class HomeSystemController extends Controller
 
     public function createManual(CreateHomeSystemManualRequest $request, Game $game): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if (! $game->canCreateHomeSystems()) {
             throw ValidationException::withMessages([
                 'home_system' => 'Home systems can only be created when deposits have been generated.',

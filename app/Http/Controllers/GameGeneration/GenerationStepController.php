@@ -5,31 +5,25 @@ namespace App\Http\Controllers\GameGeneration;
 use App\Enums\GameStatus;
 use App\Enums\GenerationStepName;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\GenerateStarsRequest;
 use App\Models\Game;
 use App\Services\DepositGenerator;
 use App\Services\PlanetGenerator;
 use App\Services\StarGenerator;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class GenerationStepController extends Controller
 {
-    public function generateStars(Request $request, Game $game): RedirectResponse
+    public function generateStars(GenerateStarsRequest $request, Game $game): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if (! $game->canGenerateStars()) {
             throw ValidationException::withMessages([
                 'seed' => 'Stars can only be generated when the game is in setup status.',
             ]);
         }
-
-        $request->validate([
-            'seed' => ['nullable', 'string', 'max:255'],
-        ]);
 
         $seed = $request->filled('seed') ? $request->string('seed')->toString() : null;
 

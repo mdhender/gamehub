@@ -2,12 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\PlanetType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class UpdatePlanetRequest extends FormRequest
+class GenerateStarsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,9 +23,7 @@ class UpdatePlanetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'orbit' => ['required', 'integer', 'min:1', 'max:11'],
-            'type' => ['required', Rule::enum(PlanetType::class)],
-            'habitability' => ['required', 'integer', 'min:0', 'max:25'],
+            'seed' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

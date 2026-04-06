@@ -209,7 +209,7 @@ class GameGenerationControllerEmpireTest extends TestCase
     }
 
     #[Test]
-    public function create_empire_returns_404_for_home_system_from_another_game(): void
+    public function create_empire_rejects_home_system_from_another_game(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $otherGame = $this->activeGameWithHomeSystem();
@@ -223,7 +223,7 @@ class GameGenerationControllerEmpireTest extends TestCase
                 'player_id' => $playerRecord->id,
                 'home_system_id' => $foreignHomeSystem->id,
             ])
-            ->assertNotFound();
+            ->assertInvalid('home_system_id');
     }
 
     // -------------------------------------------------------------------------

@@ -9,15 +9,12 @@ use App\Http\Requests\UploadHomeSystemTemplateRequest;
 use App\Models\Game;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class TemplateController extends Controller
 {
     public function uploadHomeSystem(UploadHomeSystemTemplateRequest $request, Game $game): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if ($game->isActive()) {
             throw ValidationException::withMessages([
                 'template' => 'Templates cannot be modified for an active game.',
@@ -52,8 +49,6 @@ class TemplateController extends Controller
 
     public function uploadColony(UploadColonyTemplateRequest $request, Game $game): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if ($game->isActive()) {
             throw ValidationException::withMessages([
                 'template' => 'Templates cannot be modified for an active game.',

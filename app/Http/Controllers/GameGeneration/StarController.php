@@ -7,15 +7,12 @@ use App\Http\Requests\UpdateStarRequest;
 use App\Models\Game;
 use App\Models\Star;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class StarController extends Controller
 {
     public function update(UpdateStarRequest $request, Game $game, Star $star): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if (! $game->isStarsGenerated()) {
             throw ValidationException::withMessages([
                 'star' => 'Stars can only be edited when the game is in stars generated status.',

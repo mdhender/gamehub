@@ -11,15 +11,12 @@ use App\Models\HomeSystem;
 use App\Models\Player;
 use App\Services\EmpireCreator;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class EmpireController extends Controller
 {
     public function store(CreateEmpireRequest $request, Game $game): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if (! $game->canAssignEmpires()) {
             throw ValidationException::withMessages([
                 'empire' => 'Empires can only be assigned when the game is active.',
@@ -30,17 +27,9 @@ class EmpireController extends Controller
 
         $player = Player::findOrFail($validated['player_id']);
 
-        if ($player->game_id !== $game->id) {
-            abort(404);
-        }
-
         $homeSystem = isset($validated['home_system_id'])
             ? HomeSystem::findOrFail($validated['home_system_id'])
             : null;
-
-        if ($homeSystem && $homeSystem->game_id !== $game->id) {
-            abort(404);
-        }
 
         try {
             app(EmpireCreator::class)->create($game, $player->user, $homeSystem);
@@ -55,8 +44,6 @@ class EmpireController extends Controller
 
     public function reassign(ReassignEmpireRequest $request, Game $game, Empire $empire): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         if (! $game->canAssignEmpires()) {
             throw ValidationException::withMessages([
                 'empire' => 'Empires can only be reassigned when the game is active.',

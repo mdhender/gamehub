@@ -14,8 +14,6 @@ class GameMemberController extends Controller
 {
     public function store(StoreGameMemberRequest $request, Game $game): RedirectResponse
     {
-        Gate::authorize('update', $game);
-
         $validated = $request->validated();
 
         if ($validated['role'] === GameRole::Gm->value && ! $request->user()->isAdmin()) {

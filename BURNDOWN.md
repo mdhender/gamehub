@@ -129,9 +129,9 @@ These tasks harden validation and authorization. They do not depend on Phase 1 a
 - `app/Http/Controllers/GameGeneration/GenerationStepController.php:28-35` — replace inline validation with `GenerateStarsRequest` type-hint
 
 **Acceptance:**
-- [ ] Unauthorized requests fail with 403 before controller logic
-- [ ] Unknown `player_id` in CreateEmpireRequest rejected by validation, not `findOrFail()`
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php`
+- [x] Unauthorized requests fail with 403 before controller logic
+- [x] Unknown `player_id` in CreateEmpireRequest rejected by validation, not `findOrFail()`
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php`
 
 ---
 
