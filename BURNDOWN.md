@@ -76,12 +76,12 @@ The existing **Generate** link remains as navigation to the generate page. The *
 **Important:** Use distinct prop names (`empireMembers`, `empireHomeSystems`) to avoid colliding with the existing `members` prop on the show page. The `Game` type on the show page also needs `can_assign_empires` and `can_generate_reports` — add these to the `game` prop in `GameController::show()`.
 
 **Acceptance:**
-- [ ] `GET /games/{id}/generate` response no longer includes `members` or `reportTurn` props
-- [ ] `GET /games/{id}` response includes `empireMembers`, `empireHomeSystems`, and `reportTurn` when game is active
-- [ ] `GET /games/{id}` response does NOT include `empireMembers`, `empireHomeSystems`, or `reportTurn` when game is inactive
-- [ ] `setupReport` behavior is unchanged
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] `GET /games/{id}/generate` response no longer includes `members` or `reportTurn` props
+- [x] `GET /games/{id}` response includes `empireMembers`, `empireHomeSystems`, and `reportTurn` when game is active
+- [x] `GET /games/{id}` response does NOT include `empireMembers`, `empireHomeSystems`, or `reportTurn` when game is inactive
+- [x] `setupReport` behavior is unchanged
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

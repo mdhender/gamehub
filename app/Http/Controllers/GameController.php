@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
 use App\Models\TurnReport;
 use App\Models\User;
+use App\Support\GameGeneration\GenerationPagePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -56,8 +57,12 @@ class GameController extends Controller
             'has_empire' => $empiriesByUserId->has($user->id),
         ];
 
-        return Inertia::render('games/show', [
-            'game' => $game->only('id', 'name', 'is_active', 'prng_seed', 'created_at', 'updated_at'),
+        $props = [
+            'game' => [
+                ...$game->only('id', 'name', 'is_active', 'prng_seed', 'created_at', 'updated_at'),
+                'can_assign_empires' => $game->canAssignEmpires(),
+                'can_generate_reports' => $game->canGenerateReports(),
+            ],
             'members' => $activeMembers->map($formatMember)->values(),
             'inactiveMembers' => $inactiveMembers->map($formatMember)->values(),
             'availableUsers' => Gate::allows('update', $game)
@@ -67,7 +72,16 @@ class GameController extends Controller
                     ->get(['id', 'name', 'email'])
                 : [],
             'setupReport' => $this->setupReportPayload($game, $request->user()),
-        ]);
+        ];
+
+        if ($game->isActive()) {
+            $presenter = new GenerationPagePresenter($game);
+            $props['empireMembers'] = $presenter->membersList();
+            $props['empireHomeSystems'] = $presenter->homeSystemsList();
+            $props['reportTurn'] = $presenter->reportTurnPayload();
+        }
+
+        return Inertia::render('games/show', $props);
     }
 
     public function store(StoreGameRequest $request): RedirectResponse

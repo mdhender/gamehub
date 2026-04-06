@@ -152,7 +152,6 @@ class GameGenerationControllerTest extends TestCase
                 ->has('planets')
                 ->has('deposits')
                 ->has('homeSystems')
-                ->has('members')
                 ->has('game.min_home_system_distance')
                 ->has('game.status')
                 ->has('game.can_generate_stars')
@@ -302,24 +301,6 @@ class GameGenerationControllerTest extends TestCase
                     ->where('planetList.0.orbit', 3)
                     ->where('planetList.0.star_location', '05-06-07')
                 )
-            );
-    }
-
-    #[Test]
-    public function generate_page_members_are_players_only_with_empire_info(): void
-    {
-        $game = Game::factory()->create();
-        $gm = $this->gmUser($game);
-        $player = User::factory()->create();
-        $game->users()->attach($player, ['role' => 'player', 'is_active' => true]);
-
-        $this->actingAs($gm)
-            ->get("/games/{$game->id}/generate")
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->has('members', 1)
-                ->where('members.0.id', $player->id)
-                ->where('members.0.empire', null)
             );
     }
 

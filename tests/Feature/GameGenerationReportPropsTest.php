@@ -76,18 +76,37 @@ class GameGenerationReportPropsTest extends TestCase
         return "/games/{$game->id}/generate";
     }
 
+    private function showUrl(Game $game): string
+    {
+        return "/games/{$game->id}";
+    }
+
     // -------------------------------------------------------------------------
     // reportTurn prop
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function report_turn_is_null_when_game_has_no_turn(): void
+    public function report_turn_is_not_present_on_generate_page(): void
     {
         $game = Game::factory()->create(['status' => GameStatus::Setup]);
         $gm = $this->gmUser($game);
 
         $this->actingAs($gm)
             ->get($this->generateUrl($game))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('reportTurn')
+            );
+    }
+
+    #[Test]
+    public function report_turn_is_null_on_show_page_when_game_has_no_turn(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Active]);
+        $gm = $this->gmUser($game);
+
+        $this->actingAs($gm)
+            ->get($this->showUrl($game))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('reportTurn', null)
@@ -102,7 +121,7 @@ class GameGenerationReportPropsTest extends TestCase
         $gm = $this->gmUser($game);
 
         $this->actingAs($gm)
-            ->get($this->generateUrl($game))
+            ->get($this->showUrl($game))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('reportTurn.number', 0)
@@ -121,7 +140,7 @@ class GameGenerationReportPropsTest extends TestCase
         $gm = $this->gmUser($game);
 
         $this->actingAs($gm)
-            ->get($this->generateUrl($game))
+            ->get($this->showUrl($game))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('reportTurn.can_generate', true)
@@ -137,11 +156,26 @@ class GameGenerationReportPropsTest extends TestCase
         $gm = $this->gmUser($game);
 
         $this->actingAs($gm)
-            ->get($this->generateUrl($game))
+            ->get($this->showUrl($game))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('reportTurn.can_generate', false)
                 ->where('reportTurn.can_lock', false)
+            );
+    }
+
+    #[Test]
+    public function report_turn_is_not_present_on_show_page_when_game_is_inactive(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $game->turns()->create(['number' => 0, 'status' => TurnStatus::Pending]);
+        $gm = $this->gmUser($game);
+
+        $this->actingAs($gm)
+            ->get($this->showUrl($game))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('reportTurn')
             );
     }
 
@@ -168,10 +202,10 @@ class GameGenerationReportPropsTest extends TestCase
         ]);
 
         $this->actingAs($gm)
-            ->get($this->generateUrl($game))
+            ->get($this->showUrl($game))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('members.0.empire.has_report', true)
+                ->where('empireMembers.0.empire.has_report', true)
             );
     }
 
@@ -187,10 +221,10 @@ class GameGenerationReportPropsTest extends TestCase
         $game->turns()->create(['number' => 0, 'status' => TurnStatus::Pending]);
 
         $this->actingAs($gm)
-            ->get($this->generateUrl($game))
+            ->get($this->showUrl($game))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('members.0.empire.has_report', false)
+                ->where('empireMembers.0.empire.has_report', false)
             );
     }
 }

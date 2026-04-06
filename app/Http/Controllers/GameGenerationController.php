@@ -33,8 +33,6 @@ class GameGenerationController extends Controller
             'planetList' => Inertia::defer(fn () => $p->planetList()),
             'homeSystems' => $p->homeSystemsList(),
             'availableStars' => $p->availableStarsList(),
-            'members' => $p->membersList(),
-            'reportTurn' => $p->reportTurnPayload(),
         ]);
     }
 
