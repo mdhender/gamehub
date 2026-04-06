@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TurnStatus;
 use App\Http\Requests\StoreGameRequest;
 use App\Http\Requests\UpdateGameRequest;
 use App\Models\Game;
@@ -76,9 +77,9 @@ class GameController extends Controller
 
         if ($game->isActive()) {
             $presenter = new GenerationPagePresenter($game);
-            $props['empireMembers'] = $presenter->membersList();
+            $props['empireMembers'] = $this->empireMembers($game);
             $props['empireHomeSystems'] = $presenter->homeSystemsList();
-            $props['reportTurn'] = $presenter->reportTurnPayload();
+            $props['reportTurn'] = $this->reportTurnPayload($game);
         }
 
         return Inertia::render('games/show', $props);
@@ -108,6 +109,61 @@ class GameController extends Controller
         $game->delete();
 
         return back()->with('success', 'Game deleted.');
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function empireMembers(Game $game): array
+    {
+        $players = $game->playerRecords()
+            ->where('role', 'player')
+            ->where('is_active', true)
+            ->with('user')
+            ->get();
+
+        $empiresByPlayerId = $game->empires()->with('homeSystem.star')->get()->keyBy('player_id');
+
+        $currentTurn = $game->currentTurn;
+        $reportsByEmpireId = $currentTurn
+            ? TurnReport::where('turn_id', $currentTurn->id)->pluck('empire_id')->flip()
+            : collect();
+
+        return $players->map(function ($player) use ($empiresByPlayerId, $reportsByEmpireId) {
+            $empire = $empiresByPlayerId->get($player->id);
+
+            return [
+                'id' => $player->id,
+                'user_id' => $player->user_id,
+                'name' => $player->user->name,
+                'empire' => $empire ? [
+                    'id' => $empire->id,
+                    'name' => $empire->name,
+                    'home_system_id' => $empire->home_system_id,
+                    'home_system_location' => $empire->homeSystem->star->location(),
+                    'has_report' => $reportsByEmpireId->has($empire->id),
+                ] : null,
+            ];
+        })->all();
+    }
+
+    /** @return array<string, mixed>|null */
+    private function reportTurnPayload(Game $game): ?array
+    {
+        $currentTurn = $game->currentTurn;
+
+        if (! $currentTurn) {
+            return null;
+        }
+
+        return [
+            'id' => $currentTurn->id,
+            'number' => $currentTurn->number,
+            'status' => $currentTurn->status->value,
+            'reports_locked_at' => $currentTurn->reports_locked_at?->toIso8601String(),
+            'can_generate' => $game->canGenerateReports(),
+            'can_lock' => $game->isActive()
+                && $currentTurn->status === TurnStatus::Completed
+                && $currentTurn->reports_locked_at === null,
+        ];
     }
 
     private function setupReportPayload(Game $game, User $user): ?array

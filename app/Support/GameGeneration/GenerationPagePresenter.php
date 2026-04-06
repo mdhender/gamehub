@@ -2,10 +2,8 @@
 
 namespace App\Support\GameGeneration;
 
-use App\Enums\TurnStatus;
 use App\Models\Game;
 use App\Models\HomeSystem;
-use App\Models\TurnReport;
 use Illuminate\Support\Facades\DB;
 
 class GenerationPagePresenter
@@ -189,60 +187,5 @@ class GenerationPagePresenter
                 'location' => $s->location(),
             ])
             ->all();
-    }
-
-    /** @return list<array<string, mixed>> */
-    public function membersList(): array
-    {
-        $players = $this->game->playerRecords()
-            ->where('role', 'player')
-            ->where('is_active', true)
-            ->with('user')
-            ->get();
-
-        $empiresByPlayerId = $this->game->empires()->with('homeSystem.star')->get()->keyBy('player_id');
-
-        $currentTurn = $this->game->currentTurn;
-        $reportsByEmpireId = $currentTurn
-            ? TurnReport::where('turn_id', $currentTurn->id)->pluck('empire_id')->flip()
-            : collect();
-
-        return $players->map(function ($player) use ($empiresByPlayerId, $reportsByEmpireId) {
-            $empire = $empiresByPlayerId->get($player->id);
-
-            return [
-                'id' => $player->id,
-                'user_id' => $player->user_id,
-                'name' => $player->user->name,
-                'empire' => $empire ? [
-                    'id' => $empire->id,
-                    'name' => $empire->name,
-                    'home_system_id' => $empire->home_system_id,
-                    'home_system_location' => $empire->homeSystem->star->location(),
-                    'has_report' => $reportsByEmpireId->has($empire->id),
-                ] : null,
-            ];
-        })->all();
-    }
-
-    /** @return array<string, mixed>|null */
-    public function reportTurnPayload(): ?array
-    {
-        $currentTurn = $this->game->currentTurn;
-
-        if (! $currentTurn) {
-            return null;
-        }
-
-        return [
-            'id' => $currentTurn->id,
-            'number' => $currentTurn->number,
-            'status' => $currentTurn->status->value,
-            'reports_locked_at' => $currentTurn->reports_locked_at?->toIso8601String(),
-            'can_generate' => $this->game->canGenerateReports(),
-            'can_lock' => $this->game->isActive()
-                && $currentTurn->status === TurnStatus::Completed
-                && $currentTurn->reports_locked_at === null,
-        ];
     }
 }

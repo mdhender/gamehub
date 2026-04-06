@@ -276,10 +276,10 @@ The existing **Generate** link remains as navigation to the generate page. The *
   - Keep `availableStarsList()` — still used by the generate page
 
 **Acceptance:**
-- [ ] No unused methods remain in `GenerationPagePresenter`
-- [ ] No controller references removed methods
-- [ ] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] No unused methods remain in `GenerationPagePresenter`
+- [x] No controller references removed methods
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
