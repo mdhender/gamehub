@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\Turn;
 use App\Models\TurnReport;
 use App\Services\SetupReportGenerator;
+use App\Support\TurnReports\TurnReportJsonExporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -91,88 +91,12 @@ class TurnReportController extends Controller
         ]);
     }
 
-    public function download(Game $game, Turn $turn, Empire $empire): Response
+    public function download(Game $game, Turn $turn, Empire $empire, TurnReportJsonExporter $exporter): Response
     {
         Gate::authorize('download', [TurnReport::class, $game, $empire]);
 
         $report = $this->loadReport($game, $turn, $empire);
-
-        $data = [
-            'game' => [
-                'id' => $game->id,
-                'name' => $game->name,
-            ],
-            'turn' => [
-                'id' => $turn->id,
-                'number' => $turn->number,
-                'status' => $turn->status->value,
-                'reports_locked_at' => $turn->reports_locked_at?->toIso8601String(),
-            ],
-            'empire' => [
-                'id' => $empire->id,
-                'name' => $empire->name,
-            ],
-            'generated_at' => $report->generated_at->toIso8601String(),
-            'colonies' => $report->colonies->map(fn ($colony) => [
-                'id' => $colony->id,
-                'source_colony_id' => $colony->source_colony_id,
-                'name' => $colony->name,
-                'kind' => $colony->kind->value,
-                'tech_level' => $colony->tech_level,
-                'planet_id' => $colony->planet_id,
-                'orbit' => $colony->orbit,
-                'star_x' => $colony->star_x,
-                'star_y' => $colony->star_y,
-                'star_z' => $colony->star_z,
-                'star_sequence' => $colony->star_sequence,
-                'rations' => $colony->rations,
-                'sol' => $colony->sol,
-                'birth_rate' => $colony->birth_rate,
-                'death_rate' => $colony->death_rate,
-                'inventory' => $colony->inventory->map(fn ($item) => [
-                    'unit_code' => $item->unit_code->value,
-                    'tech_level' => $item->tech_level,
-                    'quantity_assembled' => $item->quantity_assembled,
-                    'quantity_disassembled' => $item->quantity_disassembled,
-                ])->values(),
-                'population' => $colony->population->map(function ($pop) use ($colony) {
-                    $cadres = [PopulationClass::ConstructionWorker->value, PopulationClass::Spy->value];
-                    $isCadre = in_array($pop->population_code->value, $cadres);
-                    $population = $isCadre ? $pop->quantity * 2 : $pop->quantity;
-                    $cngdPaid = (int) ceil($pop->quantity * $pop->pay_rate);
-                    $foodConsumed = (int) ceil($population * $colony->rations * 0.25);
-
-                    return [
-                        'population_code' => $pop->population_code->value,
-                        'quantity' => $pop->quantity,
-                        'population' => $population,
-                        'employed' => $pop->employed,
-                        'pay_rate' => $pop->pay_rate,
-                        'cngd_paid' => $cngdPaid,
-                        'ration_pct' => $colony->rations * 100,
-                        'food_consumed' => $foodConsumed,
-                        'rebel_quantity' => $pop->rebel_quantity,
-                    ];
-                })->values(),
-            ])->values(),
-            'surveys' => $report->surveys->map(fn ($survey) => [
-                'id' => $survey->id,
-                'planet_id' => $survey->planet_id,
-                'orbit' => $survey->orbit,
-                'star_x' => $survey->star_x,
-                'star_y' => $survey->star_y,
-                'star_z' => $survey->star_z,
-                'star_sequence' => $survey->star_sequence,
-                'planet_type' => $survey->planet_type->value,
-                'habitability' => $survey->habitability,
-                'deposits' => $survey->deposits->map(fn ($dep) => [
-                    'deposit_no' => $dep->deposit_no,
-                    'resource' => $dep->resource->value,
-                    'yield_pct' => $dep->yield_pct,
-                    'quantity_remaining' => $dep->quantity_remaining,
-                ])->values(),
-            ])->values(),
-        ];
+        $data = $exporter->toArray($game, $turn, $empire, $report);
 
         $filename = "report-{$game->id}-turn-{$turn->number}-empire-{$empire->id}.json";
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

@@ -397,9 +397,9 @@ These tasks extract business logic from fat controllers. They depend on Phase 2 
 - `app/Http/Controllers/TurnReportController.php` — controller `download()` should only: authorize, load report, delegate to exporter, return response
 
 **Acceptance:**
-- [ ] Controller `download()` is under 15 lines
-- [ ] Export logic and business calculations live in the exporter class
-- [ ] `php artisan test --compact tests/Feature/TurnReports/TurnReportControllerDownloadTest.php`
+- [x] Controller `download()` is under 15 lines
+- [x] Export logic and business calculations live in the exporter class
+- [x] `php artisan test --compact tests/Feature/TurnReports/TurnReportControllerDownloadTest.php`
 
 ---
 
