@@ -130,13 +130,13 @@ The existing **Generate** link remains as navigation to the generate page. The *
 - Keep the `deleteConfig`, `deleteForm`, `handleDeleteConfirm` logic unchanged
 
 **Acceptance:**
-- [ ] Generate page shows exactly 5 tab buttons
-- [ ] Only one panel's content is shown at a time
-- [ ] Templates tab contains PRNG Seed, Home System Template, and Colony Template sections
-- [ ] Home Systems tab contains both Home Systems and Activate sections
-- [ ] No Empires or Turn Reports content on the generate page
-- [ ] Delete confirmation dialog works from Stars, Planets, Deposits, and Home Systems tabs
-- [ ] `bun run build` succeeds
+- [x] Generate page shows exactly 5 tab buttons
+- [x] Only one panel's content is shown at a time
+- [x] Templates tab contains PRNG Seed, Home System Template, and Colony Template sections
+- [x] Home Systems tab contains both Home Systems and Activate sections
+- [x] No Empires or Turn Reports content on the generate page
+- [x] Delete confirmation dialog works from Stars, Planets, Deposits, and Home Systems tabs
+- [x] `bun run build` succeeds
 
 ---
 

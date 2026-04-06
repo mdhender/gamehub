@@ -17,9 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import ActivateSection from './generate/ActivateSection';
 import ColonyTemplateSection from './generate/ColonyTemplateSection';
 import DepositsSection from './generate/DepositsSection';
-import EmpiresSection from './generate/EmpiresSection';
 import HomeSystemsSection from './generate/HomeSystemsSection';
-import TurnReportsSection from './generate/TurnReportsSection';
 import HomeSystemTemplateSection from './generate/HomeSystemTemplateSection';
 import PlanetsSection from './generate/PlanetsSection';
 import PrngSeedSection from './generate/PrngSeedSection';
@@ -33,10 +31,8 @@ import {
     GenerationStep,
     HomeSystemItem,
     HomeSystemTemplateSummary,
-    MemberItem,
     PlanetItem,
     PlanetsSummary,
-    ReportTurn,
     StarItem,
     StarsSummary,
 } from './generate/types';
@@ -64,6 +60,8 @@ const deleteConfig: Record<DeleteStep, { title: string; description: string }> =
     },
 };
 
+type GenerateTab = 'templates' | 'stars' | 'planets' | 'deposits' | 'home-systems';
+
 export default function GameGenerate({
     game,
     homeSystemTemplate,
@@ -75,8 +73,6 @@ export default function GameGenerate({
     planetList,
     homeSystems,
     availableStars,
-    members,
-    reportTurn,
 }: {
     game: Game;
     homeSystemTemplate: HomeSystemTemplateSummary | null;
@@ -89,8 +85,6 @@ export default function GameGenerate({
     planetList: PlanetItem[] | null | undefined;
     homeSystems: HomeSystemItem[];
     availableStars: AvailableStar[] | null;
-    members: MemberItem[];
-    reportTurn: ReportTurn | null;
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -102,6 +96,7 @@ export default function GameGenerate({
 
     const deleteForm = useForm({});
     const [deleteConfirm, setDeleteConfirm] = useState<DeleteStep | null>(null);
+    const [activeTab, setActiveTab] = useState<GenerateTab>('templates');
 
     function handleDeleteConfirm() {
         if (deleteConfirm === null) { return; }
@@ -111,79 +106,119 @@ export default function GameGenerate({
         });
     }
 
+    const tabs: { key: GenerateTab; label: string }[] = [
+        { key: 'templates', label: 'Templates' },
+        { key: 'stars', label: 'Stars' },
+        { key: 'planets', label: 'Planets' },
+        { key: 'deposits', label: 'Deposits' },
+        { key: 'home-systems', label: 'Home Systems' },
+    ];
+
     return (
         <>
             <Head title={`Generate — ${game.name}`} />
 
-            <div className="space-y-10 px-4 py-6">
-                <PrngSeedSection game={game} />
+            <div className="space-y-6 px-4 py-6">
+                <div className="border-b border-sidebar-border/70 dark:border-sidebar-border">
+                    <nav className="-mb-px flex gap-6">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => setActiveTab(tab.key)}
+                                className={`pb-3 text-sm font-medium transition-colors ${
+                                    activeTab === tab.key
+                                        ? 'border-b-2 border-primary text-primary'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </nav>
+                </div>
 
-                <HomeSystemTemplateSection game={game} homeSystemTemplate={homeSystemTemplate} />
+                {activeTab === 'templates' && (
+                    <div className="space-y-10">
+                        <PrngSeedSection game={game} />
+                        <HomeSystemTemplateSection game={game} homeSystemTemplate={homeSystemTemplate} />
+                        <ColonyTemplateSection game={game} colonyTemplate={colonyTemplate} />
+                    </div>
+                )}
 
-                <ColonyTemplateSection game={game} colonyTemplate={colonyTemplate} />
+                {activeTab === 'stars' && (
+                    <div className="space-y-10">
+                        <Deferred
+                            data="starList"
+                            fallback={
+                                <section>
+                                    <div className="mt-4 space-y-3">
+                                        <Skeleton className="h-6 w-32" />
+                                        <Skeleton className="h-48 w-full rounded-lg" />
+                                    </div>
+                                </section>
+                            }
+                        >
+                            <StarsSection
+                                game={game}
+                                stars={stars}
+                                starList={starList ?? null}
+                                onRequestDelete={setDeleteConfirm}
+                            />
+                        </Deferred>
+                    </div>
+                )}
 
-                <Deferred
-                    data="starList"
-                    fallback={
-                        <section>
-                            <div className="mt-4 space-y-3">
-                                <Skeleton className="h-6 w-32" />
-                                <Skeleton className="h-48 w-full rounded-lg" />
-                            </div>
-                        </section>
-                    }
-                >
-                    <StarsSection
-                        game={game}
-                        stars={stars}
-                        starList={starList ?? null}
-                        onRequestDelete={setDeleteConfirm}
-                    />
-                </Deferred>
+                {activeTab === 'planets' && (
+                    <div className="space-y-10">
+                        <Deferred
+                            data="planetList"
+                            fallback={
+                                <section>
+                                    <div className="mt-4 space-y-3">
+                                        <Skeleton className="h-6 w-32" />
+                                        <Skeleton className="h-48 w-full rounded-lg" />
+                                    </div>
+                                </section>
+                            }
+                        >
+                            <PlanetsSection
+                                game={game}
+                                planets={planets}
+                                planetList={planetList ?? null}
+                                onRequestDelete={setDeleteConfirm}
+                            />
+                        </Deferred>
+                    </div>
+                )}
 
-                <Deferred
-                    data="planetList"
-                    fallback={
-                        <section>
-                            <div className="mt-4 space-y-3">
-                                <Skeleton className="h-6 w-32" />
-                                <Skeleton className="h-48 w-full rounded-lg" />
-                            </div>
-                        </section>
-                    }
-                >
-                    <PlanetsSection
-                        game={game}
-                        planets={planets}
-                        planetList={planetList ?? null}
-                        onRequestDelete={setDeleteConfirm}
-                    />
-                </Deferred>
+                {activeTab === 'deposits' && (
+                    <div className="space-y-10">
+                        <DepositsSection
+                            game={game}
+                            deposits={deposits}
+                            onRequestDelete={setDeleteConfirm}
+                        />
+                    </div>
+                )}
 
-                <DepositsSection
-                    game={game}
-                    deposits={deposits}
-                    onRequestDelete={setDeleteConfirm}
-                />
-
-                <HomeSystemsSection
-                    game={game}
-                    homeSystems={homeSystems}
-                    availableStars={availableStars}
-                    onRequestDelete={setDeleteConfirm}
-                />
-
-                <ActivateSection
-                    game={game}
-                    stars={stars}
-                    planets={planets}
-                    deposits={deposits}
-                    homeSystems={homeSystems}
-                />
-
-                <EmpiresSection game={game} members={members} homeSystems={homeSystems} />
-
-                <TurnReportsSection game={game} reportTurn={reportTurn} members={members} />
+                {activeTab === 'home-systems' && (
+                    <div className="space-y-10">
+                        <HomeSystemsSection
+                            game={game}
+                            homeSystems={homeSystems}
+                            availableStars={availableStars}
+                            onRequestDelete={setDeleteConfirm}
+                        />
+                        <ActivateSection
+                            game={game}
+                            stars={stars}
+                            planets={planets}
+                            deposits={deposits}
+                            homeSystems={homeSystems}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Delete step confirmation dialog — shared across Stars, Planets, Deposits, and Home Systems sections */}
