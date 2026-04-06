@@ -376,9 +376,9 @@ These tasks extract business logic from fat controllers. They depend on Phase 2 
 **Change:** Move colony template persistence logic (DB transaction, colonyTemplates deletion, pay-rate calculation for ConstructionWorker/Spy, item parsing with CODE-TL format) into the action class. Move home system template persistence (planet creation, deposit creation) into its action class.
 
 **Acceptance:**
-- [ ] Controller methods are under 15 lines each
-- [ ] Business logic lives in action classes
-- [ ] `php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php tests/Feature/GameGenerationControllerTest.php`
+- [x] Controller methods are under 15 lines each
+- [x] Business logic lives in action classes
+- [x] `php artisan test --compact tests/Feature/UploadColonyTemplateValidationTest.php tests/Feature/GameGenerationControllerTest.php`
 
 ---
 
