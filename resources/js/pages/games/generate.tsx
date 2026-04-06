@@ -15,7 +15,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import ActivateSection from './generate/ActivateSection';
-import ColonyTemplateSection from './generate/ColonyTemplateSection';
+
 import DepositsSection from './generate/DepositsSection';
 import HomeSystemsSection from './generate/HomeSystemsSection';
 import HomeSystemTemplateSection from './generate/HomeSystemTemplateSection';
@@ -24,7 +24,6 @@ import PrngSeedSection from './generate/PrngSeedSection';
 import StarsSection from './generate/StarsSection';
 import {
     AvailableStar,
-    ColonyTemplateSummary,
     DeleteStep,
     DepositsSummary,
     Game,
@@ -65,7 +64,6 @@ type GenerateTab = 'templates' | 'stars' | 'planets' | 'deposits' | 'home-system
 export default function GameGenerate({
     game,
     homeSystemTemplate,
-    colonyTemplate,
     stars,
     planets,
     deposits,
@@ -76,7 +74,6 @@ export default function GameGenerate({
 }: {
     game: Game;
     homeSystemTemplate: HomeSystemTemplateSummary | null;
-    colonyTemplate: ColonyTemplateSummary[] | null;
     generationSteps: GenerationStep[];
     stars: StarsSummary | null;
     planets: PlanetsSummary | null;
@@ -108,6 +105,7 @@ export default function GameGenerate({
     const allGenerateTabs: GenerateTab[] = ['templates', 'stars', 'planets', 'deposits', 'home-systems'];
 
     function resolveGenerateTab(): GenerateTab {
+        if (typeof window === 'undefined') return 'templates';
         const param = new URLSearchParams(window.location.search).get('tab');
         if (param && allGenerateTabs.includes(param as GenerateTab) && tabEnabled[param as GenerateTab]) {
             return param as GenerateTab;
@@ -173,8 +171,6 @@ export default function GameGenerate({
                 {activeTab === 'templates' && (
                     <div className="space-y-10">
                         <PrngSeedSection game={game} />
-                        <HomeSystemTemplateSection game={game} homeSystemTemplate={homeSystemTemplate} />
-                        <ColonyTemplateSection game={game} colonyTemplate={colonyTemplate} />
                     </div>
                 )}
 
@@ -236,6 +232,7 @@ export default function GameGenerate({
 
                 {activeTab === 'home-systems' && (
                     <div className="space-y-10">
+                        <HomeSystemTemplateSection game={game} homeSystemTemplate={homeSystemTemplate} />
                         <HomeSystemsSection
                             game={game}
                             homeSystems={homeSystems}

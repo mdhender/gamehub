@@ -22,7 +22,7 @@ class GameGenerationController extends Controller
         return Inertia::render('games/generate', [
             'game' => $p->gamePayload(),
             'homeSystemTemplate' => $p->homeSystemTemplateSummary(),
-            'colonyTemplate' => $p->colonyTemplateSummary(),
+
             'generationSteps' => $game->generationSteps->map(fn ($step) => [
                 'id' => $step->id, 'step' => $step->step->value, 'sequence' => $step->sequence,
             ]),

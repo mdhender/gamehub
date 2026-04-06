@@ -2,12 +2,11 @@ import { Form } from '@inertiajs/react';
 import TemplateController from '@/actions/App/Http/Controllers/GameGeneration/TemplateController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { Game, HomeSystemTemplateSummary } from './types';
+import { HomeSystemTemplateSummary } from './types';
 
 const resourceLabels: Record<string, string> = {
     gold: 'Gold',
@@ -20,7 +19,7 @@ export default function HomeSystemTemplateSection({
     game,
     homeSystemTemplate,
 }: {
-    game: Game;
+    game: { id: number };
     homeSystemTemplate: HomeSystemTemplateSummary | null;
 }) {
     return (
@@ -58,38 +57,34 @@ export default function HomeSystemTemplateSection({
                     <p className="text-sm text-muted-foreground">No template uploaded yet.</p>
                 )}
 
-                {game.can_edit_templates ? (
-                    <Form
-                        {...TemplateController.uploadHomeSystem.form(game)}
-                        encType="multipart/form-data"
-                        resetOnSuccess
-                        className="flex items-end gap-3"
-                    >
-                        {({ processing, errors }) => (
-                            <>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="home-system-template-file">
-                                        {homeSystemTemplate ? 'Replace template' : 'Upload template'}
-                                    </Label>
-                                    <Input
-                                        id="home-system-template-file"
-                                        type="file"
-                                        name="template"
-                                        accept=".json"
-                                        required
-                                    />
-                                    <InputError message={errors.template} />
-                                </div>
-                                <Button type="submit" disabled={processing}>
-                                    {processing && <Spinner />}
-                                    Upload
-                                </Button>
-                            </>
-                        )}
-                    </Form>
-                ) : (
-                    <Badge variant="secondary">Locked — game is active</Badge>
-                )}
+                <Form
+                    {...TemplateController.uploadHomeSystem.form(game)}
+                    encType="multipart/form-data"
+                    resetOnSuccess
+                    className="flex items-end gap-3"
+                >
+                    {({ processing, errors }) => (
+                        <>
+                            <div className="grid gap-2">
+                                <Label htmlFor="home-system-template-file">
+                                    {homeSystemTemplate ? 'Replace template' : 'Upload template'}
+                                </Label>
+                                <Input
+                                    id="home-system-template-file"
+                                    type="file"
+                                    name="template"
+                                    accept=".json"
+                                    required
+                                />
+                                <InputError message={errors.template} />
+                            </div>
+                            <Button type="submit" disabled={processing}>
+                                {processing && <Spinner />}
+                                Upload
+                            </Button>
+                        </>
+                    )}
+                </Form>
             </div>
         </section>
     );

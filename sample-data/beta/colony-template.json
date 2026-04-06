@@ -403,7 +403,7 @@
         }
     },
     {
-        "kind": "SHIP",
+        "kind": "CSHP",
         "tech-level": 1,
         "inventory": {
             "super-structure": [

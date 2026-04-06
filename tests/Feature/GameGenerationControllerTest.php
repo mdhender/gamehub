@@ -104,7 +104,6 @@ class GameGenerationControllerTest extends TestCase
                 ->component('games/generate')
                 ->has('game')
                 ->has('homeSystemTemplate')
-                ->has('colonyTemplate')
             );
     }
 
@@ -120,9 +119,6 @@ class GameGenerationControllerTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('homeSystemTemplate.planet_count', 6)
                 ->whereNot('homeSystemTemplate.homeworld_orbit', null)
-                ->has('colonyTemplate', 2)
-                ->where('colonyTemplate.0.unit_count', 17)
-                ->where('colonyTemplate.1.unit_count', 3)
             );
     }
 
@@ -368,7 +364,7 @@ class GameGenerationControllerTest extends TestCase
     }
 
     #[Test]
-    public function upload_home_system_template_is_rejected_when_game_is_active(): void
+    public function upload_home_system_template_is_accepted_when_game_is_active(): void
     {
         $game = Game::factory()->create(['status' => GameStatus::Active]);
         $user = $this->gmUser($game);
@@ -377,7 +373,8 @@ class GameGenerationControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/templates/home-system", ['template' => $file])
-            ->assertSessionHasErrors('template');
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
     }
 
     #[Test]
@@ -463,7 +460,7 @@ class GameGenerationControllerTest extends TestCase
     }
 
     #[Test]
-    public function upload_colony_template_is_rejected_when_game_is_active(): void
+    public function upload_colony_template_is_accepted_when_game_is_active(): void
     {
         $game = Game::factory()->create(['status' => GameStatus::Active]);
         $user = $this->gmUser($game);
@@ -472,7 +469,8 @@ class GameGenerationControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post("/games/{$game->id}/generate/templates/colony", ['template' => $file])
-            ->assertSessionHasErrors('template');
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
     }
 
     #[Test]

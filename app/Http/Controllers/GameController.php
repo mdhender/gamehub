@@ -63,6 +63,7 @@ class GameController extends Controller
                 ...$game->only('id', 'name', 'is_active', 'prng_seed', 'created_at', 'updated_at'),
                 'can_assign_empires' => $game->canAssignEmpires(),
                 'can_generate_reports' => $game->canGenerateReports(),
+
             ],
             'members' => $activeMembers->map($formatMember)->values(),
             'inactiveMembers' => $inactiveMembers->map($formatMember)->values(),
@@ -80,6 +81,7 @@ class GameController extends Controller
             $props['empireMembers'] = $this->empireMembers($game);
             $props['empireHomeSystems'] = $presenter->homeSystemsList();
             $props['reportTurn'] = $this->reportTurnPayload($game);
+            $props['colonyTemplate'] = $presenter->colonyTemplateSummary();
         }
 
         return Inertia::render('games/show', $props);

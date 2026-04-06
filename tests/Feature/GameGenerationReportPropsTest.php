@@ -180,6 +180,52 @@ class GameGenerationReportPropsTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // colonyTemplate prop
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function colony_template_is_present_on_show_page_when_game_is_active(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Active]);
+        $gm = $this->gmUser($game);
+
+        $this->actingAs($gm)
+            ->get($this->showUrl($game))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('colonyTemplate')
+            );
+    }
+
+    #[Test]
+    public function colony_template_is_not_present_on_show_page_when_game_is_inactive(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $gm = $this->gmUser($game);
+
+        $this->actingAs($gm)
+            ->get($this->showUrl($game))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('colonyTemplate')
+            );
+    }
+
+    #[Test]
+    public function colony_template_is_not_present_on_generate_page(): void
+    {
+        $game = Game::factory()->create(['status' => GameStatus::Setup]);
+        $gm = $this->gmUser($game);
+
+        $this->actingAs($gm)
+            ->get($this->generateUrl($game))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->missing('colonyTemplate')
+            );
+    }
+
+    // -------------------------------------------------------------------------
     // members[*].empire.has_report
     // -------------------------------------------------------------------------
 

@@ -2,18 +2,17 @@ import { Form } from '@inertiajs/react';
 import TemplateController from '@/actions/App/Http/Controllers/GameGeneration/TemplateController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { ColonyTemplateSummary, Game } from './types';
+import { ColonyTemplateSummary } from './types';
 
 export default function ColonyTemplateSection({
     game,
     colonyTemplate,
 }: {
-    game: Game;
+    game: { id: number };
     colonyTemplate: ColonyTemplateSummary[] | null;
 }) {
     return (
@@ -52,38 +51,34 @@ export default function ColonyTemplateSection({
                     <p className="text-sm text-muted-foreground">No template uploaded yet.</p>
                 )}
 
-                {game.can_edit_templates ? (
-                    <Form
-                        {...TemplateController.uploadColony.form(game)}
-                        encType="multipart/form-data"
-                        resetOnSuccess
-                        className="flex items-end gap-3"
-                    >
-                        {({ processing, errors }) => (
-                            <>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="colony-template-file">
-                                        {colonyTemplate && colonyTemplate.length > 0 ? 'Replace template' : 'Upload template'}
-                                    </Label>
-                                    <Input
-                                        id="colony-template-file"
-                                        type="file"
-                                        name="template"
-                                        accept=".json"
-                                        required
-                                    />
-                                    <InputError message={errors.template} />
-                                </div>
-                                <Button type="submit" disabled={processing}>
-                                    {processing && <Spinner />}
-                                    Upload
-                                </Button>
-                            </>
-                        )}
-                    </Form>
-                ) : (
-                    <Badge variant="secondary">Locked — game is active</Badge>
-                )}
+                <Form
+                    {...TemplateController.uploadColony.form(game)}
+                    encType="multipart/form-data"
+                    resetOnSuccess
+                    className="flex items-end gap-3"
+                >
+                    {({ processing, errors }) => (
+                        <>
+                            <div className="grid gap-2">
+                                <Label htmlFor="colony-template-file">
+                                    {colonyTemplate && colonyTemplate.length > 0 ? 'Replace template' : 'Upload template'}
+                                </Label>
+                                <Input
+                                    id="colony-template-file"
+                                    type="file"
+                                    name="template"
+                                    accept=".json"
+                                    required
+                                />
+                                <InputError message={errors.template} />
+                            </div>
+                            <Button type="submit" disabled={processing}>
+                                {processing && <Spinner />}
+                                Upload
+                            </Button>
+                        </>
+                    )}
+                </Form>
             </div>
         </section>
     );
