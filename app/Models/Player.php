@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\GameRole;
+use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -23,6 +25,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable(['game_id', 'user_id', 'role', 'is_active'])]
 class Player extends Model
 {
+    /** @use HasFactory<PlayerFactory> */
+    use HasFactory;
+
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [

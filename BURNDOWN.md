@@ -193,8 +193,8 @@ These tasks fix model gaps and database schema issues. Migration tasks should NO
 - `app/Models/Player.php` — add `use HasFactory;` with `/** @use HasFactory<PlayerFactory> */` annotation; add `@return` PHPDoc on `casts()`
 
 **Acceptance:**
-- [ ] `Player::factory()->create()` works
-- [ ] `php artisan test --compact --filter=Player`
+- [x] `Player::factory()->create()` works
+- [x] `php artisan test --compact --filter=Player`
 
 ---
 
