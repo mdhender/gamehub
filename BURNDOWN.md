@@ -283,6 +283,67 @@ The existing **Generate** link remains as navigation to the generate page. The *
 
 ---
 
+### GEN-09 — Move HomeSystemTemplateSection from Templates tab to Home Systems tab
+
+**Effort:** S
+**Dependencies:** GEN-03
+
+**Problem:** The Home System Template is only relevant when configuring home systems. Showing it on the Templates tab adds clutter; it belongs on the Home Systems tab where it provides context for home system creation.
+
+**Files modified:**
+- `resources/js/pages/games/generate.tsx` — removed `HomeSystemTemplateSection` from the Templates tab panel and added it to the Home Systems tab panel (above `HomeSystemsSection`)
+
+**Acceptance:**
+- [x] Templates tab no longer renders `HomeSystemTemplateSection`
+- [x] Home Systems tab renders `HomeSystemTemplateSection` above `HomeSystemsSection`
+- [x] `bun run build` succeeds
+
+---
+
+### GEN-10 — Move ColonyTemplateSection from generate page to show page Empires tab
+
+**Effort:** M
+**Dependencies:** GEN-09
+
+**Problem:** The Colony Template defines starting colonies for empires and is only relevant once the game is active and empires are being assigned. It belongs on the show page's Empires tab rather than the generate page's Templates tab.
+
+**Files modified:**
+- `app/Http/Controllers/GameGenerationController.php` — removed `colonyTemplate` prop
+- `app/Http/Controllers/GameController.php` — added `colonyTemplate` prop (active games only, via `GenerationPagePresenter::colonyTemplateSummary()`)
+- `resources/js/pages/games/generate.tsx` — removed `ColonyTemplateSection` import, prop, and rendering
+- `resources/js/pages/games/show.tsx` — imported `ColonyTemplateSection` and renders it in the Empires tab above `EmpiresSection`; added `colonyTemplate` prop
+- `tests/Feature/GameGenerationControllerTest.php` — removed `colonyTemplate` assertions from generate page
+- `tests/Feature/GameGenerationReportPropsTest.php` — added 3 tests: `colonyTemplate` present on show (active), missing on show (inactive), missing on generate
+
+**Acceptance:**
+- [x] `GET /games/{id}/generate` no longer includes `colonyTemplate` prop
+- [x] `GET /games/{id}` includes `colonyTemplate` when game is active
+- [x] `GET /games/{id}` does NOT include `colonyTemplate` when game is inactive
+- [x] Empires tab on show page renders `ColonyTemplateSection` above `EmpiresSection`
+- [x] Templates tab on generate page no longer renders `ColonyTemplateSection`
+- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
+- [x] `bun run build` succeeds
+
+---
+
+### GEN-11 — Fix ColonyTemplateSection rendering gate on show page
+
+**Effort:** S
+**Dependencies:** GEN-10
+
+**Problem:** `ColonyTemplateSection` was inside the `empireMembers && empireHomeSystems` guard on the Empires tab, so it never rendered when those props were absent (e.g., no players assigned or no home systems created). The colony template uploader should only require the game to be active.
+
+**Files modified:**
+- `resources/js/pages/games/show.tsx` — moved `ColonyTemplateSection` outside the `empireMembers && empireHomeSystems` guard; `EmpiresSection` retains its own guard
+
+**Acceptance:**
+- [x] Empires tab renders `ColonyTemplateSection` when game is active, regardless of players or home systems
+- [x] `EmpiresSection` still only renders when `empireMembers` and `empireHomeSystems` are present
+- [x] `bun run build` succeeds
+
+---
+
 ## Execution Order
 
 Tasks should be completed in this order. Tasks at the same indentation level can be parallelized.
@@ -302,4 +363,10 @@ GEN-06  (redirect to next tab)                           ← after GEN-05
 GEN-07  (update feature tests)                           ← after GEN-01 through GEN-06
 
 GEN-08  (cleanup dead code)                              ← after GEN-07
+
+GEN-09  (move HomeSystemTemplate to Home Systems tab)    ← after GEN-03
+
+GEN-10  (move ColonyTemplate to show page Empires tab)   ← after GEN-09
+
+GEN-11  (fix ColonyTemplate rendering gate)              ← after GEN-10
 ```

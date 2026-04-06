@@ -26,9 +26,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import ColonyTemplateSection from './generate/ColonyTemplateSection';
 import EmpiresSection from './generate/EmpiresSection';
 import TurnReportsSection from './generate/TurnReportsSection';
-import { Game as GenerateGame, HomeSystemItem, MemberItem, ReportTurn } from './generate/types';
+import { ColonyTemplateSummary, Game as GenerateGame, HomeSystemItem, MemberItem, ReportTurn } from './generate/types';
 
 type Game = {
     id: number;
@@ -74,6 +75,7 @@ export default function GameShow({
     empireMembers,
     empireHomeSystems,
     reportTurn,
+    colonyTemplate,
 }: {
     game: Game;
     members: Member[];
@@ -83,6 +85,7 @@ export default function GameShow({
     empireMembers?: MemberItem[];
     empireHomeSystems?: HomeSystemItem[];
     reportTurn?: ReportTurn | null;
+    colonyTemplate?: ColonyTemplateSummary[] | null;
 }) {
     const { auth } = usePage().props;
     const isAdmin = auth.user?.is_admin;
@@ -92,6 +95,7 @@ export default function GameShow({
     const allShowTabs: Tab[] = ['members', 'empires', 'turn-reports'];
 
     function resolveShowTab(): Tab {
+        if (typeof window === 'undefined') return 'members';
         const param = new URLSearchParams(window.location.search).get('tab');
         if (param && allShowTabs.includes(param as Tab)) {
             if ((param === 'empires' || param === 'turn-reports') && !game.is_active) {
@@ -507,13 +511,19 @@ export default function GameShow({
                     )}
 
                     {/* Empires tab */}
-                    {activeTab === 'empires' && game.is_active && empireMembers && empireHomeSystems && (
-                        <div className="mt-6">
-                            <EmpiresSection
-                                game={game as unknown as GenerateGame}
-                                members={empireMembers}
-                                homeSystems={empireHomeSystems}
+                    {activeTab === 'empires' && game.is_active && (
+                        <div className="mt-6 space-y-10">
+                            <ColonyTemplateSection
+                                game={game}
+                                colonyTemplate={colonyTemplate ?? null}
                             />
+                            {empireMembers && empireHomeSystems && (
+                                <EmpiresSection
+                                    game={game as unknown as GenerateGame}
+                                    members={empireMembers}
+                                    homeSystems={empireHomeSystems}
+                                />
+                            )}
                         </div>
                     )}
 
