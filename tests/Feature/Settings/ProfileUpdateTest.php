@@ -64,6 +64,31 @@ class ProfileUpdateTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
+    public function test_unverified_user_cannot_access_profile_edit()
+    {
+        $user = User::factory()->unverified()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->get(route('profile.edit'));
+
+        $response->assertRedirect(route('verification.notice'));
+    }
+
+    public function test_unverified_user_cannot_update_profile()
+    {
+        $user = User::factory()->unverified()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+
+        $response->assertRedirect(route('verification.notice'));
+    }
+
     public function test_user_can_delete_their_account()
     {
         $user = User::factory()->create();

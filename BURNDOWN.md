@@ -149,8 +149,8 @@ These tasks harden validation and authorization. They do not depend on Phase 1 a
 - `app/Http/Requests/Admin/HandleUpdateRequest.php` — verify it has proper `authorize()` (it may already)
 
 **Acceptance:**
-- [ ] Unverified users cannot access `profile.edit` or `profile.update` routes
-- [ ] `php artisan test --compact tests/Feature/Settings/ProfileUpdateTest.php`
+- [x] Unverified users cannot access `profile.edit` or `profile.update` routes
+- [x] `php artisan test --compact tests/Feature/Settings/ProfileUpdateTest.php`
 
 ---
 
