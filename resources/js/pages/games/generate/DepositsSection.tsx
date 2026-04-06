@@ -24,6 +24,8 @@ export default function DepositsSection({
             />
 
             <div className="mt-4 space-y-4">
+                <p className="text-sm text-muted-foreground font-mono">Seed: {game.prng_seed}</p>
+
                 {deposits ? (
                     <div className="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">
                         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">

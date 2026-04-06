@@ -161,14 +161,14 @@ The existing **Generate** link remains as navigation to the generate page. The *
 - `resources/js/pages/games/generate/DepositsSection.tsx` — add same read-only seed display
 
 **Acceptance:**
-- [ ] All 5 generate tabs are always visible
-- [ ] Unreachable tabs have `opacity-50 cursor-not-allowed` styling and cannot be selected
-- [ ] Setup-status game: Templates and Stars enabled; Planets, Deposits, Home Systems disabled
-- [ ] Stars-generated game: Templates, Stars, Planets enabled; Deposits, Home Systems disabled
-- [ ] Planets-generated game: Templates through Deposits enabled; Home Systems disabled
-- [ ] Deposits-generated game: all tabs enabled
-- [ ] Stars, Planets, and Deposits panels each show `game.prng_seed` as read-only text
-- [ ] `bun run build` succeeds
+- [x] All 5 generate tabs are always visible
+- [x] Unreachable tabs have `opacity-50 cursor-not-allowed` styling and cannot be selected
+- [x] Setup-status game: Templates and Stars enabled; Planets, Deposits, Home Systems disabled
+- [x] Stars-generated game: Templates, Stars, Planets enabled; Deposits, Home Systems disabled
+- [x] Planets-generated game: Templates through Deposits enabled; Home Systems disabled
+- [x] Deposits-generated game: all tabs enabled
+- [x] Stars, Planets, and Deposits panels each show `game.prng_seed` as read-only text
+- [x] `bun run build` succeeds
 
 ---
 

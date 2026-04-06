@@ -45,6 +45,8 @@ export default function StarsSection({
             />
 
             <div className="mt-4 space-y-4">
+                <p className="text-sm text-muted-foreground font-mono">Seed: {game.prng_seed}</p>
+
                 {stars ? (
                     <div className="space-y-3">
                         <div className="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">

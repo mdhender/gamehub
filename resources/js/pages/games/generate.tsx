@@ -106,6 +106,14 @@ export default function GameGenerate({
         });
     }
 
+    const tabEnabled: Record<GenerateTab, boolean> = {
+        templates: true,
+        stars: game.can_generate_stars || game.status !== 'setup',
+        planets: game.can_generate_planets || !['setup', 'stars_generated'].includes(game.status),
+        deposits: game.can_generate_deposits || !['setup', 'stars_generated', 'planets_generated'].includes(game.status),
+        'home-systems': game.can_create_home_systems || game.can_activate || game.can_assign_empires,
+    };
+
     const tabs: { key: GenerateTab; label: string }[] = [
         { key: 'templates', label: 'Templates' },
         { key: 'stars', label: 'Stars' },
@@ -121,20 +129,26 @@ export default function GameGenerate({
             <div className="space-y-6 px-4 py-6">
                 <div className="border-b border-sidebar-border/70 dark:border-sidebar-border">
                     <nav className="-mb-px flex gap-6">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.key}
-                                type="button"
-                                onClick={() => setActiveTab(tab.key)}
-                                className={`pb-3 text-sm font-medium transition-colors ${
-                                    activeTab === tab.key
-                                        ? 'border-b-2 border-primary text-primary'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+                        {tabs.map((tab) => {
+                            const enabled = tabEnabled[tab.key];
+                            return (
+                                <button
+                                    key={tab.key}
+                                    type="button"
+                                    onClick={() => enabled && setActiveTab(tab.key)}
+                                    className={`pb-3 text-sm font-medium transition-colors ${
+                                        !enabled
+                                            ? 'cursor-not-allowed opacity-50'
+                                            : activeTab === tab.key
+                                              ? 'border-b-2 border-primary text-primary'
+                                              : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                    disabled={!enabled}
+                                >
+                                    {tab.label}
+                                </button>
+                            );
+                        })}
                     </nav>
                 </div>
 
