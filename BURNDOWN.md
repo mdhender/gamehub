@@ -350,8 +350,8 @@ Turn reports are **historical snapshots** — they must survive even if the refe
 **Note:** Also add the corresponding `use Database\Factories\XFactory;` import if not already present. Check the factory class names in `database/factories/` to use the correct names.
 
 **Acceptance:**
-- [ ] All 6 models have the annotation matching their factory
-- [ ] `php artisan test --compact tests/Feature/TurnReports/ tests/Feature/Reports/`
+- [x] All 6 models have the annotation matching their factory
+- [x] `php artisan test --compact tests/Feature/TurnReports/ tests/Feature/Reports/`
 
 ---
 

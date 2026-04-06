@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\TurnReportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['game_id', 'turn_id', 'empire_id', 'generated_at'])]
 class TurnReport extends Model
 {
+    /** @use HasFactory<TurnReportFactory> */
     use HasFactory;
 
     public $timestamps = false;

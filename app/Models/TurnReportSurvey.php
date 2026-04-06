@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PlanetType;
+use Database\Factories\TurnReportSurveyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'star_sequence', 'planet_type', 'habitability'])]
 class TurnReportSurvey extends Model
 {
+    /** @use HasFactory<TurnReportSurveyFactory> */
     use HasFactory;
 
     public $timestamps = false;

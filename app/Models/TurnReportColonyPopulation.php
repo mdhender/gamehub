@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PopulationClass;
+use Database\Factories\TurnReportColonyPopulationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['turn_report_colony_id', 'population_code', 'quantity', 'employed', 'pay_rate', 'rebel_quantity'])]
 class TurnReportColonyPopulation extends Model
 {
+    /** @use HasFactory<TurnReportColonyPopulationFactory> */
     use HasFactory;
 
     protected $table = 'turn_report_colony_population';

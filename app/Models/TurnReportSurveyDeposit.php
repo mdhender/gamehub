@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DepositResource;
+use Database\Factories\TurnReportSurveyDepositFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['turn_report_survey_id', 'deposit_no', 'resource', 'yield_pct', 'quantity_remaining'])]
 class TurnReportSurveyDeposit extends Model
 {
+    /** @use HasFactory<TurnReportSurveyDepositFactory> */
     use HasFactory;
 
     public $timestamps = false;

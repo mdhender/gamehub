@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ColonyKind;
+use Database\Factories\TurnReportColonyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'rations', 'sol', 'birth_rate', 'death_rate'])]
 class TurnReportColony extends Model
 {
+    /** @use HasFactory<TurnReportColonyFactory> */
     use HasFactory;
 
     public $timestamps = false;
