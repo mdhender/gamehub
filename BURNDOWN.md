@@ -193,11 +193,11 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
   3. Handle templates with empty population (CSHP) — skip `ColonyPopulation::insert` if the template has no population records
 
 **Acceptance:**
-- [ ] Created colonies have `sol`, `birth_rate`, `death_rate` matching their template
-- [ ] Created `ColonyInventory` records have `inventory_section` and `quantity` (not old columns)
-- [ ] CSHP-based colonies have 0 `ColonyPopulation` records
-- [ ] No references to `quantity_assembled` or `quantity_disassembled` remain in the file
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Created colonies have `sol`, `birth_rate`, `death_rate` matching their template
+- [x] Created `ColonyInventory` records have `inventory_section` and `quantity` (not old columns)
+- [x] CSHP-based colonies have 0 `ColonyPopulation` records
+- [x] No references to `quantity_assembled` or `quantity_disassembled` remain in the file
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

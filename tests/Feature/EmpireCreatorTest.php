@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
+use App\Enums\InventorySection;
 use App\Enums\PopulationClass;
 use App\Enums\UnitCode;
 use App\Models\Empire;
@@ -51,8 +52,8 @@ class EmpireCreatorTest extends TestCase
         $colonyTemplate->items()->create([
             'unit' => UnitCode::Factories,
             'tech_level' => 1,
-            'quantity_assembled' => 5,
-            'quantity_disassembled' => 0,
+            'quantity' => 5,
+            'inventory_section' => InventorySection::Operational,
         ]);
         $colonyTemplate->population()->create([
             'population_code' => PopulationClass::Unemployable,
@@ -133,7 +134,8 @@ class EmpireCreatorTest extends TestCase
         $inventory = $empire->colonies()->first()->inventory()->get();
         $this->assertCount(1, $inventory);
         $this->assertSame(UnitCode::Factories, $inventory->first()->unit);
-        $this->assertSame(5, $inventory->first()->quantity_assembled);
+        $this->assertSame(5, $inventory->first()->quantity);
+        $this->assertSame(InventorySection::Operational, $inventory->first()->inventory_section);
     }
 
     #[Test]
@@ -275,8 +277,8 @@ class EmpireCreatorTest extends TestCase
         $template2->items()->create([
             'unit' => UnitCode::Farms,
             'tech_level' => 1,
-            'quantity_assembled' => 3,
-            'quantity_disassembled' => 0,
+            'quantity' => 3,
+            'inventory_section' => InventorySection::Operational,
         ]);
         $template2->population()->create([
             'population_code' => PopulationClass::Unskilled,

@@ -124,6 +124,9 @@ class EmpireCreator
                 'planet_id' => $homeworldPlanet->id,
                 'kind' => $colonyTemplate->kind,
                 'tech_level' => $colonyTemplate->tech_level,
+                'sol' => $colonyTemplate->sol,
+                'birth_rate' => $colonyTemplate->birth_rate,
+                'death_rate' => $colonyTemplate->death_rate,
             ]);
 
             if ($colonyTemplate->items->isNotEmpty()) {
@@ -132,8 +135,8 @@ class EmpireCreator
                         'colony_id' => $colony->id,
                         'unit' => $item->unit->value,
                         'tech_level' => $item->tech_level,
-                        'quantity_assembled' => $item->quantity_assembled,
-                        'quantity_disassembled' => $item->quantity_disassembled,
+                        'quantity' => $item->quantity,
+                        'inventory_section' => $item->inventory_section->value,
                     ])->all()
                 );
             }
