@@ -321,11 +321,11 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/UploadColonyTemplateValidationTest.php`
 
 **Acceptance:**
-- [ ] Import tests cover COPN=7, CORB=1, CSHP=0 factory groups from the sample JSON
-- [ ] Import tests assert correct orders, unit parsing, WIP parsing, and reimport replacement
-- [ ] Validation tests cover: valid factory groups, missing orders, missing WIP quarters, WIP mismatch, invalid `FCT` unit format, invalid non-manufacturable orders, empty `production: []`, and sample file pass-through
-- [ ] `php artisan test --compact tests/Feature/ImportColonyTemplatesTest.php tests/Feature/UploadColonyTemplateValidationTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Import tests cover COPN=7, CORB=1, CSHP=0 factory groups from the sample JSON
+- [x] Import tests assert correct orders, unit parsing, WIP parsing, and reimport replacement
+- [x] Validation tests cover: valid factory groups, missing orders, missing WIP quarters, WIP mismatch, invalid `FCT` unit format, invalid non-manufacturable orders, empty `production: []`, and sample file pass-through
+- [x] `php artisan test --compact tests/Feature/ImportColonyTemplatesTest.php tests/Feature/UploadColonyTemplateValidationTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
