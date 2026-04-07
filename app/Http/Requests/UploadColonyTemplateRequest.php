@@ -145,6 +145,22 @@ class UploadColonyTemplateRequest extends FormRequest
                         }
                     }
 
+                    if (isset($template['production'])) {
+                        $production = $template['production'];
+
+                        if (! is_array($production)) {
+                            $validator->errors()->add('template', "{$prefix}: 'production' must be an array.");
+                        } elseif (! empty($production)) {
+                            if (isset($production['factories'])) {
+                                if (! is_array($production['factories'])) {
+                                    $validator->errors()->add('template', "{$prefix}: 'production.factories' must be an array.");
+                                } else {
+                                    $this->validateFactoryGroups($validator, $prefix, $production['factories'], $validUnitCodes);
+                                }
+                            }
+                        }
+                    }
+
                     if (! isset($template['inventory'])) {
                         $validator->errors()->add('template', "{$prefix}: 'inventory' is required.");
                     } elseif (! is_array($template['inventory'])) {
@@ -234,8 +250,153 @@ class UploadColonyTemplateRequest extends FormRequest
         }
     }
 
+    /**
+     * @param  array<int, mixed>  $factories
+     * @param  array<string>  $validUnitCodes
+     */
+    private function validateFactoryGroups(Validator $validator, string $prefix, array $factories, array $validUnitCodes): void
+    {
+        foreach ($factories as $j => $group) {
+            $gPrefix = "{$prefix} factory group #".($j + 1);
+
+            if (! is_array($group)) {
+                $validator->errors()->add('template', "{$gPrefix}: must be an object.");
+
+                continue;
+            }
+
+            if (! isset($group['group']) || ! is_int($group['group'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'group' is required and must be an integer.");
+            }
+
+            // Validate orders
+            $ordersBaseCode = null;
+            if (! isset($group['orders']) || ! is_string($group['orders'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'orders' is required and must be a string.");
+            } else {
+                $ordersBaseCode = $this->validateManufacturableUnit($validator, $gPrefix.' orders', $group['orders'], $validUnitCodes);
+            }
+
+            // Validate factory inventory units
+            if (! isset($group['units']) || ! is_array($group['units'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'units' is required and must be an array.");
+            } else {
+                foreach ($group['units'] as $k => $unit) {
+                    $uPrefix = "{$gPrefix} unit #".($k + 1);
+
+                    if (! isset($unit['unit']) || ! is_string($unit['unit'])) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'unit' is required.");
+
+                        continue;
+                    }
+
+                    if (! preg_match('/^FCT-\d+$/', $unit['unit'])) {
+                        $validator->errors()->add('template', "{$uPrefix}: factory inventory unit must be FCT-<tech_level> (e.g. FCT-1).");
+                    }
+
+                    if (! isset($unit['quantity']) || ! is_int($unit['quantity']) || $unit['quantity'] < 0) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'quantity' must be an integer >= 0.");
+                    }
+                }
+            }
+
+            // Validate work-in-progress
+            if (! isset($group['work-in-progress']) || ! is_array($group['work-in-progress'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'work-in-progress' is required and must be an object.");
+            } else {
+                $wip = $group['work-in-progress'];
+
+                foreach (['q1', 'q2', 'q3'] as $quarter) {
+                    $qPrefix = "{$gPrefix} WIP {$quarter}";
+
+                    if (! isset($wip[$quarter]) || ! is_array($wip[$quarter])) {
+                        $validator->errors()->add('template', "{$qPrefix}: is required and must be an object.");
+
+                        continue;
+                    }
+
+                    if (! isset($wip[$quarter]['unit']) || ! is_string($wip[$quarter]['unit'])) {
+                        $validator->errors()->add('template', "{$qPrefix}: 'unit' is required.");
+                    } else {
+                        // WIP unit base code must match orders base code
+                        $wipCode = str_contains($wip[$quarter]['unit'], '-')
+                            ? explode('-', $wip[$quarter]['unit'], 2)[0]
+                            : $wip[$quarter]['unit'];
+
+                        if ($ordersBaseCode !== null && $wipCode !== $ordersBaseCode) {
+                            $validator->errors()->add('template', "{$qPrefix}: WIP unit '{$wip[$quarter]['unit']}' does not match orders base code '{$ordersBaseCode}'.");
+                        }
+                    }
+
+                    if (! isset($wip[$quarter]['quantity']) || ! is_int($wip[$quarter]['quantity']) || $wip[$quarter]['quantity'] < 0) {
+                        $validator->errors()->add('template', "{$qPrefix}: 'quantity' must be an integer >= 0.");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate a unit string as a manufacturable target. Returns the base code on success, null on failure.
+     *
+     * @param  array<string>  $validUnitCodes
+     */
+    private function validateManufacturableUnit(Validator $validator, string $prefix, string $unit, array $validUnitCodes): ?string
+    {
+        if (str_contains($unit, '-')) {
+            [$code, $techLevel] = explode('-', $unit, 2);
+        } else {
+            $code = $unit;
+            $techLevel = null;
+        }
+
+        if (! in_array($code, $validUnitCodes, true)) {
+            $validator->errors()->add('template', "{$prefix}: unit code '{$code}' is not a valid UnitCode.");
+
+            return null;
+        }
+
+        if ($this->isNonManufacturable($code)) {
+            $validator->errors()->add('template', "{$prefix}: '{$code}' is not a manufacturable target.");
+
+            return null;
+        }
+
+        if ($this->isManufacturableConsumable($code)) {
+            if ($techLevel !== null) {
+                $validator->errors()->add('template', "{$prefix}: manufacturable consumable '{$code}' must not have a tech level suffix.");
+
+                return null;
+            }
+        } else {
+            if ($techLevel === null) {
+                $validator->errors()->add('template', "{$prefix}: non-consumable unit '{$code}' must use CODE-TL format.");
+
+                return null;
+            }
+
+            if (! ctype_digit($techLevel) || (int) $techLevel <= 0) {
+                $validator->errors()->add('template', "{$prefix}: unit tech level '{$techLevel}' must be a positive integer.");
+
+                return null;
+            }
+        }
+
+        return $code;
+    }
+
     private function isConsumable(string $code): bool
     {
         return in_array($code, ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH', 'SLS', 'STU'], true);
+    }
+
+    private function isNonManufacturable(string $code): bool
+    {
+        return in_array($code, ['FUEL', 'FOOD', 'GOLD', 'METS', 'NMTS'], true);
+    }
+
+    private function isManufacturableConsumable(string $code): bool
+    {
+        return in_array($code, ['CNGD', 'MTSP', 'RSCH', 'SLS', 'STU'], true);
     }
 }

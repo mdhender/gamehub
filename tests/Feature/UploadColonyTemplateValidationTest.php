@@ -398,6 +398,324 @@ class UploadColonyTemplateValidationTest extends TestCase
     }
 
     #[Test]
+    public function valid_factory_group_passes_validation(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'CNGD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q2' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q3' => ['unit' => 'CNGD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function factory_group_with_tech_level_orders_passes(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'AUT-1',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'AUT-1', 'quantity' => 50],
+                        'q2' => ['unit' => 'AUT-1', 'quantity' => 50],
+                        'q3' => ['unit' => 'AUT-1', 'quantity' => 50],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function factory_group_missing_orders_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q2' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q3' => ['unit' => 'CNGD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_group_missing_work_in_progress_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'CNGD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_group_missing_quarter_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'CNGD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q2' => ['unit' => 'CNGD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_wip_unit_mismatch_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'CNGD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'MTSP', 'quantity' => 500],
+                        'q2' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q3' => ['unit' => 'CNGD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_inventory_unit_not_fct_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'CNGD',
+                    'units' => [['unit' => 'AUT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q2' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q3' => ['unit' => 'CNGD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_orders_targeting_fuel_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'FUEL',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'FUEL', 'quantity' => 500],
+                        'q2' => ['unit' => 'FUEL', 'quantity' => 500],
+                        'q3' => ['unit' => 'FUEL', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_orders_targeting_food_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'FOOD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'FOOD', 'quantity' => 500],
+                        'q2' => ['unit' => 'FOOD', 'quantity' => 500],
+                        'q3' => ['unit' => 'FOOD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_orders_targeting_gold_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'GOLD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'GOLD', 'quantity' => 500],
+                        'q2' => ['unit' => 'GOLD', 'quantity' => 500],
+                        'q3' => ['unit' => 'GOLD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_orders_targeting_mets_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'METS',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'METS', 'quantity' => 500],
+                        'q2' => ['unit' => 'METS', 'quantity' => 500],
+                        'q3' => ['unit' => 'METS', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function factory_orders_targeting_nmts_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'NMTS',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'NMTS', 'quantity' => 500],
+                        'q2' => ['unit' => 'NMTS', 'quantity' => 500],
+                        'q3' => ['unit' => 'NMTS', 'quantity' => 500],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function empty_production_array_passes_validation(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
     public function copn_and_corb_templates_from_sample_data_pass(): void
     {
         $game = Game::factory()->create();

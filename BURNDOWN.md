@@ -245,15 +245,15 @@ Key rules from the reconciled plan/sample data:
 9. Update or replace `isConsumable()` if needed so inventory validation and production validation are both correct
 
 **Acceptance:**
-- [ ] A valid factory group passes validation
-- [ ] Missing `orders` fails validation
-- [ ] Missing `work-in-progress` or any missing quarter (`q1`/`q2`/`q3`) fails validation
-- [ ] A WIP unit that does not match `orders` fails validation
-- [ ] A factory inventory unit that is not `FCT-\d+` fails validation
-- [ ] Orders targeting `FUEL`, `FOOD`, `GOLD`, `METS`, or `NMTS` fail validation
-- [ ] Templates with an empty `production: []` pass validation
-- [ ] The sample data file still passes validation even though it includes `farms`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] A valid factory group passes validation
+- [x] Missing `orders` fails validation
+- [x] Missing `work-in-progress` or any missing quarter (`q1`/`q2`/`q3`) fails validation
+- [x] A WIP unit that does not match `orders` fails validation
+- [x] A factory inventory unit that is not `FCT-\d+` fails validation
+- [x] Orders targeting `FUEL`, `FOOD`, `GOLD`, `METS`, or `NMTS` fail validation
+- [x] Templates with an empty `production: []` pass validation
+- [x] The sample data file still passes validation even though it includes `farms`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
