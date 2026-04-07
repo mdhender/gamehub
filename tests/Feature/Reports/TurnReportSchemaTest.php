@@ -175,8 +175,8 @@ class TurnReportSchemaTest extends TestCase
             'turn_report_colony_id' => $colonyId,
             'unit_code' => 'FAC',
             'tech_level' => 2,
-            'quantity_assembled' => 10,
-            'quantity_disassembled' => 5,
+            'quantity' => 10,
+            'inventory_section' => 'operational',
         ]);
 
         $this->assertNotNull($id);
@@ -271,8 +271,8 @@ class TurnReportSchemaTest extends TestCase
             'turn_report_colony_id' => $colonyId,
             'unit_code' => 'MIN',
             'tech_level' => 1,
-            'quantity_assembled' => 3,
-            'quantity_disassembled' => 0,
+            'quantity' => 3,
+            'inventory_section' => 'operational',
         ]);
 
         $populationId = DB::table('turn_report_colony_population')->insertGetId([

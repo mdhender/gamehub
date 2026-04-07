@@ -4,6 +4,7 @@ namespace Tests\Feature\Reports;
 
 use App\Enums\ColonyKind;
 use App\Enums\DepositResource;
+use App\Enums\InventorySection;
 use App\Enums\PlanetType;
 use App\Enums\PopulationClass;
 use App\Enums\UnitCode;
@@ -157,8 +158,8 @@ class TurnReportModelTest extends TestCase
             'turn_report_colony_id' => $colony->id,
             'unit_code' => UnitCode::Factories,
             'tech_level' => 1,
-            'quantity_assembled' => 10,
-            'quantity_disassembled' => 0,
+            'quantity' => 10,
+            'inventory_section' => InventorySection::Operational,
         ]);
 
         $this->assertInstanceOf(UnitCode::class, $inventory->fresh()->unit_code);
@@ -186,8 +187,8 @@ class TurnReportModelTest extends TestCase
         $colony = $this->makeTurnReportColony();
 
         DB::table('turn_report_colony_inventory')->insert([
-            ['turn_report_colony_id' => $colony->id, 'unit_code' => 'FCT', 'tech_level' => 1, 'quantity_assembled' => 10, 'quantity_disassembled' => 0],
-            ['turn_report_colony_id' => $colony->id, 'unit_code' => 'FRM', 'tech_level' => 1, 'quantity_assembled' => 5, 'quantity_disassembled' => 2],
+            ['turn_report_colony_id' => $colony->id, 'unit_code' => 'FCT', 'tech_level' => 1, 'quantity' => 10, 'inventory_section' => 'operational'],
+            ['turn_report_colony_id' => $colony->id, 'unit_code' => 'FRM', 'tech_level' => 1, 'quantity' => 5, 'inventory_section' => 'operational'],
         ]);
 
         DB::table('turn_report_colony_population')->insert([

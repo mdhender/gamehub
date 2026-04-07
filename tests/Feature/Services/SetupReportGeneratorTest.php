@@ -4,6 +4,7 @@ namespace Tests\Feature\Services;
 
 use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
+use App\Enums\InventorySection;
 use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Enums\UnitCode;
@@ -55,8 +56,8 @@ class SetupReportGeneratorTest extends TestCase
         $colonyTemplate->items()->create([
             'unit' => UnitCode::Factories,
             'tech_level' => 1,
-            'quantity_assembled' => 5,
-            'quantity_disassembled' => 0,
+            'quantity' => 5,
+            'inventory_section' => InventorySection::Operational,
         ]);
         $colonyTemplate->population()->create([
             'population_code' => PopulationClass::Unemployable,
@@ -199,8 +200,8 @@ class SetupReportGeneratorTest extends TestCase
 
         $this->assertCount($liveInventory->count(), $reportInventory);
         $this->assertSame($liveInventory->first()->unit, $reportInventory->first()->unit_code);
-        $this->assertSame($liveInventory->first()->quantity_assembled, $reportInventory->first()->quantity_assembled);
-        $this->assertSame($liveInventory->first()->quantity_disassembled, $reportInventory->first()->quantity_disassembled);
+        $this->assertSame($liveInventory->first()->quantity, $reportInventory->first()->quantity);
+        $this->assertSame($liveInventory->first()->inventory_section, $reportInventory->first()->inventory_section);
     }
 
     #[Test]
@@ -347,18 +348,18 @@ class SetupReportGeneratorTest extends TestCase
         $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
         $colony = $empire->colonies()->first();
         $originalName = $colony->name;
-        $originalInvQty = $colony->inventory()->first()->quantity_assembled;
+        $originalInvQty = $colony->inventory()->first()->quantity;
         $originalPopQty = $colony->population()->first()->quantity;
 
         $colony->update(['name' => 'Mutated Colony Name']);
-        $colony->inventory()->first()->update(['quantity_assembled' => $originalInvQty + 9999]);
+        $colony->inventory()->first()->update(['quantity' => $originalInvQty + 9999]);
         $colony->population()->first()->update(['quantity' => $originalPopQty + 9999]);
 
         $reportColony = TurnReport::where('turn_id', $turn->id)->first()
             ->colonies()->first();
 
         $this->assertSame($originalName, $reportColony->name);
-        $this->assertSame($originalInvQty, $reportColony->inventory()->first()->quantity_assembled);
+        $this->assertSame($originalInvQty, $reportColony->inventory()->first()->quantity);
         $this->assertSame($originalPopQty, $reportColony->population()->first()->quantity);
     }
 
@@ -400,10 +401,10 @@ class SetupReportGeneratorTest extends TestCase
         $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
         $colony = $empire->colonies()->first();
         $originalName = $colony->name;
-        $originalInvQty = $colony->inventory()->first()->quantity_assembled;
+        $originalInvQty = $colony->inventory()->first()->quantity;
 
         $colony->update(['name' => 'Refreshed Colony']);
-        $colony->inventory()->first()->update(['quantity_assembled' => $originalInvQty + 500]);
+        $colony->inventory()->first()->update(['quantity' => $originalInvQty + 500]);
 
         $this->generator->generate($turn->fresh());
 
@@ -411,7 +412,7 @@ class SetupReportGeneratorTest extends TestCase
         $reportColony = $report->colonies()->first();
 
         $this->assertSame('Refreshed Colony', $reportColony->name);
-        $this->assertSame($originalInvQty + 500, $reportColony->inventory()->first()->quantity_assembled);
+        $this->assertSame($originalInvQty + 500, $reportColony->inventory()->first()->quantity);
 
         $this->assertSame(1, TurnReport::where('turn_id', $turn->id)->count());
         $this->assertSame(1, $report->colonies()->count());
@@ -440,8 +441,8 @@ class SetupReportGeneratorTest extends TestCase
         $surfaceTemplate->items()->create([
             'unit' => UnitCode::Factories,
             'tech_level' => 1,
-            'quantity_assembled' => 5,
-            'quantity_disassembled' => 0,
+            'quantity' => 5,
+            'inventory_section' => InventorySection::Operational,
         ]);
         $surfaceTemplate->population()->create([
             'population_code' => PopulationClass::Unemployable,
@@ -453,8 +454,8 @@ class SetupReportGeneratorTest extends TestCase
         $orbitalTemplate->items()->create([
             'unit' => UnitCode::Structure,
             'tech_level' => 0,
-            'quantity_assembled' => 100,
-            'quantity_disassembled' => 0,
+            'quantity' => 100,
+            'inventory_section' => InventorySection::Operational,
         ]);
         $orbitalTemplate->population()->create([
             'population_code' => PopulationClass::Unskilled,

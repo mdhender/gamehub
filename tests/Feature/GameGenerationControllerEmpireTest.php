@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
+use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Game;
@@ -58,8 +59,8 @@ class GameGenerationControllerEmpireTest extends TestCase
         $colonyTemplate->items()->create([
             'unit' => UnitCode::Factories,
             'tech_level' => 1,
-            'quantity_assembled' => 5,
-            'quantity_disassembled' => 0,
+            'quantity' => 5,
+            'inventory_section' => InventorySection::Operational,
         ]);
 
         (new HomeSystemCreator)->createRandom($game->fresh());

@@ -286,11 +286,11 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 - `tests/Feature/GameGenerationControllerTest.php` — update any colony template fixtures
 
 **Acceptance:**
-- [ ] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
-- [ ] `php artisan test --compact tests/Feature/Services/SetupReportGeneratorTest.php`
-- [ ] `php artisan test --compact tests/Feature/Reports/`
-- [ ] `php artisan test --compact tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameShowSetupReportTest.php tests/Feature/GameGenerationControllerTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
+- [x] `php artisan test --compact tests/Feature/Services/SetupReportGeneratorTest.php`
+- [x] `php artisan test --compact tests/Feature/Reports/`
+- [x] `php artisan test --compact tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameShowSetupReportTest.php tests/Feature/GameGenerationControllerTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

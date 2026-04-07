@@ -59,6 +59,9 @@ class GameGenerationControllerTest extends TestCase
             $templates[] = [
                 'kind' => $kinds[$t % count($kinds)],
                 'tech-level' => 1,
+                'sol' => 1.0,
+                'birth-rate-pct' => 0.0625,
+                'death-rate-pct' => 0.0625,
                 'population' => [
                     ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.5],
                 ],
@@ -482,8 +485,11 @@ class GameGenerationControllerTest extends TestCase
         $payload = [[
             'kind' => 'COPN',
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [['population_code' => 'UEM', 'quantity' => 0, 'pay_rate' => 0]],
-            'inventory' => ['operational' => [], 'stored' => []],
+            'inventory' => ['operational' => [], 'cargo' => []],
         ]];
 
         $file = $this->jsonFile('colony.json', json_encode($payload));
@@ -521,13 +527,16 @@ class GameGenerationControllerTest extends TestCase
         $payload = [[
             'kind' => 'COPN',
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.5]],
             'inventory' => [
                 'operational' => [
                     ['unit' => 'FCT-1', 'quantity' => 10],
                     ['unit' => 'FRM-2', 'quantity' => 5],
                 ],
-                'stored' => [
+                'cargo' => [
                     ['unit' => 'FUEL', 'quantity' => 100],
                 ],
             ],
@@ -564,6 +573,9 @@ class GameGenerationControllerTest extends TestCase
         $payload = [[
             'kind' => 'COPN',
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [
                 ['population_code' => 'UEM', 'quantity' => 3500000, 'pay_rate' => 0.0],
                 ['population_code' => 'USK', 'quantity' => 500000, 'pay_rate' => 1.5],
@@ -597,6 +609,9 @@ class GameGenerationControllerTest extends TestCase
         $payload = [[
             'kind' => 'COPN',
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [
                 ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.0],
                 ['population_code' => 'USK', 'quantity' => 1000, 'pay_rate' => 0.125],
@@ -629,6 +644,9 @@ class GameGenerationControllerTest extends TestCase
         $payload = [[
             'kind' => 'COPN',
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [
                 ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.0],
                 ['population_code' => 'PRO', 'quantity' => 1000, 'pay_rate' => 0.375],
@@ -661,6 +679,9 @@ class GameGenerationControllerTest extends TestCase
         $payload = [[
             'kind' => 'COPN',
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [
                 ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.0],
                 ['population_code' => 'USK', 'quantity' => 1000, 'pay_rate' => 0.125],
@@ -697,33 +718,38 @@ class GameGenerationControllerTest extends TestCase
             ->assertRedirect()
             ->assertSessionDoesntHaveErrors();
 
-        $this->assertSame(2, $game->colonyTemplates()->count());
+        $this->assertSame(3, $game->colonyTemplates()->count());
 
         $copn = $game->colonyTemplates()->where('kind', 'COPN')->first();
         $this->assertNotNull($copn);
-        $this->assertSame(17, $copn->items()->count());
-        $this->assertSame(4, $copn->population()->count());
+        $this->assertSame(16, $copn->items()->count());
+        $this->assertSame(6, $copn->population()->count());
 
         $corb = $game->colonyTemplates()->where('kind', 'CORB')->first();
         $this->assertNotNull($corb);
-        $this->assertSame(3, $corb->items()->count());
-        $this->assertSame(6, $corb->population()->count());
+        $this->assertSame(10, $corb->items()->count());
+        $this->assertSame(4, $corb->population()->count());
 
-        $asw = $copn->items()->where('unit', 'ASW')->first();
-        $this->assertNotNull($asw);
-        $this->assertSame(1, $asw->tech_level);
+        $cshp = $game->colonyTemplates()->where('kind', 'CSHP')->first();
+        $this->assertNotNull($cshp);
+        $this->assertSame(5, $cshp->items()->count());
+        $this->assertSame(0, $cshp->population()->count());
+
+        $fct = $copn->items()->where('unit', 'FCT')->first();
+        $this->assertNotNull($fct);
+        $this->assertSame(1, $fct->tech_level);
 
         $fuel = $copn->items()->where('unit', 'FUEL')->first();
         $this->assertNotNull($fuel);
         $this->assertSame(0, $fuel->tech_level);
 
-        $stu = $copn->items()->where('unit', 'STU')->first();
+        $stu = $copn->items()->where('unit', 'STU')->where('inventory_section', 'super_structure')->first();
         $this->assertNotNull($stu);
         $this->assertSame(0, $stu->tech_level);
 
         $uem = $copn->population()->where('population_code', 'UEM')->first();
         $this->assertNotNull($uem);
-        $this->assertSame(3500000, $uem->quantity);
+        $this->assertSame(5900000, $uem->quantity);
         $this->assertSame(0.0, $uem->pay_rate);
     }
 
