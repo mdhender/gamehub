@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ColonyKind;
+use App\Enums\InventorySection;
 use App\Enums\PopulationClass;
 use App\Enums\UnitCode;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -94,11 +95,29 @@ class UploadColonyTemplateRequest extends FormRequest
                         $validator->errors()->add('template', "{$prefix}: 'tech-level' must be a positive integer.");
                     }
 
+                    if (! isset($template['sol'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'sol' is required.");
+                    } elseif (! is_numeric($template['sol'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'sol' must be numeric.");
+                    }
+
+                    if (! isset($template['birth-rate-pct'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'birth-rate-pct' is required.");
+                    } elseif (! is_numeric($template['birth-rate-pct'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'birth-rate-pct' must be numeric.");
+                    }
+
+                    if (! isset($template['death-rate-pct'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'death-rate-pct' is required.");
+                    } elseif (! is_numeric($template['death-rate-pct'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'death-rate-pct' must be numeric.");
+                    }
+
                     if (! isset($template['population'])) {
                         $validator->errors()->add('template', "{$prefix}: 'population' is required.");
-                    } elseif (! is_array($template['population']) || empty($template['population'])) {
-                        $validator->errors()->add('template', "{$prefix}: 'population' must be a non-empty array.");
-                    } else {
+                    } elseif (! is_array($template['population'])) {
+                        $validator->errors()->add('template', "{$prefix}: 'population' must be an array.");
+                    } elseif (! empty($template['population'])) {
                         foreach ($template['population'] as $j => $pop) {
                             $popPrefix = "{$prefix} population #".($j + 1);
 
@@ -131,15 +150,29 @@ class UploadColonyTemplateRequest extends FormRequest
                     } elseif (! is_array($template['inventory'])) {
                         $validator->errors()->add('template', "{$prefix}: 'inventory' must be an array.");
                     } else {
-                        $operational = $template['inventory']['operational'] ?? [];
-                        $stored = $template['inventory']['stored'] ?? [];
-                        $allItems = array_merge(
-                            is_array($operational) ? $operational : [],
-                            is_array($stored) ? $stored : [],
+                        $validSections = array_map(
+                            fn (InventorySection $s) => str_replace('_', '-', $s->value),
+                            InventorySection::cases(),
                         );
 
+                        $unknownKeys = array_diff(array_keys($template['inventory']), $validSections);
+                        if (! empty($unknownKeys)) {
+                            $validator->errors()->add('template', "{$prefix}: inventory contains unknown keys: ".implode(', ', $unknownKeys).'.');
+                        }
+
+                        $allItems = [];
+                        foreach ($validSections as $sectionKey) {
+                            $sectionItems = $template['inventory'][$sectionKey] ?? [];
+                            if (! is_array($sectionItems)) {
+                                $validator->errors()->add('template', "{$prefix}: inventory.{$sectionKey} must be an array.");
+
+                                continue;
+                            }
+                            $allItems = array_merge($allItems, $sectionItems);
+                        }
+
                         if (empty($allItems)) {
-                            $validator->errors()->add('template', "{$prefix}: inventory must have at least one item across operational and stored.");
+                            $validator->errors()->add('template', "{$prefix}: inventory must have at least one item across all sections.");
                         } else {
                             foreach ($allItems as $k => $item) {
                                 $itemPrefix = "{$prefix} inventory item #".($k + 1);
@@ -203,6 +236,6 @@ class UploadColonyTemplateRequest extends FormRequest
 
     private function isConsumable(string $code): bool
     {
-        return in_array($code, ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH', 'STU'], true);
+        return in_array($code, ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH', 'SLS', 'STU'], true);
     }
 }

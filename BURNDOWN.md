@@ -170,12 +170,12 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
   6. Remove all references to `stored`
 
 **Acceptance:**
-- [ ] CSHP template with empty population and inventory-only passes validation
-- [ ] Template missing `sol` or `birth-rate-pct` or `death-rate-pct` fails validation
-- [ ] Template with unknown inventory key (e.g., `inventory.weapons`) fails validation
-- [ ] Template with no items in any inventory section fails validation
-- [ ] Existing COPN/CORB templates still pass validation
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] CSHP template with empty population and inventory-only passes validation
+- [x] Template missing `sol` or `birth-rate-pct` or `death-rate-pct` fails validation
+- [x] Template with unknown inventory key (e.g., `inventory.weapons`) fails validation
+- [x] Template with no items in any inventory section fails validation
+- [x] Existing COPN/CORB templates still pass validation
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

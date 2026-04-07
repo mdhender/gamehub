@@ -37,6 +37,9 @@ class UploadColonyTemplateValidationTest extends TestCase
         return [
             'kind' => $kind,
             'tech-level' => 1,
+            'sol' => 1.0,
+            'birth-rate-pct' => 0.0625,
+            'death-rate-pct' => 0.0625,
             'population' => [
                 ['population_code' => 'UEM', 'quantity' => 1000, 'pay_rate' => 0.5],
             ],
@@ -146,16 +149,16 @@ class UploadColonyTemplateValidationTest extends TestCase
     }
 
     #[Test]
-    public function empty_population_array_fails(): void
+    public function empty_population_array_passes_for_cshp(): void
     {
         $game = Game::factory()->create();
         $user = $this->gmUser($game);
 
-        $template = $this->validTemplate();
+        $template = $this->validTemplate('CSHP');
         $template['population'] = [];
 
         $this->upload($game, $user, json_encode([$template]))
-            ->assertSessionHasErrors('template');
+            ->assertSessionDoesntHaveErrors('template');
     }
 
     #[Test]
@@ -172,13 +175,18 @@ class UploadColonyTemplateValidationTest extends TestCase
     }
 
     #[Test]
-    public function empty_inventory_both_sections_fails(): void
+    public function empty_inventory_all_sections_fails(): void
     {
         $game = Game::factory()->create();
         $user = $this->gmUser($game);
 
         $template = $this->validTemplate();
-        $template['inventory'] = ['operational' => [], 'stored' => []];
+        $template['inventory'] = [
+            'super-structure' => [],
+            'structure' => [],
+            'operational' => [],
+            'cargo' => [],
+        ];
 
         $this->upload($game, $user, json_encode([$template]))
             ->assertSessionHasErrors('template');
@@ -294,6 +302,110 @@ class UploadColonyTemplateValidationTest extends TestCase
         $template['inventory']['operational'] = [['unit' => 'FUEL', 'quantity' => 10]];
 
         $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function missing_sol_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        unset($template['sol']);
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function missing_birth_rate_pct_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        unset($template['birth-rate-pct']);
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function missing_death_rate_pct_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        unset($template['death-rate-pct']);
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function unknown_inventory_section_key_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['inventory'] = [
+            'operational' => [['unit' => 'FCT-1', 'quantity' => 10]],
+            'weapons' => [['unit' => 'FCT-1', 'quantity' => 5]],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function cshp_with_empty_population_and_inventory_passes(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate('CSHP');
+        $template['population'] = [];
+        $template['inventory'] = [
+            'super-structure' => [['unit' => 'SLS', 'quantity' => 500000]],
+            'structure' => [['unit' => 'LFS-1', 'quantity' => 500]],
+            'operational' => [],
+            'cargo' => [['unit' => 'FUEL', 'quantity' => 5000]],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function template_with_all_four_inventory_sections_passes(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['inventory'] = [
+            'super-structure' => [['unit' => 'STU', 'quantity' => 1000]],
+            'structure' => [['unit' => 'SEN-1', 'quantity' => 5]],
+            'operational' => [['unit' => 'FCT-1', 'quantity' => 10]],
+            'cargo' => [['unit' => 'FUEL', 'quantity' => 100]],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function copn_and_corb_templates_from_sample_data_pass(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $json = file_get_contents(base_path('sample-data/beta/colony-template.json'));
+
+        $this->upload($game, $user, $json)
             ->assertSessionDoesntHaveErrors('template');
     }
 }
