@@ -46,4 +46,10 @@ class ColonyTemplate extends Model
     {
         return $this->hasMany(ColonyTemplatePopulation::class);
     }
+
+    /** @return HasMany<ColonyTemplateFactoryGroup, $this> */
+    public function factoryGroups(): HasMany
+    {
+        return $this->hasMany(ColonyTemplateFactoryGroup::class);
+    }
 }

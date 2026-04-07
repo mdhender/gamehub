@@ -61,4 +61,10 @@ class Colony extends Model
     {
         return $this->hasMany(ColonyPopulation::class);
     }
+
+    /** @return HasMany<ColonyFactoryGroup, $this> */
+    public function factoryGroups(): HasMany
+    {
+        return $this->hasMany(ColonyFactoryGroup::class);
+    }
 }

@@ -140,11 +140,11 @@ Key rules from the reconciled plan/sample data:
 - `input_remainder_mets` and `input_remainder_nmts` cast to `float` on live factory groups
 
 **Acceptance:**
-- [ ] All 6 models exist and follow the repo's model conventions
-- [ ] `ColonyTemplate` exposes `factoryGroups()`
-- [ ] `Colony` exposes `factoryGroups()`
-- [ ] Factory group/unit/WIP relations resolve correctly
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 6 models exist and follow the repo's model conventions
+- [x] `ColonyTemplate` exposes `factoryGroups()`
+- [x] `Colony` exposes `factoryGroups()`
+- [x] Factory group/unit/WIP relations resolve correctly
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
