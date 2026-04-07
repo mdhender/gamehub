@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\GameGeneration\ImportColonyTemplates;
 use App\Enums\ColonyKind;
 use App\Enums\InventorySection;
+use App\Enums\UnitCode;
 use App\Models\Game;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -139,6 +140,107 @@ class ImportColonyTemplatesTest extends TestCase
         $this->assertGreaterThan(0, $cshp->items->count());
         $this->assertTrue($cshp->items->pluck('inventory_section')->contains(InventorySection::SuperStructure));
         $this->assertTrue($cshp->items->pluck('inventory_section')->contains(InventorySection::Cargo));
+    }
+
+    #[Test]
+    public function copn_template_has_seven_factory_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        $this->assertCount(7, $copn->factoryGroups);
+    }
+
+    #[Test]
+    public function corb_template_has_one_factory_group(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $corb = $game->colonyTemplates()->where('kind', ColonyKind::Orbital)->first();
+
+        $this->assertCount(1, $corb->factoryGroups);
+    }
+
+    #[Test]
+    public function cshp_template_has_zero_factory_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $cshp = $game->colonyTemplates()->where('kind', ColonyKind::Ship)->first();
+
+        $this->assertCount(0, $cshp->factoryGroups);
+    }
+
+    #[Test]
+    public function factory_groups_have_null_pending_orders(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        foreach ($copn->factoryGroups as $group) {
+            $this->assertNull($group->pending_orders_unit);
+            $this->assertNull($group->pending_orders_tech_level);
+        }
+    }
+
+    #[Test]
+    public function factory_units_parse_fct_1_correctly(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+        $group1 = $copn->factoryGroups()->where('group_number', 1)->first();
+        $unit = $group1->units->first();
+
+        $this->assertEquals(UnitCode::Factories, $unit->unit);
+        $this->assertSame(1, $unit->tech_level);
+        $this->assertSame(250000, $unit->quantity);
+    }
+
+    #[Test]
+    public function factory_wip_stores_correct_quarter_unit_tech_level_and_quantity(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+        $group3 = $copn->factoryGroups()->where('group_number', 3)->first();
+
+        $this->assertCount(3, $group3->wip);
+
+        $q1 = $group3->wip->where('quarter', 1)->first();
+        $this->assertEquals(UnitCode::Automation, $q1->unit);
+        $this->assertSame(1, $q1->tech_level);
+        $this->assertSame(93750, $q1->quantity);
+
+        $q2 = $group3->wip->where('quarter', 2)->first();
+        $this->assertSame(93750, $q2->quantity);
+    }
+
+    #[Test]
+    public function reimporting_does_not_leave_duplicate_factory_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->fresh()->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        $this->assertCount(7, $copn->factoryGroups);
     }
 
     #[Test]

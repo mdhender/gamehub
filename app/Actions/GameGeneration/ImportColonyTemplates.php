@@ -41,6 +41,12 @@ class ImportColonyTemplates
                 }
 
                 $this->createInventory($template, $templateData['inventory']);
+
+                $production = $templateData['production'] ?? [];
+
+                if (! empty($production['factories'])) {
+                    $this->createFactoryGroups($template, $production['factories']);
+                }
             }
         });
     }
@@ -86,14 +92,7 @@ class ImportColonyTemplates
     {
         foreach (self::SECTION_MAP as $jsonKey => $section) {
             foreach ($inventoryData[$jsonKey] ?? [] as $itemData) {
-                $unit = $itemData['unit'];
-                if (str_contains($unit, '-')) {
-                    [$unitCode, $techLevel] = explode('-', $unit, 2);
-                    $techLevel = (int) $techLevel;
-                } else {
-                    $unitCode = $unit;
-                    $techLevel = 0;
-                }
+                [$unitCode, $techLevel] = self::parseUnitString($itemData['unit']);
 
                 $template->items()->create([
                     'unit' => $unitCode,
@@ -103,5 +102,63 @@ class ImportColonyTemplates
                 ]);
             }
         }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $factoriesData
+     */
+    private function createFactoryGroups(mixed $template, array $factoriesData): void
+    {
+        foreach ($factoriesData as $groupData) {
+            [$ordersUnit, $ordersTechLevel] = self::parseUnitString($groupData['orders']);
+
+            $group = $template->factoryGroups()->create([
+                'group_number' => $groupData['group'],
+                'orders_unit' => $ordersUnit,
+                'orders_tech_level' => $ordersTechLevel,
+                'pending_orders_unit' => null,
+                'pending_orders_tech_level' => null,
+            ]);
+
+            foreach ($groupData['units'] as $unitData) {
+                [$unitCode, $techLevel] = self::parseUnitString($unitData['unit']);
+
+                $group->units()->create([
+                    'unit' => $unitCode,
+                    'tech_level' => $techLevel,
+                    'quantity' => $unitData['quantity'],
+                ]);
+            }
+
+            $quarterMap = ['q1' => 1, 'q2' => 2, 'q3' => 3];
+
+            foreach ($quarterMap as $key => $quarter) {
+                $wipData = $groupData['work-in-progress'][$key];
+                [$wipUnit, $wipTechLevel] = self::parseUnitString($wipData['unit']);
+
+                $group->wip()->create([
+                    'quarter' => $quarter,
+                    'unit' => $wipUnit,
+                    'tech_level' => $wipTechLevel,
+                    'quantity' => $wipData['quantity'],
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Parse a unit string like "FCT-1" into ['FCT', 1] or "CNGD" into ['CNGD', 0].
+     *
+     * @return array{0: string, 1: int}
+     */
+    private static function parseUnitString(string $unit): array
+    {
+        if (str_contains($unit, '-')) {
+            [$code, $level] = explode('-', $unit, 2);
+
+            return [$code, (int) $level];
+        }
+
+        return [$unit, 0];
     }
 }

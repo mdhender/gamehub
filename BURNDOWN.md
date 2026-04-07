@@ -203,14 +203,14 @@ Key rules from the reconciled plan/sample data:
 7. Consider extracting a shared `parseUnitString()` helper if the same `CODE[-TL]` parsing logic is used in inventory and factory imports
 
 **Acceptance:**
-- [ ] Importing `sample-data/beta/colony-template.json` creates 7 factory groups for COPN
-- [ ] Importing creates 1 factory group for CORB
-- [ ] Importing creates 0 factory groups for CSHP
-- [ ] Imported factory groups have `pending_orders_unit` and `pending_orders_tech_level` as `null`
-- [ ] Factory units parse `FCT-1` correctly into `unit=FCT`, `tech_level=1`
-- [ ] Factory WIP rows store the correct quarter, unit, tech level, and quantity
-- [ ] Reimporting the same file does not leave duplicate or orphaned rows
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Importing `sample-data/beta/colony-template.json` creates 7 factory groups for COPN
+- [x] Importing creates 1 factory group for CORB
+- [x] Importing creates 0 factory groups for CSHP
+- [x] Imported factory groups have `pending_orders_unit` and `pending_orders_tech_level` as `null`
+- [x] Factory units parse `FCT-1` correctly into `unit=FCT`, `tech_level=1`
+- [x] Factory WIP rows store the correct quarter, unit, tech level, and quantity
+- [x] Reimporting the same file does not leave duplicate or orphaned rows
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
