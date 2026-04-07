@@ -586,11 +586,11 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/EmpireCreatorTest.php`
 
 **Acceptance:**
-- [ ] Tests create template farm groups and assert live farm groups/units are copied
-- [ ] Tests assert live farm unit stages match the template stages
-- [ ] Tests assert colonies from templates with empty production have no farm groups
-- [ ] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Tests create template farm groups and assert live farm groups/units are copied
+- [x] Tests assert live farm unit stages match the template stages
+- [x] Tests assert colonies from templates with empty production have no farm groups
+- [x] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

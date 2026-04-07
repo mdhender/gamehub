@@ -408,6 +408,93 @@ class EmpireCreatorTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // farm groups
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function create_copies_farm_groups_from_template_to_live_colony(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $group = $template->farmGroups()->create([
+            'group_number' => 1,
+        ]);
+        $group->units()->createMany([
+            ['unit' => UnitCode::Farms, 'tech_level' => 1, 'quantity' => 100, 'stage' => 1],
+            ['unit' => UnitCode::Farms, 'tech_level' => 1, 'quantity' => 200, 'stage' => 2],
+            ['unit' => UnitCode::Farms, 'tech_level' => 1, 'quantity' => 300, 'stage' => 3],
+            ['unit' => UnitCode::Farms, 'tech_level' => 1, 'quantity' => 400, 'stage' => 4],
+        ]);
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $liveGroups = $colony->farmGroups()->get();
+        $this->assertCount(1, $liveGroups);
+
+        $liveGroup = $liveGroups->first();
+        $this->assertSame(1, $liveGroup->group_number);
+
+        $liveUnits = $liveGroup->units()->orderBy('stage')->get();
+        $this->assertCount(4, $liveUnits);
+
+        $this->assertSame(1, $liveUnits->firstWhere('stage', 1)->stage);
+        $this->assertSame(100, $liveUnits->firstWhere('stage', 1)->quantity);
+
+        $this->assertSame(2, $liveUnits->firstWhere('stage', 2)->stage);
+        $this->assertSame(200, $liveUnits->firstWhere('stage', 2)->quantity);
+
+        $this->assertSame(3, $liveUnits->firstWhere('stage', 3)->stage);
+        $this->assertSame(300, $liveUnits->firstWhere('stage', 3)->quantity);
+
+        $this->assertSame(4, $liveUnits->firstWhere('stage', 4)->stage);
+        $this->assertSame(400, $liveUnits->firstWhere('stage', 4)->quantity);
+
+        // All farm units should be FRM
+        $this->assertTrue($liveUnits->every(fn ($u) => $u->unit === UnitCode::Farms));
+        $this->assertTrue($liveUnits->every(fn ($u) => $u->tech_level === 1));
+    }
+
+    #[Test]
+    public function create_preserves_farm_unit_stages_from_template(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $group = $template->farmGroups()->create([
+            'group_number' => 1,
+        ]);
+        // Only stages 1 and 3 populated — verify exact stage values are preserved
+        $group->units()->createMany([
+            ['unit' => UnitCode::Farms, 'tech_level' => 1, 'quantity' => 50, 'stage' => 1],
+            ['unit' => UnitCode::Farms, 'tech_level' => 1, 'quantity' => 75, 'stage' => 3],
+        ]);
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $liveUnits = $empire->colonies()->first()->farmGroups()->first()->units()->orderBy('stage')->get();
+        $this->assertCount(2, $liveUnits);
+        $this->assertSame(1, $liveUnits[0]->stage);
+        $this->assertSame(50, $liveUnits[0]->quantity);
+        $this->assertSame(3, $liveUnits[1]->stage);
+        $this->assertSame(75, $liveUnits[1]->quantity);
+    }
+
+    #[Test]
+    public function create_produces_no_farm_groups_when_template_has_none(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $this->assertCount(0, $colony->farmGroups()->get());
+    }
+
+    // -------------------------------------------------------------------------
     // reassign
     // -------------------------------------------------------------------------
 
