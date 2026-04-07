@@ -118,7 +118,23 @@
                     "units": [
                         {
                             "unit": "FRM-1",
-                            "quantity": 130000
+                            "quantity": 32500,
+                            "stage": 1
+                        },
+                        {
+                            "unit": "FRM-1",
+                            "quantity": 32500,
+                            "stage": 2
+                        },
+                        {
+                            "unit": "FRM-1",
+                            "quantity": 32500,
+                            "stage": 3
+                        },
+                        {
+                            "unit": "FRM-1",
+                            "quantity": 32500,
+                            "stage": 4
                         }
                     ]
                 }
@@ -126,171 +142,87 @@
             "factories": [
                 {
                     "group": 1,
+                    "orders": "CNGD",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 250000,
-                            "orders": "CNGD",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "CNGD",
-                                    "quantity": 2083333
-                                },
-                                "q2": {
-                                    "unit": "CNGD",
-                                    "quantity": 2083333
-                                },
-                                "q3": {
-                                    "unit": "CNGD",
-                                    "quantity": 2083333
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 250000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "CNGD", "quantity": 2083333 },
+                        "q2": { "unit": "CNGD", "quantity": 2083333 },
+                        "q3": { "unit": "CNGD", "quantity": 2083333 }
+                    }
                 },
                 {
                     "group": 2,
+                    "orders": "MTSP",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 75000,
-                            "orders": "MTSP",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "MTSP",
-                                    "quantity": 9375000
-                                },
-                                "q2": {
-                                    "unit": "MTSP",
-                                    "quantity": 9375000
-                                },
-                                "q3": {
-                                    "unit": "MTSP",
-                                    "quantity": 9375000
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 75000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "MTSP", "quantity": 9375000 },
+                        "q2": { "unit": "MTSP", "quantity": 9375000 },
+                        "q3": { "unit": "MTSP", "quantity": 9375000 }
+                    }
                 },
                 {
                     "group": 3,
+                    "orders": "AUT-1",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 75000,
-                            "orders": "AUT-1",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "AUT-1",
-                                    "quantity": 93750
-                                },
-                                "q2": {
-                                    "unit": "AUT-1",
-                                    "quantity": 93750
-                                },
-                                "q3": {
-                                    "unit": "AUT-1",
-                                    "quantity": 93750
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 75000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "AUT-1", "quantity": 93750 },
+                        "q2": { "unit": "AUT-1", "quantity": 93750 },
+                        "q3": { "unit": "AUT-1", "quantity": 93750 }
+                    }
                 },
                 {
                     "group": 4,
+                    "orders": "SLS",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 75000,
-                            "orders": "SLS",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "SLS",
-                                    "quantity": 7500000
-                                },
-                                "q2": {
-                                    "unit": "SLS",
-                                    "quantity": 7500000
-                                },
-                                "q3": {
-                                    "unit": "SLS",
-                                    "quantity": 7500000
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 75000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "SLS", "quantity": 7500000 },
+                        "q2": { "unit": "SLS", "quantity": 7500000 },
+                        "q3": { "unit": "SLS", "quantity": 7500000 }
+                    }
                 },
                 {
                     "group": 5,
+                    "orders": "MIN-1",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 75000,
-                            "orders": "MIN-1",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "MIN-1",
-                                    "quantity": 31250
-                                },
-                                "q2": {
-                                    "unit": "MIN-1",
-                                    "quantity": 31250
-                                },
-                                "q3": {
-                                    "unit": "MIN-1",
-                                    "quantity": 31250
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 75000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "MIN-1", "quantity": 31250 },
+                        "q2": { "unit": "MIN-1", "quantity": 31250 },
+                        "q3": { "unit": "MIN-1", "quantity": 31250 }
+                    }
                 },
                 {
                     "group": 6,
+                    "orders": "STU",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 250000,
-                            "orders": "STU",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "STU",
-                                    "quantity": 2500000
-                                },
-                                "q2": {
-                                    "unit": "STU",
-                                    "quantity": 2500000
-                                },
-                                "q3": {
-                                    "unit": "STU",
-                                    "quantity": 2500000
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 250000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "STU", "quantity": 2500000 },
+                        "q2": { "unit": "STU", "quantity": 2500000 },
+                        "q3": { "unit": "STU", "quantity": 2500000 }
+                    }
                 },
                 {
                     "group": 7,
+                    "orders": "RSCH",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 50000,
-                            "orders": "RSCH",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "RSCH",
-                                    "quantity": 12500
-                                },
-                                "q2": {
-                                    "unit": "RSCH",
-                                    "quantity": 12500
-                                },
-                                "q3": {
-                                    "unit": "RSCH",
-                                    "quantity": 12500
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 50000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "RSCH", "quantity": 12500 },
+                        "q2": { "unit": "RSCH", "quantity": 12500 },
+                        "q3": { "unit": "RSCH", "quantity": 12500 }
+                    }
                 }
             ]
         }
@@ -377,27 +309,15 @@
             "factories": [
                 {
                     "group": 1,
+                    "orders": "SLS",
                     "units": [
-                        {
-                            "unit": "FCT-1",
-                            "quantity": 1000,
-                            "orders": "SLS",
-                            "work-in-progress": {
-                                "q1": {
-                                    "unit": "SLS",
-                                    "quantity": 100000
-                                },
-                                "q2": {
-                                    "unit": "SLS",
-                                    "quantity": 100000
-                                },
-                                "q3": {
-                                    "unit": "SLS",
-                                    "quantity": 100000
-                                }
-                            }
-                        }
-                    ]
+                        { "unit": "FCT-1", "quantity": 1000 }
+                    ],
+                    "work-in-progress": {
+                        "q1": { "unit": "SLS", "quantity": 100000 },
+                        "q2": { "unit": "SLS", "quantity": 100000 },
+                        "q3": { "unit": "SLS", "quantity": 100000 }
+                    }
                 }
             ]
         }

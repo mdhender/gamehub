@@ -129,13 +129,34 @@ Pipeline flow: new production → q1 → q2 → q3 → delivered to Cargo.
 - `ColonyFactoryUnitFactory`
 - `ColonyFactoryWipFactory`
 
+#### Template JSON shape
+
+`orders` and `work-in-progress` are group-level properties (the production order and its pipeline). `units` is just the factory inventory in the group.
+
+```json
+"factories": [
+    {
+        "group": 1,
+        "orders": "CNGD",
+        "units": [
+            { "unit": "FCT-1", "quantity": 250000 }
+        ],
+        "work-in-progress": {
+            "q1": { "unit": "CNGD", "quantity": 2083333 },
+            "q2": { "unit": "CNGD", "quantity": 2083333 },
+            "q3": { "unit": "CNGD", "quantity": 2083333 }
+        }
+    }
+]
+```
+
 ### 5. Update `ImportColonyTemplates`
 
 - Add `createFactoryGroups()` method.
 - For each entry in `production.factories`:
   - Create a `ColonyTemplateFactoryGroup` with `group_number`, `orders_unit`, `orders_tech_level`. `pending_orders` is null at game start.
   - Create `ColonyTemplateFactoryUnit` rows for each unit in the group (parse tech level from `"FCT-1"` format).
-  - Create `ColonyTemplateFactoryWip` rows for q1, q2, q3 from `work-in-progress`.
+  - Create `ColonyTemplateFactoryWip` rows for q1, q2, q3 from group-level `work-in-progress`.
 - Handle CSHP where `production` is an empty array (skip gracefully).
 
 ### 6. Update `UploadColonyTemplateRequest`
@@ -200,21 +221,38 @@ Pipeline flow: new production → q1 → q2 → q3 → delivered to Cargo.
 #### `colony_template_farm_units`
 - `id`, `colony_template_farm_group_id` (FK cascade)
 - `unit` string (always `FRM`), `tech_level` integer, `quantity` integer
-- `stage` integer, default 0 — harvest progress (0=0%, 1=25%, 2=50%, 3=75%, 4=100%)
+- `stage` integer (1–4, required) — harvest progress (1=0%, 2=25%, 3=50%, 4=75%)
 
 #### Mirror tables for live colonies
 - `colony_farm_groups` — same shape, FK to `colony_id`
 - `colony_farm_units` — same shape, FK to `colony_farm_group_id`
 
-Farm units track their own progress through a five-stage harvest cycle:
+Farm units track their own progress through a four-stage harvest cycle. The first phase of each turn advances all farms:
 
+- Stage 4 (75%) → 100% → **harvest** (FOOD to Cargo) → reset to stage 1 (0%)
+- Stage 3 (50%) → stage 4 (75%)
+- Stage 2 (25%) → stage 3 (50%)
+- Stage 1 (0%) → stage 2 (25%)
+
+After Phase 1, farms are always at stages 1–4 (0%, 25%, 50%, 75%). The 100% state is transient — it occurs during harvest and immediately resets. On input shortage, units reset to stage 1 — losing all progress.
+
+At game start, template farm units should be **staggered across stages** so that FOOD is delivered every turn. A group's units are split into multiple entries at different stages. For example, 130,000 FRM-1 split into 4 entries of 32,500 at stages 1–4 means 32,500 farms (the stage 4 batch) harvest every turn. FOOD output is calculated at harvest time from the unit count and tech level — it is not stored as WIP.
+
+#### Template JSON shape
+
+```json
+"farms": [
+    {
+        "group": 1,
+        "units": [
+            { "unit": "FRM-1", "quantity": 32500, "stage": 1 },
+            { "unit": "FRM-1", "quantity": 32500, "stage": 2 },
+            { "unit": "FRM-1", "quantity": 32500, "stage": 3 },
+            { "unit": "FRM-1", "quantity": 32500, "stage": 4 }
+        ]
+    }
+]
 ```
-0% → 25% → 50% → 75% → 100% (harvest, then back to 0%)
-```
-
-Each turn, units advance one stage if inputs (fuel + labor) are met. At 100%, FOOD is produced and units return to 0%. On input shortage, units reset to 0% — losing all progress.
-
-At game start, all template farm units are at stage 0.
 
 ### 2. Models
 
@@ -240,7 +278,7 @@ At game start, all template farm units are at stage 0.
 - Add `createFarmGroups()` method.
 - For each entry in `production.farms`:
   - Create a `ColonyTemplateFarmGroup` with `group_number`.
-  - Create `ColonyTemplateFarmUnit` rows for each unit (parse tech level from `"FRM-1"` format). All start at `stage=0`.
+  - Create `ColonyTemplateFarmUnit` rows for each unit (parse tech level from `"FRM-1"` format). Read `stage` from JSON; the importer fills missing stages (1–4) with quantity 0 using the first entry's unit and tech level.
 - Handle CSHP where `production` is an empty array (skip gracefully).
 
 ### 6. Update `UploadColonyTemplateRequest`
@@ -248,12 +286,13 @@ At game start, all template farm units are at stage 0.
 - Validate optional `production.farms` array.
 - Each farm group requires: `group` (integer), `units` (array of `{unit, quantity}`).
 - Each farm unit: `unit` must match `FRM-\d+` format, `quantity` required integer.
+- `stage` integer (1–4, required). GM may omit stages from JSON; the importer backfills missing stages with quantity 0.
 - No orders, WIP, or pending orders for farms.
 
 ### 7. Update `EmpireCreator`
 
 - Eager-load `farmGroups.units` on templates.
-- Copy farm groups and units to live colony tables with `stage=0`.
+- Copy farm groups and units to live colony tables, preserving `stage` from template.
 
 ### 8. Tests
 
@@ -270,14 +309,13 @@ At game start, all template farm units are at stage 0.
 - Sample data file still passes.
 
 #### Import tests (in `ImportColonyTemplatesTest`)
-- COPN creates 1 farm group with 1 unit (130,000 FRM-1 at stage 0).
+- COPN creates 1 farm group with 4 unit entries (32,500 FRM-1 each at stages 1–4).
 - CORB creates 0 farm groups.
 - CSHP creates 0 farm groups.
 - Reimport replaces farm groups.
 
 #### EmpireCreator tests (in `EmpireCreatorTest`)
-- Farm groups and units copied from template to live colony.
-- All units at stage 0.
+- Farm groups and units copied from template to live colony with stages preserved.
 - CSHP colonies have no farm groups.
 
 ---
@@ -368,6 +406,53 @@ Mines have no pipeline, no WIP, no harvest cycle. They produce one-quarter of an
 
 ---
 
+## PR 5 — Colony Template Documentation
+
+### 1. Reference: Colony Template JSON Format
+
+Create `docs/colony-template-reference.md` — a complete field-by-field reference for the colony template JSON file.
+
+Covers:
+- Top-level fields: `kind`, `tech-level`, `sol`, `birth-rate-pct`, `death-rate-pct`.
+- `population` array: `population_code`, `quantity`, `pay_rate`.
+- `inventory` object: the four sections (`super-structure`, `structure`, `operational`, `cargo`) and `{unit, quantity}` entries.
+- `production.factories`: group structure with `orders` and `work-in-progress` (q1/q2/q3) at group level, `units` with `unit`/`quantity`.
+- `production.farms`: group structure, `units` with `unit`/`quantity`/`stage`.
+- `production.mines` (future): group structure, `units` with `unit`/`quantity`.
+- Valid values for `kind` (`COPN`, `CORB`, `CSHP`) and what each allows/omits.
+- Unit code format (`FCT-1`, `FRM-1`, `MIN-1`, `AUT-1`, etc.).
+
+### 2. Explanation: Farm Stages and Staggering
+
+`docs/referees/explanation/colony-template-farming.md` — covers:
+- Why farms use a stage-based harvest cycle instead of a WIP pipeline.
+- The five-stage cycle: 0% → 25% → 50% → 75% → 100% → harvest → back to 0%.
+- Why units must be staggered across stages at game start (otherwise the colony starves for 4 turns then receives a massive glut).
+- How to split a total quantity across stages: divide evenly into entries at stages 1–4 so one batch harvests every turn.
+- Example: 130,000 FRM-1 → 4 entries of 32,500 at stages 1, 2, 3, 4.
+
+### 3. Explanation: Factory Production Pipeline
+
+`docs/referees/explanation/colony-template-factories.md` — covers:
+- The 3-quarter WIP pipeline: new production → q1 (25%) → q2 (50%) → q3 (75%) → delivered to Cargo.
+- Why `orders` and `work-in-progress` are group-level concepts (all factories in a group work the same order).
+- How WIP quantities relate to factory count and output rate.
+- `pending_orders` and retooling (not used at game start but available later).
+
+### 4. Explanation: Mining
+
+`docs/referees/explanation/colony-template-mining.md` — covers:
+- Mines produce one-quarter of annual output each turn (no pipeline, no stages).
+- 1:1 relationship between mine groups and deposits.
+- Why mine groups are not in the template (deposits are system-specific, assigned by EmpireCreator).
+- Input shortage reduces output proportionally — no reset penalty (unlike farms).
+
+### 5. Tests
+
+- Validate that the documentation files exist and are non-empty (optional smoke test).
+
+---
+
 ## Files Affected (Summary)
 
 ### PR 1 (done)
@@ -428,3 +513,14 @@ Mines have no pipeline, no WIP, no harvest cycle. They produce one-quarter of an
 - `app/Actions/GameGeneration/ImportColonyTemplates.php` — add `createMineGroups()`
 - `app/Http/Requests/UploadColonyTemplateRequest.php` — validate mine groups
 - `app/Services/EmpireCreator.php` — copy mine groups to live colonies
+
+### PR 5
+
+#### New Files
+For coding agents:
+- `docs/reference/colony-template.md`
+
+For referees:
+- `docs/referees/explanation/colony-template-farming.md`
+- `docs/referees/explanation/colony-template-factories.md`
+- `docs/referees/explanation/colony-template-mining.md`

@@ -99,11 +99,11 @@ Factories
 
 
 Manufacturing
-  Group  Units  Qty______  Orders   WIP 25%_________  WIP 50%_________  WIP 75%_________
-      1  FCT-1    250,000  CNGD       2,083,333 CNGD    2,083,333 CNGD    2,083,333 CNGD
-      2  FCT-1     75,000  MTSP       9,375,000 MTSP    9,375,000 MTSP    9,375,000 MTSP
-      3  FCT-1     75,000  AUT-1         93,750 AUT-1      93,750 AUT-1      93,750 AUT-1
-      4  FCT-1     75,000  SLS        7,500,000 SLS     7,500,000 SLS     7,500,000 SLS
-      5  FCT-1     75,000  MIN-1         31,250 MIN-1      31,250 MIN-1      31,250 MIN-1
-      6  FCT-1    250,000  STU        2,500,000 STU     2,500,000 STU     2,500,000 STU
-      7  FCT-1     50,000  RSCH          12,500 RSCH       12,500 RSCH       12,500 RSCH
+  Group  Qty______  WIP 25%__________  WIP 50%__________  WIP 75%__________
+      1    250,000    2,083,333 CNGD     2,083,333 CNGD     2,083,333 CNGD
+      2     75,000    9,375,000 MTSP     9,375,000 MTSP     9,375,000 MTSP
+      3     75,000       93,750 AUT-1       93,750 AUT-1       93,750 AUT-1
+      4     75,000    7,500,000 SLS      7,500,000 SLS      7,500,000 SLS
+      5     75,000       31,250 MIN-1       31,250 MIN-1       31,250 MIN-1
+      6    250,000    2,500,000 STU      2,500,000 STU      2,500,000 STU
+      7     50,000       12,500 RSCH        12,500 RSCH        12,500 RSCH
