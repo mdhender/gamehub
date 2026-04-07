@@ -6,6 +6,7 @@ use App\Enums\ColonyKind;
 use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\ColonyTemplate;
+use App\Models\ColonyTemplateFactoryGroup;
 use App\Models\ColonyTemplateItem;
 use App\Models\Game;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -98,5 +99,20 @@ class ColonyTemplateModelTest extends TestCase
         ColonyTemplate::query()->create(['game_id' => $game->id, 'kind' => ColonyKind::Orbital, 'tech_level' => 1]);
 
         $this->assertDatabaseCount('colony_templates', 2);
+    }
+
+    #[Test]
+    public function has_many_factory_groups(): void
+    {
+        $template = $this->makeTemplate();
+
+        $group = ColonyTemplateFactoryGroup::query()->create([
+            'colony_template_id' => $template->id,
+            'group_number' => 1,
+            'orders_unit' => UnitCode::Factories,
+            'orders_tech_level' => 1,
+        ]);
+
+        $this->assertTrue($template->factoryGroups->contains($group));
     }
 }

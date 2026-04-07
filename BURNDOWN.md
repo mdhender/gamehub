@@ -301,11 +301,11 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/Models/ColonyModelTest.php` — assert `factoryGroups()` relation
 
 **Acceptance:**
-- [ ] Migration tests verify columns, defaults, unique constraints, and cascade deletes for all 6 tables
-- [ ] Model tests verify casts, relationships, and factory validity for all 6 new models
-- [ ] Parent model tests cover `factoryGroups()` on both `ColonyTemplate` and `Colony`
-- [ ] `php artisan test --compact tests/Feature/Models/ tests/Feature/Database/Migrations/`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Migration tests verify columns, defaults, unique constraints, and cascade deletes for all 6 tables
+- [x] Model tests verify casts, relationships, and factory validity for all 6 new models
+- [x] Parent model tests cover `factoryGroups()` on both `ColonyTemplate` and `Colony`
+- [x] `php artisan test --compact tests/Feature/Models/ tests/Feature/Database/Migrations/`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

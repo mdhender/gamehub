@@ -3,7 +3,9 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\ColonyKind;
+use App\Enums\UnitCode;
 use App\Models\Colony;
+use App\Models\ColonyFactoryGroup;
 use App\Models\Empire;
 use App\Models\Planet;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -102,5 +104,20 @@ class ColonyModelTest extends TestCase
         $this->assertTrue($colony->empire->is($empire));
         $this->assertTrue($colony->star->is($planet->star));
         $this->assertTrue($colony->planet->is($planet));
+    }
+
+    #[Test]
+    public function has_many_factory_groups(): void
+    {
+        $colony = $this->makeColony();
+
+        $group = ColonyFactoryGroup::query()->create([
+            'colony_id' => $colony->id,
+            'group_number' => 1,
+            'orders_unit' => UnitCode::Factories,
+            'orders_tech_level' => 1,
+        ]);
+
+        $this->assertTrue($colony->factoryGroups->contains($group));
     }
 }
