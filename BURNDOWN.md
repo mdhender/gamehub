@@ -213,10 +213,10 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 - `app/Support/TurnReports/TurnReportJsonExporter.php` — export `quantity` and `inventory_section` instead of the old columns
 
 **Acceptance:**
-- [ ] `TurnReportColonyInventory` records created by `SetupReportGenerator` have `quantity` and `inventory_section`
-- [ ] JSON export includes `quantity` and `inventory_section`, not `quantity_assembled`/`quantity_disassembled`
-- [ ] No references to `quantity_assembled` or `quantity_disassembled` remain in either file
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] `TurnReportColonyInventory` records created by `SetupReportGenerator` have `quantity` and `inventory_section`
+- [x] JSON export includes `quantity` and `inventory_section`, not `quantity_assembled`/`quantity_disassembled`
+- [x] No references to `quantity_assembled` or `quantity_disassembled` remain in either file
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

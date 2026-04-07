@@ -52,8 +52,8 @@ class TurnReportJsonExporter
                 'inventory' => $colony->inventory->map(fn ($item) => [
                     'unit_code' => $item->unit_code->value,
                     'tech_level' => $item->tech_level,
-                    'quantity_assembled' => $item->quantity_assembled,
-                    'quantity_disassembled' => $item->quantity_disassembled,
+                    'inventory_section' => $item->inventory_section->value,
+                    'quantity' => $item->quantity,
                 ])->values(),
                 'population' => $colony->population->map(function ($pop) use ($colony) {
                     $cadres = [PopulationClass::ConstructionWorker->value, PopulationClass::Spy->value];

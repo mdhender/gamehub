@@ -81,8 +81,8 @@ class SetupReportGenerator
                         $reportColony->inventory()->create([
                             'unit_code' => $item->unit,
                             'tech_level' => $item->tech_level,
-                            'quantity_assembled' => $item->quantity_assembled,
-                            'quantity_disassembled' => $item->quantity_disassembled,
+                            'inventory_section' => $item->inventory_section,
+                            'quantity' => $item->quantity,
                         ]);
                     }
 
