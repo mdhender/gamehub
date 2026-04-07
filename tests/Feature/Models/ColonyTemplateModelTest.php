@@ -7,6 +7,7 @@ use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\ColonyTemplate;
 use App\Models\ColonyTemplateFactoryGroup;
+use App\Models\ColonyTemplateFarmGroup;
 use App\Models\ColonyTemplateItem;
 use App\Models\Game;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -114,5 +115,18 @@ class ColonyTemplateModelTest extends TestCase
         ]);
 
         $this->assertTrue($template->factoryGroups->contains($group));
+    }
+
+    #[Test]
+    public function has_many_farm_groups(): void
+    {
+        $template = $this->makeTemplate();
+
+        $group = ColonyTemplateFarmGroup::query()->create([
+            'colony_template_id' => $template->id,
+            'group_number' => 1,
+        ]);
+
+        $this->assertTrue($template->farmGroups->contains($group));
     }
 }

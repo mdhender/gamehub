@@ -546,11 +546,11 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/Models/ColonyModelTest.php` — assert `farmGroups()` relation
 
 **Acceptance:**
-- [ ] Migration tests verify columns, defaults, unique constraints, and cascade deletes for all 4 farm tables
-- [ ] Model tests verify casts, relationships, and factory validity for all 4 new farm models
-- [ ] Parent model tests cover `farmGroups()` on both `ColonyTemplate` and `Colony`
-- [ ] `php artisan test --compact tests/Feature/Models/ tests/Feature/Database/Migrations/`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Migration tests verify columns, defaults, unique constraints, and cascade deletes for all 4 farm tables
+- [x] Model tests verify casts, relationships, and factory validity for all 4 new farm models
+- [x] Parent model tests cover `farmGroups()` on both `ColonyTemplate` and `Colony`
+- [x] `php artisan test --compact tests/Feature/Models/ tests/Feature/Database/Migrations/`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
