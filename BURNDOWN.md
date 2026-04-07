@@ -340,11 +340,11 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/EmpireCreatorTest.php`
 
 **Acceptance:**
-- [ ] Tests create template factory groups and assert live factory groups, units, and WIP are copied
-- [ ] Tests assert both `input_remainder_mets` and `input_remainder_nmts` initialize to `0`
-- [ ] Tests assert colonies from templates with empty production have no factory groups
-- [ ] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Tests create template factory groups and assert live factory groups, units, and WIP are copied
+- [x] Tests assert both `input_remainder_mets` and `input_remainder_nmts` initialize to `0`
+- [x] Tests assert colonies from templates with empty production have no factory groups
+- [x] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
