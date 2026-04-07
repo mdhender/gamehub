@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\InventorySection;
 use App\Models\ColonyTemplate;
 use App\Models\ColonyTemplateItem;
 use App\Models\Game;
@@ -70,30 +71,37 @@ class GameFactory extends Factory
                 true
             );
 
+            $sectionMap = [
+                'super-structure' => InventorySection::SuperStructure,
+                'structure' => InventorySection::Structure,
+                'operational' => InventorySection::Operational,
+                'cargo' => InventorySection::Cargo,
+            ];
+
             foreach ($colonyDataArray as $colonyData) {
                 $colonyTemplate = ColonyTemplate::create([
                     'game_id' => $game->id,
                     'kind' => $colonyData['kind'],
                     'tech_level' => $colonyData['tech-level'],
+                    'sol' => $colonyData['sol'],
+                    'birth_rate' => $colonyData['birth-rate-pct'],
+                    'death_rate' => $colonyData['death-rate-pct'],
                 ]);
 
-                $allItems = array_merge(
-                    $colonyData['inventory']['operational'] ?? [],
-                    $colonyData['inventory']['stored'] ?? [],
-                );
+                foreach ($sectionMap as $jsonKey => $section) {
+                    foreach ($colonyData['inventory'][$jsonKey] ?? [] as $itemData) {
+                        $parts = explode('-', $itemData['unit'], 2);
+                        $unit = $parts[0];
+                        $techLevel = isset($parts[1]) ? (int) $parts[1] : 0;
 
-                foreach ($allItems as $itemData) {
-                    $parts = explode('-', $itemData['unit'], 2);
-                    $unit = $parts[0];
-                    $techLevel = isset($parts[1]) ? (int) $parts[1] : 0;
-
-                    ColonyTemplateItem::create([
-                        'colony_template_id' => $colonyTemplate->id,
-                        'unit' => $unit,
-                        'tech_level' => $techLevel,
-                        'quantity_assembled' => $itemData['quantity'],
-                        'quantity_disassembled' => 0,
-                    ]);
+                        ColonyTemplateItem::create([
+                            'colony_template_id' => $colonyTemplate->id,
+                            'unit' => $unit,
+                            'tech_level' => $techLevel,
+                            'quantity' => $itemData['quantity'],
+                            'inventory_section' => $section,
+                        ]);
+                    }
                 }
             }
         });

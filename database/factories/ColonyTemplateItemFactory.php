@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\ColonyTemplate;
 use App\Models\ColonyTemplateItem;
@@ -23,8 +24,8 @@ class ColonyTemplateItemFactory extends Factory
             'colony_template_id' => ColonyTemplate::factory(),
             'unit' => fake()->randomElement(UnitCode::cases()),
             'tech_level' => fake()->numberBetween(1, 5),
-            'quantity_assembled' => fake()->numberBetween(0, 50),
-            'quantity_disassembled' => fake()->numberBetween(0, 50),
+            'quantity' => fake()->numberBetween(0, 100),
+            'inventory_section' => InventorySection::Operational,
         ];
     }
 }

@@ -23,6 +23,9 @@ class ColonyTemplateFactory extends Factory
             'game_id' => Game::factory(),
             'kind' => ColonyKind::OpenSurface,
             'tech_level' => fake()->numberBetween(1, 5),
+            'sol' => 1.0,
+            'birth_rate' => 0.0625,
+            'death_rate' => 0.0625,
         ];
     }
 }

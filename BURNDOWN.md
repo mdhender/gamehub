@@ -116,9 +116,9 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 - `database/factories/GameFactory.php` — update the `createWithFullGeneration` or similar method that builds colony template items: replace `quantity_assembled`/`quantity_disassembled` with `quantity`; replace `operational`/`stored` inventory key references with section-based logic using `inventory_section`
 
 **Acceptance:**
-- [ ] No references to `quantity_assembled`, `quantity_disassembled`, or old `stored` key remain in any factory
-- [ ] Each factory produces valid model instances (verify with `php artisan tinker --execute 'App\Models\ColonyTemplateItem::factory()->make()->toArray();'`)
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] No references to `quantity_assembled`, `quantity_disassembled`, or old `stored` key remain in any factory
+- [x] Each factory produces valid model instances (verify with `php artisan tinker --execute 'App\Models\ColonyTemplateItem::factory()->make()->toArray();'`)
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
