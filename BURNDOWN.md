@@ -629,12 +629,12 @@ Key rules from the reconciled plan/sample data:
   - `unit`, `tech_level`, `quantity`
 
 **Acceptance:**
-- [ ] All 4 mine tables exist with the required columns and nullability rules
-- [ ] Template mine groups allow `deposit_id = null`
-- [ ] Live mine groups require a non-null `deposit_id`
-- [ ] Deleting a template or colony cascades to its mine groups and mine units
-- [ ] `php artisan migrate:fresh` succeeds
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 4 mine tables exist with the required columns and nullability rules
+- [x] Template mine groups allow `deposit_id = null`
+- [x] Live mine groups require a non-null `deposit_id`
+- [x] Deleting a template or colony cascades to its mine groups and mine units
+- [x] `php artisan migrate:fresh` succeeds
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
