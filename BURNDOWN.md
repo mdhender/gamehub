@@ -435,10 +435,10 @@ Key rules from the reconciled plan/sample data:
 - `database/factories/ColonyFarmUnitFactory.php`
 
 **Acceptance:**
-- [ ] Each new farm factory can `make()` a valid attribute set
-- [ ] Each new farm factory can `create()` valid related records
-- [ ] Farm unit factories produce `FRM` units with `stage` in `1..4`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Each new farm factory can `make()` a valid attribute set
+- [x] Each new farm factory can `create()` valid related records
+- [x] Farm unit factories produce `FRM` units with `stage` in `1..4`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
