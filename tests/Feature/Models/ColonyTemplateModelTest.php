@@ -3,6 +3,7 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\ColonyKind;
+use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\ColonyTemplate;
 use App\Models\ColonyTemplateItem;
@@ -53,11 +54,39 @@ class ColonyTemplateModelTest extends TestCase
             'colony_template_id' => $template->id,
             'unit' => UnitCode::Factories->value,
             'tech_level' => 1,
-            'quantity_assembled' => 0,
-            'quantity_disassembled' => 0,
+            'quantity' => 0,
+            'inventory_section' => InventorySection::Operational,
         ]);
 
         $this->assertTrue($template->items->contains($item));
+    }
+
+    #[Test]
+    public function casts_metadata_fields(): void
+    {
+        $template = $this->makeTemplate([
+            'sol' => 1.0,
+            'birth_rate' => 0.0625,
+            'death_rate' => 0.0625,
+        ]);
+
+        $fresh = $template->fresh();
+
+        $this->assertSame(1.0, $fresh->sol);
+        $this->assertSame(0.0625, $fresh->birth_rate);
+        $this->assertSame(0.0625, $fresh->death_rate);
+    }
+
+    #[Test]
+    public function metadata_fields_default_to_zero(): void
+    {
+        $template = $this->makeTemplate();
+
+        $fresh = $template->fresh();
+
+        $this->assertSame(0.0, $fresh->sol);
+        $this->assertSame(0.0, $fresh->birth_rate);
+        $this->assertSame(0.0, $fresh->death_rate);
     }
 
     #[Test]

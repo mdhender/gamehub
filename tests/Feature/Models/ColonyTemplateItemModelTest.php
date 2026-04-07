@@ -3,6 +3,7 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\ColonyKind;
+use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\ColonyTemplate;
 use App\Models\ColonyTemplateItem;
@@ -28,8 +29,8 @@ class ColonyTemplateItemModelTest extends TestCase
             'colony_template_id' => $template->id,
             'unit' => UnitCode::Food,
             'tech_level' => 1,
-            'quantity_assembled' => 0,
-            'quantity_disassembled' => 0,
+            'quantity' => 0,
+            'inventory_section' => InventorySection::Operational,
         ], $attributes));
     }
 
@@ -63,8 +64,8 @@ class ColonyTemplateItemModelTest extends TestCase
             'colony_template_id' => $template->id,
             'unit' => UnitCode::Food,
             'tech_level' => 1,
-            'quantity_assembled' => 0,
-            'quantity_disassembled' => 0,
+            'quantity' => 0,
+            'inventory_section' => InventorySection::Operational,
         ]);
 
         $this->assertTrue($item->colonyTemplate->is($template));

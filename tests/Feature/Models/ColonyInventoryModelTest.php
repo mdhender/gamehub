@@ -3,6 +3,7 @@
 namespace Tests\Feature\Models;
 
 use App\Enums\ColonyKind;
+use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use App\Models\Colony;
 use App\Models\ColonyInventory;
@@ -36,8 +37,8 @@ class ColonyInventoryModelTest extends TestCase
             'colony_id' => $colony->id,
             'unit' => UnitCode::Factories,
             'tech_level' => 1,
-            'quantity_assembled' => 0,
-            'quantity_disassembled' => 0,
+            'quantity' => 0,
+            'inventory_section' => InventorySection::Operational,
         ], $attributes));
     }
 

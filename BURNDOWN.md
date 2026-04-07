@@ -234,9 +234,9 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 - `tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php` — this tests the old rebuild migration; update assertions to match new column structure (the old migration still runs, but the new migration follows it and changes the columns)
 
 **Acceptance:**
-- [ ] All model tests pass: `php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php tests/Feature/Models/ColonyTemplateItemModelTest.php tests/Feature/Models/ColonyInventoryModelTest.php`
-- [ ] Migration test passes: `php artisan test --compact tests/Feature/Database/Migrations/`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All model tests pass: `php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php tests/Feature/Models/ColonyTemplateItemModelTest.php tests/Feature/Models/ColonyInventoryModelTest.php`
+- [x] Migration test passes: `php artisan test --compact tests/Feature/Database/Migrations/`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
