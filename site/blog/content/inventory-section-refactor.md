@@ -23,12 +23,12 @@ The 1978 manual actually uses three inventory buckets: Assembled Items, Storage/
 
 The new model replaces both columns with `inventory_section` (a string enum) and `quantity` (a single integer). The section tells you where the item sits:
 
-| Section | Meaning | Volume rule |
-|---|---|---|
-| `super_structure` | Hull structure (STU, SLS) | Full volume |
-| `structure` | Installed systems (sensors, drives, life support) | Full volume |
-| `operational` | Active production units (factories, farms, mines) | Full volume |
-| `cargo` | Stored/transported items (resources, spare parts) | Half volume |
+| Section           | Meaning                                           | Volume rule |
+|-------------------|---------------------------------------------------|-------------|
+| `super_structure` | Hull structure (STU, SLS)                         | Full volume |
+| `structure`       | Installed systems (sensors, drives, life support) | Full volume |
+| `operational`     | Active production units (factories, farms, mines) | Full volume |
+| `cargo`           | Stored/transported items (resources, spare parts) | Half volume |
 
 The cargo half-volume rule is the key gameplay distinction — it's why you can carry more cargo than installed equipment in the same hull space.
 
