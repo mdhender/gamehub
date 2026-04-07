@@ -1,19 +1,13 @@
 # Plan: Import Updated Colony Template
 
-## Decisions (Confirmed)
+The template has been updated.
 
-1. **SHIP tech-level**: Required in JSON (value `1`). No special handling needed — all entries have `tech-level`.
-2. **SOL key**: JSON uses `"sol"` (not `"standard-of-living"`). DB column: `sol` to match `colonies.sol`.
-3. **Inventory sections**: Add `inventory_section` to `colony_template_items` and `colony_inventory`. The EmpireCreator decodes sections when creating live inventory. Colony inventory may need a boolean to track if units are in storage or not.
-
-## Template JSON Changes (Done)
-
-- Renamed `"standard-of-living"` → `"sol"` in COPN and CORB entries.
-- Added `"tech-level": 1` to the SHIP entry.
+* A new kind, CSHP, is now valid.
+* Inventory has been refactored into four sections.
 
 ---
 
-## PR 1 — Metadata + SHIP + Inventory Sections
+## PR 1 — Metadata + CSHP + Inventory Sections
 
 ### 1. Migration: Add columns to `colony_templates`
 
@@ -46,7 +40,7 @@ enum InventorySection: string
 
 ### 5. Update `ColonyKind` enum
 
-Add `Ship = 'SHIP'` case (the JSON uses `SHIP`, not `CSHP`). Or normalize at the import boundary — TBD based on whether `CSHP` is used elsewhere.
+Verify that the JSON uses `COPN`, `CORB`, or `CSHP`).
 
 ### 6. Model Updates
 
@@ -57,16 +51,13 @@ Add `Ship = 'SHIP'` case (the JSON uses `SHIP`, not `CSHP`). Or normalize at the
 ### 7. Update `ImportColonyTemplates`
 
 - Read `sol`, `birth-rate-pct`, `death-rate-pct` from JSON into template.
-- Make population import optional (SHIP has none).
+- Make population import optional (CSHP has none).
 - Replace `createInventory()` to iterate all 4 sections (`super-structure` → `super_structure`, etc.), storing `inventory_section` on each item.
-- Normalize `SHIP` kind to `CSHP` (or add to enum) at import boundary.
 - Remove references to old `stored` key.
 
 ### 8. Update `UploadColonyTemplateRequest`
 
-- Accept `SHIP` kind (normalize to internal value).
-- Require `sol`, `birth-rate-pct`, `death-rate-pct` on all entries (SHIP included since it now has tech-level).
-- Or: make `sol`/rates/population optional for SHIP only — confirm with user.
+- Accept `CSHP` kind.
 - Validate 4 inventory sections instead of `operational` + `stored`.
 - Remove `stored` references.
 - Validate `super-structure`, `structure`, `operational`, `cargo` keys; reject unknown keys.
@@ -75,13 +66,13 @@ Add `Ship = 'SHIP'` case (the JSON uses `SHIP`, not `CSHP`). Or normalize at the
 
 - Copy `sol`, `birth_rate`, `death_rate` from template to `Colony`.
 - Copy `inventory_section` from template items to `ColonyInventory`.
-- Handle SHIP entries (no population).
+- Handle entries with an empty population slice.
 
 ### 10. Tests
 
-- **Validation**: SHIP with inventory-only passes; new fields validated; 4 inventory sections validated.
+- **Validation**: CSHP with inventory-only passes; new fields validated; 4 inventory sections validated.
 - **Importer**: Sample JSON creates 3 templates with correct metadata, sections, and population.
-- **EmpireCreator**: Metadata + sections copied to live colonies; SHIP creates colony without population.
+- **EmpireCreator**: Metadata + sections copied to live colonies.
 
 ---
 

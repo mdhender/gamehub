@@ -73,7 +73,7 @@ Units in storage count as **half their normal volume** (rounded up) when computi
 This applies to all stored items regardless of assembly state.
 Their **mass** does not change.
 
-For example, 5 SPD-1 units in storage occupy 63 VU (5 × 25 × 1 / 2).
+For example, 5 SPD-1 units in storage occupy 63 VU (5 × 25 × ½).
 
 ---
 ## Open Colony Exterior Storage
@@ -161,34 +161,74 @@ A negative value means the ship/colony is over capacity.
 
 ## Enclosure Report
 
-The enclosure section of the turn report summarizes structural units and enclosed volume:
+The enclosure section of the turn report summarizes the contents (inventory) of the ship/colony.
+The inventory is grouped into sections for convenience:
+
+| Section             | Meaning                                                           | Assembled Status                                  | Storage Status     |
+|---------------------|-------------------------------------------------------------------|---------------------------------------------------|--------------------|
+| Super-structure     | Structural units that define the size of the ship/colony.         | Always assembled.                                 | N/A - full volume. |
+| Structure           | Units that are part of the ship/colony systems.                   | If they must be assembled before using, they are. | N/A - full volume. |
+| Crew and Passengers | Summary of the population of the ship/colony.                     | N/A                                               | N/A - full volume. |                     
+| Operational         | Units that are available for immediate use.                       | If they must be assembled before using, they are. | N/A - full volume. |
+| Cargo               | Units that are "boxed up" to reduce space required to store them. | If they can be un-assembled, they are.            | Uses ½ the volume. |
+
 
 For example, the report for an orbital colony might contain:
 
 ```
-Enclosure
+Inventory
   Super-structure (VU Factor: 10)
-    Kind_  Units______  Volume_____  Enclosed Volume
-      STU    4,953,743    2,476,872          495,374
-    Total                 2,476,872          495,374
+    Units_  Quantity___  Volume_____  Mass________  Enclosed Capacity
+    STU       1,080,000      540,000       540,000            108,000
+    Total             -      540,000       540,000            108,000
+  Structure
+    Units_  Quantity___  Volume_____  Mass________  Volume Used______
+    LFS-1         3,720       29,760        29,760             29,760
+    SEN-1             1        3,000         3,000              3,000
+    Total             -       32,760        32,760             32,760
+  Crew and Passengers
+    Units_  Quantity___  Volume_____  Mass________  Volume Used______
+    UEM               0            -             -                  -
+    USK             100            -             -                  -
+    PRO           3,110            -             -                  -
+    SLD             510            -             -                  -
+    Total         3,720           38            38                 38
+  Operational
+    Units_  Quantity___  Volume_____  Mass________  Volume Used______
+    AUT-1         9,000       36,000        36,000             36,000
+    FCT-1         1,000       14,000        14,000             14,000
+    Total             -       50,000        50,000             50,000
+  Cargo
+    Units_  Quantity___  Volume_____  Mass________  Volume Used______
+    CNGD          1,307          784           784                392
+    FOOD            930        5,580         5,580              2,790
+    FUEL          4,221        4,221         4,221              2,111
+    METS          4,000        4,000         4,000              2,000
+    NMTS         16,000       16,000        16,000              8,000
+    Total             -       30,585        30,585             15,293
+  Summary
+    Total Mass___  Enclosed Capacity  Volume Used__  Remaining Volume
+          653,383            108,000         98,091             9,909
 ```
 
 - **VU Factor**: The volume unit factor for the type of ship/colony
-- **Kind**: STU or SLS
-- **Units**: quantity of structural units
-- **Volume**: total volume of the structural units
+- **Units**: The code for the unit (usually includes the tech-level, too)
+- **Quantity**: quantity of units
+- **Volume**: total volume of the units
+- **Mass**: total mass of the units
 - **Enclosed Volume**: total housing capacity provided by structural units
+- **Volume Used**: actual volume the units require (units in "storage" use ½ their normal volume)
 
 ---
 
 ## Worked Example
 
 An orbital colony (CORB, VU Factor = 10) with:
-- 850,000 FCT-1 operational (volume each = 12 + 2×1 = 14) → 11,900,000 VU
-- 130,000 FRM-1 operational (volume each = 6 + 1 = 7) → 910,000 VU
-- 300,000 MIN-1 operational (volume each = 10 + 2×1 = 12) → 3,600,000 VU
-- 15,920,040 total population → ceil(15,920,040 / 100) = 159,201 VU
-- Various stored items at half volume
+- 1,080,000 STU (volume each = 0.5) → 540,000 VU
+- 1 SEN-1 (volume each = 3,000) → 3,000 VU
+- 3,720 total population → ceil(3,7200 / 100) → 38 VU
+- 1,000 FCT-1 operational (volume each = 12 + 2×1 = 14) → 14,000 VU
+- 1,307 CNGD (volume each = 0.5) → 392 VU
 
 The total content volume determines the number of structural units needed:
 

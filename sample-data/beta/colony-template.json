@@ -405,6 +405,10 @@
     {
         "kind": "CSHP",
         "tech-level": 1,
+        "sol": 1.0,
+        "birth-rate-pct": 0.0625,
+        "death-rate-pct": 0.0625,
+        "population": [],
         "inventory": {
             "super-structure": [
                 {
@@ -433,6 +437,7 @@
                     "quantity": 5000
                 }
             ]
-        }
+        },
+        "production": []
     }
 ]
