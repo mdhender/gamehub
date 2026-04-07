@@ -1,6 +1,6 @@
 # BURNDOWN
 
-Game generation workflow — tabbed UI refactor.
+Colony template refactor — inventory sections, metadata, and column cleanup.
 
 **Date:** 2026-04-06
 
@@ -15,332 +15,304 @@ Game generation workflow — tabbed UI refactor.
 
 ## Problem Statement
 
-The `/games/{gameId}/generate` page renders all generation steps linearly (PRNG Seed, Home System Template, Colony Template, Stars, Planets, Deposits, Home Systems, Activate, Empires, Turn Reports), causing excessive scrolling. The Empires and Turn Reports sections are post-activation concerns that belong on the main game page, not the generation workflow.
+The colony template JSON has been restructured to be easier for GMs. Three changes:
 
-## Proposed Design
+1. **New metadata fields** — `sol`, `birth-rate-pct`, `death-rate-pct` are now on each template. `ColonyTemplate` lacks columns for these (though `Colony` already has them).
+2. **Four inventory sections** — inventory is now grouped into `super-structure`, `structure`, `operational`, and `cargo` instead of the old `operational`/`stored` split. The section determines storage semantics (cargo items use half volume; everything else uses full volume).
+3. **Column simplification** — the old `quantity_assembled`/`quantity_disassembled` columns are replaced by a single `quantity` column. The `inventory_section` column now carries the semantic meaning those two columns encoded.
 
-### Generate page (`/games/{gameId}/generate`)
+The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in templates. The new JSON includes a CSHP template with empty population.
 
-Convert the linear layout into **5 client-side tabs**:
+## Reference
 
-| Tab | Contents |
-|---|---|
-| **Templates** | PrngSeedSection, HomeSystemTemplateSection, ColonyTemplateSection |
-| **Stars** | StarsSection + read-only PRNG seed display |
-| **Planets** | PlanetsSection + read-only PRNG seed display |
-| **Deposits** | DepositsSection + read-only PRNG seed display |
-| **Home Systems** | HomeSystemsSection + ActivateSection |
-
-- All 5 tabs are **always visible**. Tabs for unreachable steps are **disabled** (`opacity-50 cursor-not-allowed`), not hidden.
-- The delete-step confirmation dialog is **shared** across all tabs (stays at page root).
-- After a successful generation step, redirect to the next logical tab via `?tab=` query param.
-
-### Game show page (`/games/{gameId}`)
-
-Add **Empires** and **Turn Reports** tabs alongside the existing **Members** tab:
-
-| Tab | Visibility | Contents |
-|---|---|---|
-| **Members** | Always | Existing member management |
-| **Empires** | Active games only | EmpiresSection (moved from generate page) |
-| **Turn Reports** | Active games only | TurnReportsSection (moved from generate page) |
-
-The existing **Generate** link remains as navigation to the generate page. The **Setup Report** section for players remains outside the tabs, unchanged.
-
-### Tab persistence
-
-- Tab state is stored in `?tab=` query params.
-- Client-side tab clicks update the URL via `history.replaceState` (no server round-trip).
-- Invalid or unreachable tab values fall back to a safe default.
+- Updated JSON: `sample-data/beta/colony-template.json`
+- Inventory semantics: `site/docs/content/developers/reference/ship-structures.md` (Enclosure Report table)
+- Plan doc: `docs/plan-import-colony-template.md` (PR 1 section only; PR 2 production is out of scope)
 
 ---
 
 ## Tasks
 
-### GEN-01 — Move active-game props from generate page to show page (backend)
+### COL-01 — Create InventorySection enum and colony_templates metadata migration
 
-**Effort:** M
+**Effort:** S
 **Dependencies:** None
 
-**Problem:** The generate page currently serves `members` and `reportTurn` props that belong on the show page. The show page needs these props (plus `homeSystems` for empire assignment) when the game is active.
+**Problem:** `ColonyTemplate` has no columns for `sol`, `birth_rate`, or `death_rate`. There is no enum representing the four inventory sections.
 
-**Files to modify:**
-- `app/Http/Controllers/GameGenerationController.php` — remove `members` and `reportTurn` from the `show()` Inertia props
-- `app/Http/Controllers/GameController.php` — add active-game props to `show()`:
-  - `empireMembers` — player members with their empire assignments (reimplement `GenerationPagePresenter::membersList()` logic)
-  - `empireHomeSystems` — home systems with empire counts (reimplement `GenerationPagePresenter::homeSystemsList()` logic)
-  - `reportTurn` — current turn payload (reimplement `GenerationPagePresenter::reportTurnPayload()` logic)
-  - Wrap all three in a conditional: only compute when `$game->isActive()`
-- `app/Support/GameGeneration/GenerationPagePresenter.php` — no changes yet (cleanup in GEN-08)
+**Files to create:**
+- `app/Enums/InventorySection.php` — string-backed enum with cases: `SuperStructure = 'super_structure'`, `Structure = 'structure'`, `Operational = 'operational'`, `Cargo = 'cargo'`
+- Migration: add `sol` (real, default 0.0), `birth_rate` (real, default 0.0), `death_rate` (real, default 0.0) to `colony_templates` table
 
-**Important:** Use distinct prop names (`empireMembers`, `empireHomeSystems`) to avoid colliding with the existing `members` prop on the show page. The `Game` type on the show page also needs `can_assign_empires` and `can_generate_reports` — add these to the `game` prop in `GameController::show()`.
+**Conventions:** Check existing enums in `app/Enums/` for style (e.g., `ColonyKind.php`). Use `php artisan make:migration` and `php artisan make:enum` (or create manually matching sibling style).
 
 **Acceptance:**
-- [x] `GET /games/{id}/generate` response no longer includes `members` or `reportTurn` props
-- [x] `GET /games/{id}` response includes `empireMembers`, `empireHomeSystems`, and `reportTurn` when game is active
-- [x] `GET /games/{id}` response does NOT include `empireMembers`, `empireHomeSystems`, or `reportTurn` when game is inactive
-- [x] `setupReport` behavior is unchanged
-- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
+- [x] `InventorySection` enum exists with exactly 4 cases and correct string values
+- [x] Migration adds 3 float columns with defaults to `colony_templates`
+- [x] `php artisan test --compact --filter=ColonyTemplateModelTest`
 - [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
-### GEN-02 — Add Empires and Turn Reports tabs to the game show page (frontend)
-
-**Effort:** M
-**Dependencies:** GEN-01
-
-**Problem:** Empires and Turn Reports need to appear as tabs on the show page for active games. The show page currently only has a Members tab and a Generate link.
-
-**Files to modify:**
-- `resources/js/pages/games/show.tsx` — extend `type Tab` to `'members' | 'empires' | 'turn-reports'`; add tab buttons for Empires and Turn Reports (only render when `game.is_active`); render `EmpiresSection` and `TurnReportsSection` in the corresponding tab panels; add the necessary type imports and prop declarations for `empireMembers`, `empireHomeSystems`, `reportTurn`
-- `resources/js/pages/games/generate/types.ts` — no changes needed (types are already exported and can be imported by `show.tsx`)
-
-**Reuse existing components:** Import `EmpiresSection` from `./generate/EmpiresSection` and `TurnReportsSection` from `./generate/TurnReportsSection`. These components accept `game`, `members`/`homeSystems`/`reportTurn` props — map the show page's `empireMembers` → `members` and `empireHomeSystems` → `homeSystems` when passing props.
-
-**Note:** The `Game` type in `show.tsx` needs to be extended with `can_assign_empires: boolean` and `can_generate_reports: boolean` (or import the `Game` type from `generate/types.ts` and merge). Keep the existing Generate link as navigation. Leave the Setup Report section outside the tabs.
-
-**Acceptance:**
-- [x] Inactive game show page: only Members tab visible, no Empires or Turn Reports tabs
-- [x] Active game show page: Members, Empires, and Turn Reports tabs all render
-- [x] Switching tabs does not trigger a server visit
-- [x] Empires tab renders assignments and assignment/reassignment actions
-- [x] Turn Reports tab renders generate/lock buttons and report links
-- [x] Generate link still navigates to `/games/{id}/generate`
-- [x] Setup Report section still appears for players as before
-- [x] `bun run build` succeeds
-
----
-
-### GEN-03 — Convert generate page from linear layout to 5 tabs (frontend)
-
-**Effort:** M
-**Dependencies:** GEN-01
-
-**Problem:** The generate page renders all sections in a single scrollable column. It needs 5 client-side tabs.
-
-**Files to modify:**
-- `resources/js/pages/games/generate.tsx` — remove `EmpiresSection` and `TurnReportsSection` imports/usages; remove `members` and `reportTurn` from the component props; add `useState` for tab selection with type `'templates' | 'stars' | 'planets' | 'deposits' | 'home-systems'`; render 5 tab buttons following the existing pattern from `show.tsx` lines 152–173; render one panel at a time based on active tab:
-  - **Templates:** `PrngSeedSection` + `HomeSystemTemplateSection` + `ColonyTemplateSection`
-  - **Stars:** `StarsSection` (keep existing `Deferred` wrapper)
-  - **Planets:** `PlanetsSection` (keep existing `Deferred` wrapper)
-  - **Deposits:** `DepositsSection`
-  - **Home Systems:** `HomeSystemsSection` + `ActivateSection`
-- Keep the delete-step confirmation dialog at page root, outside any tab panel
-- Keep the `deleteConfig`, `deleteForm`, `handleDeleteConfirm` logic unchanged
-
-**Acceptance:**
-- [x] Generate page shows exactly 5 tab buttons
-- [x] Only one panel's content is shown at a time
-- [x] Templates tab contains PRNG Seed, Home System Template, and Colony Template sections
-- [x] Home Systems tab contains both Home Systems and Activate sections
-- [x] No Empires or Turn Reports content on the generate page
-- [x] Delete confirmation dialog works from Stars, Planets, Deposits, and Home Systems tabs
-- [x] `bun run build` succeeds
-
----
-
-### GEN-04 — Add disabled-tab states and read-only PRNG seed context
+### COL-02 — Migration: restructure inventory columns on all 3 tables
 
 **Effort:** S
-**Dependencies:** GEN-03
+**Dependencies:** COL-01
 
-**Problem:** Tabs for unreachable steps should be visible but disabled. Generator tabs (Stars, Planets, Deposits) should display the PRNG seed value as read-only context.
+**Problem:** `colony_template_items`, `colony_inventory`, and `turn_report_colony_inventory` all use `quantity_assembled`/`quantity_disassembled`. These need to be replaced with `quantity` (integer) + `inventory_section` (string, default `'operational'`).
 
-**Files to modify:**
-- `resources/js/pages/games/generate.tsx` — add tab enablement logic based on `game` status/capability flags:
-  - `templates`: always enabled
-  - `stars`: enabled when `game.can_generate_stars` OR stars already exist (i.e., status is past `setup`)
-  - `planets`: enabled when `game.can_generate_planets` OR planets already exist (status is past `stars_generated`)
-  - `deposits`: enabled when `game.can_generate_deposits` OR deposits already exist (status is past `planets_generated`)
-  - `home-systems`: enabled when `game.can_create_home_systems` OR `game.can_activate` OR `game.can_assign_empires`
-  
-  Disabled tabs: `opacity-50 cursor-not-allowed`, clicking does nothing. Prevent selecting a disabled tab.
-- `resources/js/pages/games/generate/StarsSection.tsx` — add a read-only display of `game.prng_seed` (e.g., `<p className="text-sm text-muted-foreground font-mono">Seed: {game.prng_seed}</p>`) above the existing content. The Stars section already has a "Seed override" input field — this read-only display provides context.
-- `resources/js/pages/games/generate/PlanetsSection.tsx` — add same read-only seed display
-- `resources/js/pages/games/generate/DepositsSection.tsx` — add same read-only seed display
+**Files to create:**
+- One migration that alters all 3 tables:
+  1. Add `inventory_section` (string, default `'operational'`) to each table
+  2. Add `quantity` (integer, default 0) to each table
+  3. Backfill: `quantity = quantity_assembled + quantity_disassembled` on all existing rows
+  4. Drop `quantity_assembled` and `quantity_disassembled` from each table
+
+**Important:** The test suite uses SQLite with transactions. `Schema::disableForeignKeyConstraints()` is a no-op inside a transaction — if needed, use `DB::statement('PRAGMA defer_foreign_keys = ON')` instead. However, since we're only adding/dropping columns (no FK changes), this shouldn't be an issue.
 
 **Acceptance:**
-- [x] All 5 generate tabs are always visible
-- [x] Unreachable tabs have `opacity-50 cursor-not-allowed` styling and cannot be selected
-- [x] Setup-status game: Templates and Stars enabled; Planets, Deposits, Home Systems disabled
-- [x] Stars-generated game: Templates, Stars, Planets enabled; Deposits, Home Systems disabled
-- [x] Planets-generated game: Templates through Deposits enabled; Home Systems disabled
-- [x] Deposits-generated game: all tabs enabled
-- [x] Stars, Planets, and Deposits panels each show `game.prng_seed` as read-only text
-- [x] `bun run build` succeeds
+- [ ] All 3 tables have `inventory_section` and `quantity` columns
+- [ ] All 3 tables no longer have `quantity_assembled` or `quantity_disassembled` columns
+- [ ] `php artisan migrate:fresh` succeeds
+- [ ] `vendor/bin/pint --dirty --format agent`
 
 ---
 
-### GEN-05 — Make tab selection query-param-backed on both pages
+### COL-03 — Update models and casts for new columns
+
+**Effort:** S
+**Dependencies:** COL-02
+
+**Problem:** Four models reference the old columns and lack the new ones.
+
+**Files to modify:**
+- `app/Models/ColonyTemplate.php` — add `sol`, `birth_rate`, `death_rate` to `$fillable`; add casts: `sol` → `float`, `birth_rate` → `float`, `death_rate` → `float`
+- `app/Models/ColonyTemplateItem.php` — replace `quantity_assembled`, `quantity_disassembled` with `quantity` in `$fillable`; add `inventory_section` to `$fillable`; add cast: `inventory_section` → `InventorySection`
+- `app/Models/ColonyInventory.php` — same changes as `ColonyTemplateItem`
+- `app/Models/TurnReportColonyInventory.php` — same changes as `ColonyTemplateItem`
+
+**Conventions:** Check `Colony.php` for cast style — it already casts `sol`, `birth_rate`, `death_rate` to float. Match that pattern.
+
+**Acceptance:**
+- [ ] All 4 models compile without errors (`php artisan tinker --execute 'new \App\Models\ColonyTemplate;'`)
+- [ ] `ColonyTemplateItem`, `ColonyInventory`, `TurnReportColonyInventory` all cast `inventory_section` to `InventorySection`
+- [ ] No references to `quantity_assembled` or `quantity_disassembled` remain in any of the 4 model files
+- [ ] `vendor/bin/pint --dirty --format agent`
+
+---
+
+### COL-04 — Update factories for new columns
+
+**Effort:** S
+**Dependencies:** COL-03
+
+**Problem:** Four factories generate `quantity_assembled`/`quantity_disassembled`. The `GameFactory` uses old `operational`/`stored` inventory keys.
+
+**Files to modify:**
+- `database/factories/ColonyTemplateFactory.php` — add `sol`, `birth_rate`, `death_rate` with sensible defaults (e.g., `1.0`, `0.0625`, `0.0625`)
+- `database/factories/ColonyTemplateItemFactory.php` — replace `quantity_assembled`/`quantity_disassembled` with `quantity`; add `inventory_section` defaulting to `InventorySection::Operational`
+- `database/factories/ColonyInventoryFactory.php` — same: replace qty columns with `quantity`; add `inventory_section` defaulting to `InventorySection::Operational`
+- `database/factories/TurnReportColonyInventoryFactory.php` — same pattern
+- `database/factories/GameFactory.php` — update the `createWithFullGeneration` or similar method that builds colony template items: replace `quantity_assembled`/`quantity_disassembled` with `quantity`; replace `operational`/`stored` inventory key references with section-based logic using `inventory_section`
+
+**Acceptance:**
+- [ ] No references to `quantity_assembled`, `quantity_disassembled`, or old `stored` key remain in any factory
+- [ ] Each factory produces valid model instances (verify with `php artisan tinker --execute 'App\Models\ColonyTemplateItem::factory()->make()->toArray();'`)
+- [ ] `vendor/bin/pint --dirty --format agent`
+
+---
+
+### COL-05 — Update ImportColonyTemplates action
 
 **Effort:** M
-**Dependencies:** GEN-02, GEN-03
+**Dependencies:** COL-03
 
-**Problem:** Tab state needs to survive page reloads and Inertia redirects. Use `?tab=` query params with `history.replaceState`.
+**Problem:** `ImportColonyTemplates` reads the old `operational`/`stored` inventory keys and writes `quantity_assembled`/`quantity_disassembled`. It doesn't read `sol`, `birth-rate-pct`, or `death-rate-pct`. It doesn't handle empty population (CSHP).
 
 **Files to modify:**
-- `resources/js/pages/games/generate.tsx`:
-  - On mount, parse `?tab=` from `window.location.search` into `useState` initial value
-  - If the parsed tab is invalid or disabled, fall back to the latest reachable tab (or `templates`)
-  - On tab click, update local state AND call `window.history.replaceState(null, '', newUrl)` to update `?tab=` without triggering a navigation
-- `resources/js/pages/games/show.tsx`:
-  - Same pattern: parse `?tab=` on mount, fall back to `members`
-  - On tab click, update state and `replaceState`
-  - Invalid values like `?tab=empires` on inactive games fall back to `members`
+- `app/Actions/GameGeneration/ImportColonyTemplates.php`:
+  1. Read `sol`, `birth-rate-pct`, `death-rate-pct` from each template object and store as `sol`, `birth_rate`, `death_rate` on the `ColonyTemplate`
+  2. Make population import conditional — if `population` is an empty array, skip population creation (CSHP has no population)
+  3. Replace the inventory import logic: iterate over the 4 section keys (`super-structure`, `structure`, `operational`, `cargo`), map each JSON key to the `InventorySection` enum (`super-structure` → `SuperStructure`, etc.), and create `ColonyTemplateItem` records with `inventory_section` and `quantity` (not the old `quantity_assembled`/`quantity_disassembled`)
+  4. Remove any references to old `stored` key or `quantity_assembled`/`quantity_disassembled`
+
+**Key mapping (JSON key → enum case):**
+- `super-structure` → `InventorySection::SuperStructure`
+- `structure` → `InventorySection::Structure`
+- `operational` → `InventorySection::Operational`
+- `cargo` → `InventorySection::Cargo`
 
 **Acceptance:**
-- [x] Reloading the page preserves the selected tab
-- [x] Copy/pasting the URL opens the correct tab
-- [x] Invalid `?tab=` values do not break the page (falls back to default)
-- [x] Disabled generate tabs cannot become the active panel via URL manipulation
-- [x] Show page accepts `?tab=empires` and `?tab=turn-reports` on active games
-- [x] Client-side tab switching does not cause an Inertia visit
-- [x] `bun run build` succeeds
+- [ ] Importing `sample-data/beta/colony-template.json` creates 3 `ColonyTemplate` records (COPN, CORB, CSHP)
+- [ ] COPN template has `sol=1.0`, `birth_rate=0.0625`, `death_rate=0.0625`
+- [ ] CSHP template has 0 population records
+- [ ] COPN template items span all 4 inventory sections
+- [ ] All template items use `quantity` (no `quantity_assembled`/`quantity_disassembled`)
+- [ ] No references to `stored`, `quantity_assembled`, or `quantity_disassembled` remain in the file
+- [ ] `vendor/bin/pint --dirty --format agent`
 
 ---
 
-### GEN-06 — Redirect successful generation actions to the next logical tab
-
-**Effort:** S
-**Dependencies:** GEN-05
-
-**Problem:** After completing a generation step, the user should land on the next tab automatically instead of staying on the current one.
-
-**Files to modify:**
-- `app/Http/Controllers/GameGeneration/GenerationStepController.php`:
-  - `generateStars()` — change `return back()` to `return redirect()->to(route('games.generate.show', $game) . '?tab=planets')->with('success', ...)`
-  - `generatePlanets()` — redirect to `?tab=deposits`
-  - `generateDeposits()` — redirect to `?tab=home-systems`
-- `app/Http/Controllers/GameGenerationController.php`:
-  - `activate()` — change `return back()` to `return redirect()->route('games.show', $game, ['tab' => 'empires'])->with('success', ...)`
-
-**Keep `return back()` for:** template uploads, star edits, planet edits, delete-step, home system creation, empire assignment/reassignment, report actions. These should stay on the current tab (the `?tab=` in the referer URL handles this naturally).
-
-**Acceptance:**
-- [x] After Stars generation → user lands on Planets tab (`?tab=planets`)
-- [x] After Planets generation → user lands on Deposits tab (`?tab=deposits`)
-- [x] After Deposits generation → user lands on Home Systems tab (`?tab=home-systems`)
-- [x] After game activation → user lands on game show page Empires tab (`?tab=empires`)
-- [x] Template uploads, edits, and deletes still return to the current tab
-- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerActivateTest.php`
-- [x] `vendor/bin/pint --dirty --format agent`
-
----
-
-### GEN-07 — Update feature tests for the new page responsibilities
+### COL-06 — Update UploadColonyTemplateRequest validation
 
 **Effort:** M
-**Dependencies:** GEN-01 through GEN-06
+**Dependencies:** COL-01
 
-**Problem:** Existing tests assert props on the wrong pages now. Redirect assertions need updating for the new `?tab=` behavior.
-
-**Files to modify:**
-- `tests/Feature/GameGenerationControllerTest.php`:
-  - Remove assertions that `/generate` response includes `members`
-  - Remove assertions that `/generate` response includes `reportTurn`
-  - Update any redirect assertions that now target `?tab=` URLs
-- `tests/Feature/GameGenerationReportPropsTest.php`:
-  - Repoint active-game empire/report prop assertions from `GET /games/{id}/generate` to `GET /games/{id}`
-  - Update prop names: `members` → `empireMembers`, add `empireHomeSystems`
-  - Assert `reportTurn.can_generate`, `reportTurn.can_lock`, `empireMembers[*].empire.has_report`
-- `tests/Feature/GameGenerationControllerActivateTest.php`:
-  - Update redirect assertion: activation should redirect to `/games/{id}?tab=empires`
-- `tests/Feature/GameShowSetupReportTest.php`:
-  - Verify `setupReport` behavior is unchanged
-  - Optionally add assertions for the new active-game props (`empireMembers`, `empireHomeSystems`, `reportTurn`)
-
-**Acceptance:**
-- [x] All generate page tests no longer expect moved props (`members`, `reportTurn`)
-- [x] Active-game empire/report props are covered on the show route
-- [x] Redirect-to-next-tab behavior is covered
-- [x] Setup report tests still pass unchanged
-- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationControllerActivateTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameGenerationControllerCreateHomeSystemTest.php tests/Feature/GameGenerationControllerDeleteStepTest.php tests/Feature/GameGenerationControllerUpdatePlanetTest.php tests/Feature/GameGenerationControllerUpdateStarTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
-- [x] `vendor/bin/pint --dirty --format agent`
-
----
-
-### GEN-08 — Clean up dead presenter code and unused imports
-
-**Effort:** S
-**Dependencies:** GEN-07
-
-**Problem:** After the refactor, `GenerationPagePresenter` still has methods and imports that are no longer used by the generate page.
+**Problem:** The request validates `operational` and `stored` inventory keys. It needs to validate the 4 new section keys and accept empty population for CSHP.
 
 **Files to modify:**
-- `app/Support/GameGeneration/GenerationPagePresenter.php`:
-  - Remove `membersList()` method
-  - Remove `reportTurnPayload()` method
-  - Remove unused imports: `TurnStatus`, `TurnReport`
-  - Keep `homeSystemsList()` — still used by the generate page
-  - Keep `availableStarsList()` — still used by the generate page
+- `app/Http/Requests/UploadColonyTemplateRequest.php`:
+  1. Accept `CSHP` in kind validation (verify it's already accepted — `ColonyKind` has `Ship = 'CSHP'`)
+  2. Validate `sol`, `birth-rate-pct`, `death-rate-pct` as required numerics
+  3. Replace `inventory.operational` and `inventory.stored` validation with: `inventory.super-structure`, `inventory.structure`, `inventory.operational`, `inventory.cargo` — each should be an optional array of items; reject unknown keys under `inventory`
+  4. Require at least one item across all 4 sections combined
+  5. Allow `population` to be an empty array (CSHP has `"population": []`)
+  6. Remove all references to `stored`
 
 **Acceptance:**
-- [x] No unused methods remain in `GenerationPagePresenter`
-- [x] No controller references removed methods
-- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameShowSetupReportTest.php`
-- [x] `vendor/bin/pint --dirty --format agent`
+- [ ] CSHP template with empty population and inventory-only passes validation
+- [ ] Template missing `sol` or `birth-rate-pct` or `death-rate-pct` fails validation
+- [ ] Template with unknown inventory key (e.g., `inventory.weapons`) fails validation
+- [ ] Template with no items in any inventory section fails validation
+- [ ] Existing COPN/CORB templates still pass validation
+- [ ] `vendor/bin/pint --dirty --format agent`
 
 ---
 
-### GEN-09 — Move HomeSystemTemplateSection from Templates tab to Home Systems tab
+### COL-07 — Update EmpireCreator service
 
 **Effort:** S
-**Dependencies:** GEN-03
+**Dependencies:** COL-03
 
-**Problem:** The Home System Template is only relevant when configuring home systems. Showing it on the Templates tab adds clutter; it belongs on the Home Systems tab where it provides context for home system creation.
+**Problem:** `EmpireCreator` copies template items to `ColonyInventory` using `quantity_assembled`/`quantity_disassembled`. It doesn't copy `sol`, `birth_rate`, `death_rate` from template to `Colony`. It doesn't copy `inventory_section`.
 
-**Files modified:**
-- `resources/js/pages/games/generate.tsx` — removed `HomeSystemTemplateSection` from the Templates tab panel and added it to the Home Systems tab panel (above `HomeSystemsSection`)
+**Files to modify:**
+- `app/Services/EmpireCreator.php`:
+  1. In `createColonies()` (or wherever colonies are created from templates): copy `sol`, `birth_rate`, `death_rate` from `ColonyTemplate` to the `Colony` record
+  2. In the inventory copy logic: replace `quantity_assembled`/`quantity_disassembled` mapping with `quantity` and `inventory_section`
+  3. Handle templates with empty population (CSHP) — skip `ColonyPopulation::insert` if the template has no population records
 
 **Acceptance:**
-- [x] Templates tab no longer renders `HomeSystemTemplateSection`
-- [x] Home Systems tab renders `HomeSystemTemplateSection` above `HomeSystemsSection`
-- [x] `bun run build` succeeds
+- [ ] Created colonies have `sol`, `birth_rate`, `death_rate` matching their template
+- [ ] Created `ColonyInventory` records have `inventory_section` and `quantity` (not old columns)
+- [ ] CSHP-based colonies have 0 `ColonyPopulation` records
+- [ ] No references to `quantity_assembled` or `quantity_disassembled` remain in the file
+- [ ] `vendor/bin/pint --dirty --format agent`
 
 ---
 
-### GEN-10 — Move ColonyTemplateSection from generate page to show page Empires tab
+### COL-08 — Update SetupReportGenerator and TurnReportJsonExporter
+
+**Effort:** S
+**Dependencies:** COL-03
+
+**Problem:** `SetupReportGenerator` copies `quantity_assembled`/`quantity_disassembled` from `ColonyInventory` to `TurnReportColonyInventory`. `TurnReportJsonExporter` exports those old columns.
+
+**Files to modify:**
+- `app/Services/SetupReportGenerator.php` — update the inventory copy to use `quantity` and `inventory_section` instead of `quantity_assembled`/`quantity_disassembled`
+- `app/Support/TurnReports/TurnReportJsonExporter.php` — export `quantity` and `inventory_section` instead of the old columns
+
+**Acceptance:**
+- [ ] `TurnReportColonyInventory` records created by `SetupReportGenerator` have `quantity` and `inventory_section`
+- [ ] JSON export includes `quantity` and `inventory_section`, not `quantity_assembled`/`quantity_disassembled`
+- [ ] No references to `quantity_assembled` or `quantity_disassembled` remain in either file
+- [ ] `vendor/bin/pint --dirty --format agent`
+
+---
+
+### COL-09 — Update model and migration tests
 
 **Effort:** M
-**Dependencies:** GEN-09
+**Dependencies:** COL-04
 
-**Problem:** The Colony Template defines starting colonies for empires and is only relevant once the game is active and empires are being assigned. It belongs on the show page's Empires tab rather than the generate page's Templates tab.
+**Problem:** Tests for `ColonyTemplateItem`, `ColonyInventory`, `TurnReportColonyInventory`, and `ColonyTemplate` reference the old columns.
 
-**Files modified:**
-- `app/Http/Controllers/GameGenerationController.php` — removed `colonyTemplate` prop
-- `app/Http/Controllers/GameController.php` — added `colonyTemplate` prop (active games only, via `GenerationPagePresenter::colonyTemplateSummary()`)
-- `resources/js/pages/games/generate.tsx` — removed `ColonyTemplateSection` import, prop, and rendering
-- `resources/js/pages/games/show.tsx` — imported `ColonyTemplateSection` and renders it in the Empires tab above `EmpiresSection`; added `colonyTemplate` prop
-- `tests/Feature/GameGenerationControllerTest.php` — removed `colonyTemplate` assertions from generate page
-- `tests/Feature/GameGenerationReportPropsTest.php` — added 3 tests: `colonyTemplate` present on show (active), missing on show (inactive), missing on generate
+**Files to modify:**
+- `tests/Feature/Models/ColonyTemplateItemModelTest.php` — replace `quantity_assembled`/`quantity_disassembled` assertions with `quantity` + `inventory_section`
+- `tests/Feature/Models/ColonyInventoryModelTest.php` — same
+- `tests/Feature/Models/ColonyTemplateModelTest.php` — add assertions for `sol`, `birth_rate`, `death_rate`; update any template item assertions
+- `tests/Feature/Database/Migrations/RebuildColonyInventoryAndTemplatesMigrationTest.php` — this tests the old rebuild migration; update assertions to match new column structure (the old migration still runs, but the new migration follows it and changes the columns)
 
 **Acceptance:**
-- [x] `GET /games/{id}/generate` no longer includes `colonyTemplate` prop
-- [x] `GET /games/{id}` includes `colonyTemplate` when game is active
-- [x] `GET /games/{id}` does NOT include `colonyTemplate` when game is inactive
-- [x] Empires tab on show page renders `ColonyTemplateSection` above `EmpiresSection`
-- [x] Templates tab on generate page no longer renders `ColonyTemplateSection`
-- [x] `php artisan test --compact tests/Feature/GameGenerationControllerTest.php tests/Feature/GameGenerationReportPropsTest.php`
-- [x] `vendor/bin/pint --dirty --format agent`
-- [x] `bun run build` succeeds
+- [ ] All model tests pass: `php artisan test --compact tests/Feature/Models/ColonyTemplateModelTest.php tests/Feature/Models/ColonyTemplateItemModelTest.php tests/Feature/Models/ColonyInventoryModelTest.php`
+- [ ] Migration test passes: `php artisan test --compact tests/Feature/Database/Migrations/`
+- [ ] `vendor/bin/pint --dirty --format agent`
 
 ---
 
-### GEN-11 — Fix ColonyTemplateSection rendering gate on show page
+### COL-10 — Update importer and validation tests
 
-**Effort:** S
-**Dependencies:** GEN-10
+**Effort:** M
+**Dependencies:** COL-05, COL-06
 
-**Problem:** `ColonyTemplateSection` was inside the `empireMembers && empireHomeSystems` guard on the Empires tab, so it never rendered when those props were absent (e.g., no players assigned or no home systems created). The colony template uploader should only require the game to be active.
+**Problem:** Tests for `ImportColonyTemplates` and `UploadColonyTemplateRequest` use old inventory structure and don't test new metadata or CSHP.
 
-**Files modified:**
-- `resources/js/pages/games/show.tsx` — moved `ColonyTemplateSection` outside the `empireMembers && empireHomeSystems` guard; `EmpiresSection` retains its own guard
+**Files to modify:**
+- Tests for `ImportColonyTemplates` (find with `grep -r ImportColonyTemplates tests/`):
+  - Update test JSON fixtures to use 4-section inventory format
+  - Add test: importing creates templates with `sol`, `birth_rate`, `death_rate`
+  - Add test: CSHP template with empty population imports successfully
+  - Add test: items have correct `inventory_section` values
+  - Remove assertions on `quantity_assembled`/`quantity_disassembled`
+- `tests/Feature/UploadColonyTemplateValidationTest.php`:
+  - Update test fixtures from `operational`/`stored` to 4-section format
+  - Add tests for `sol`, `birth-rate-pct`, `death-rate-pct` validation
+  - Add test: CSHP with empty population passes
+  - Add test: unknown inventory section key fails
+  - Remove `stored` references
 
 **Acceptance:**
-- [x] Empires tab renders `ColonyTemplateSection` when game is active, regardless of players or home systems
-- [x] `EmpiresSection` still only renders when `empireMembers` and `empireHomeSystems` are present
-- [x] `bun run build` succeeds
+- [ ] `php artisan test --compact --filter=ImportColonyTemplate`
+- [ ] `php artisan test --compact --filter=UploadColonyTemplate`
+- [ ] `vendor/bin/pint --dirty --format agent`
+
+---
+
+### COL-11 — Update EmpireCreator, report, and generation tests
+
+**Effort:** M
+**Dependencies:** COL-07, COL-08
+
+**Problem:** Tests for `EmpireCreator`, `SetupReportGenerator`, turn report models, and game generation reference old columns.
+
+**Files to modify:**
+- `tests/Feature/EmpireCreatorTest.php` — replace `quantity_assembled`/`quantity_disassembled` with `quantity` + `inventory_section`; add assertions for `sol`, `birth_rate`, `death_rate` on created colonies; add test for CSHP with empty population
+- `tests/Feature/Services/SetupReportGeneratorTest.php` — replace old column references with `quantity` + `inventory_section`
+- `tests/Feature/Reports/TurnReportSchemaTest.php` — update schema assertions for new columns
+- `tests/Feature/Reports/TurnReportModelTest.php` — update column references
+- `tests/Feature/GameGenerationReportPropsTest.php` — update column references
+- `tests/Feature/GameGenerationControllerEmpireTest.php` — update column references
+- `tests/Feature/GameShowSetupReportTest.php` — update column references
+- `tests/Feature/GameGenerationControllerTest.php` — update any colony template fixtures
+
+**Acceptance:**
+- [ ] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
+- [ ] `php artisan test --compact tests/Feature/Services/SetupReportGeneratorTest.php`
+- [ ] `php artisan test --compact tests/Feature/Reports/`
+- [ ] `php artisan test --compact tests/Feature/GameGenerationReportPropsTest.php tests/Feature/GameGenerationControllerEmpireTest.php tests/Feature/GameShowSetupReportTest.php tests/Feature/GameGenerationControllerTest.php`
+- [ ] `vendor/bin/pint --dirty --format agent`
+
+---
+
+### COL-12 — Update documentation and sample data
+
+**Effort:** S
+**Dependencies:** COL-08
+
+**Problem:** Docs and sample data reference `quantity_assembled`/`quantity_disassembled` and old inventory structure.
+
+**Files to modify:**
+- `docs/SETUP_REPORT.md` — replace `quantity_assembled`/`quantity_disassembled` references with `quantity` + `inventory_section`
+- `docs/GENERATORS.md` — update example JSON to show new column names
+- `site/docs/content/developers/reference/terminology.md` — update or remove `quantity_assembled`/`quantity_disassembled` definitions; add `inventory_section` and `quantity`
+- `site/docs/content/developers/explanation/assembly-required-units.md` — update references to old column semantics
+- `site/blog/content/docs-unit-codes-and-inventory-model.md` — update column references
+- `sample-data/beta/5/report-4-turn-0-empire-5.json` — update inventory entries to use `quantity` + `inventory_section`
+- `sample-data/beta/5/report-4-turn-0-empire-5.csv` — update header and data rows
+
+**Acceptance:**
+- [ ] `grep -r 'quantity_assembled\|quantity_disassembled' docs/ site/ sample-data/` returns no matches
+- [ ] Documentation accurately describes the new 4-section inventory model
 
 ---
 
@@ -349,24 +321,23 @@ The existing **Generate** link remains as navigation to the generate page. The *
 Tasks should be completed in this order. Tasks at the same indentation level can be parallelized.
 
 ```
-GEN-01  (backend prop split)
+COL-01  (InventorySection enum + colony_templates metadata migration)
 
-  GEN-02  (show page: Empires + Turn Reports tabs)      ← parallel
-  GEN-03  (generate page: 5 tabs)                       ← parallel
+COL-02  (restructure inventory columns on 3 tables)           ← after COL-01
 
-GEN-04  (disabled tabs + read-only seed)                 ← after GEN-03
+COL-03  (update models and casts)                              ← after COL-02
 
-GEN-05  (query-param tab persistence)                    ← after GEN-02 + GEN-03
+  COL-04  (update factories)                                   ← parallel
+  COL-05  (update ImportColonyTemplates)                       ← parallel
+  COL-06  (update UploadColonyTemplateRequest)                 ← parallel (only needs COL-01)
+  COL-07  (update EmpireCreator)                               ← parallel
+  COL-08  (update SetupReportGenerator + exporter)             ← parallel
 
-GEN-06  (redirect to next tab)                           ← after GEN-05
+COL-09  (model + migration tests)                              ← after COL-04
 
-GEN-07  (update feature tests)                           ← after GEN-01 through GEN-06
+COL-10  (importer + validation tests)                          ← after COL-05, COL-06
 
-GEN-08  (cleanup dead code)                              ← after GEN-07
+COL-11  (EmpireCreator, report, generation tests)              ← after COL-07, COL-08
 
-GEN-09  (move HomeSystemTemplate to Home Systems tab)    ← after GEN-03
-
-GEN-10  (move ColonyTemplate to show page Empires tab)   ← after GEN-09
-
-GEN-11  (fix ColonyTemplate rendering gate)              ← after GEN-10
+COL-12  (documentation + sample data)                          ← after COL-08
 ```
