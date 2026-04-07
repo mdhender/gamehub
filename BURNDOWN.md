@@ -497,12 +497,12 @@ Key rules from the reconciled plan/sample data:
 6. Allow `production.mines` key to exist without deep validation (PR 4)
 
 **Acceptance:**
-- [ ] A valid farm group passes validation
-- [ ] A non-`FRM-\d+` farm unit fails validation
-- [ ] A farm unit with stage outside `1..4` fails validation
-- [ ] Templates with an empty `production: []` pass validation
-- [ ] The sample data file passes validation with both factories and farms present
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] A valid farm group passes validation
+- [x] A non-`FRM-\d+` farm unit fails validation
+- [x] A farm unit with stage outside `1..4` fails validation
+- [x] Templates with an empty `production: []` pass validation
+- [x] The sample data file passes validation with both factories and farms present
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

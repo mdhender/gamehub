@@ -158,6 +158,14 @@ class UploadColonyTemplateRequest extends FormRequest
                                     $this->validateFactoryGroups($validator, $prefix, $production['factories'], $validUnitCodes);
                                 }
                             }
+
+                            if (isset($production['farms'])) {
+                                if (! is_array($production['farms'])) {
+                                    $validator->errors()->add('template', "{$prefix}: 'production.farms' must be an array.");
+                                } else {
+                                    $this->validateFarmGroups($validator, $prefix, $production['farms']);
+                                }
+                            }
                         }
                     }
 
@@ -330,6 +338,52 @@ class UploadColonyTemplateRequest extends FormRequest
 
                     if (! isset($wip[$quarter]['quantity']) || ! is_int($wip[$quarter]['quantity']) || $wip[$quarter]['quantity'] < 0) {
                         $validator->errors()->add('template', "{$qPrefix}: 'quantity' must be an integer >= 0.");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, mixed>  $farms
+     */
+    private function validateFarmGroups(Validator $validator, string $prefix, array $farms): void
+    {
+        foreach ($farms as $j => $group) {
+            $gPrefix = "{$prefix} farm group #".($j + 1);
+
+            if (! is_array($group)) {
+                $validator->errors()->add('template', "{$gPrefix}: must be an object.");
+
+                continue;
+            }
+
+            if (! isset($group['group']) || ! is_int($group['group'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'group' is required and must be an integer.");
+            }
+
+            if (! isset($group['units']) || ! is_array($group['units'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'units' is required and must be an array.");
+            } else {
+                foreach ($group['units'] as $k => $unit) {
+                    $uPrefix = "{$gPrefix} unit #".($k + 1);
+
+                    if (! isset($unit['unit']) || ! is_string($unit['unit'])) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'unit' is required.");
+
+                        continue;
+                    }
+
+                    if (! preg_match('/^FRM-\d+$/', $unit['unit'])) {
+                        $validator->errors()->add('template', "{$uPrefix}: farm unit must be FRM-<tech_level> (e.g. FRM-1).");
+                    }
+
+                    if (isset($unit['quantity']) && (! is_int($unit['quantity']) || $unit['quantity'] < 0)) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'quantity' must be an integer >= 0.");
+                    }
+
+                    if (! isset($unit['stage']) || ! is_int($unit['stage']) || $unit['stage'] < 1 || $unit['stage'] > 4) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'stage' is required and must be an integer between 1 and 4.");
                     }
                 }
             }
