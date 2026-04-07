@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['game_id', 'kind', 'tech_level'])]
+#[Fillable(['game_id', 'kind', 'tech_level', 'sol', 'birth_rate', 'death_rate'])]
 class ColonyTemplate extends Model
 {
     /** @use HasFactory<ColonyTemplateFactory> */
@@ -23,6 +23,9 @@ class ColonyTemplate extends Model
     {
         return [
             'kind' => ColonyKind::class,
+            'sol' => 'float',
+            'birth_rate' => 'float',
+            'death_rate' => 'float',
         ];
     }
 

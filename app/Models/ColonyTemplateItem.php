@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InventorySection;
 use App\Enums\UnitCode;
 use Database\Factories\ColonyTemplateItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['colony_template_id', 'unit', 'tech_level', 'quantity_assembled', 'quantity_disassembled'])]
+#[Fillable(['colony_template_id', 'unit', 'tech_level', 'quantity', 'inventory_section'])]
 class ColonyTemplateItem extends Model
 {
     /** @use HasFactory<ColonyTemplateItemFactory> */
@@ -24,6 +25,7 @@ class ColonyTemplateItem extends Model
     {
         return [
             'unit' => UnitCode::class,
+            'inventory_section' => InventorySection::class,
         ];
     }
 

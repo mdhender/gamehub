@@ -94,10 +94,10 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 **Conventions:** Check `Colony.php` for cast style — it already casts `sol`, `birth_rate`, `death_rate` to float. Match that pattern.
 
 **Acceptance:**
-- [ ] All 4 models compile without errors (`php artisan tinker --execute 'new \App\Models\ColonyTemplate;'`)
-- [ ] `ColonyTemplateItem`, `ColonyInventory`, `TurnReportColonyInventory` all cast `inventory_section` to `InventorySection`
-- [ ] No references to `quantity_assembled` or `quantity_disassembled` remain in any of the 4 model files
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 4 models compile without errors (`php artisan tinker --execute 'new \App\Models\ColonyTemplate;'`)
+- [x] `ColonyTemplateItem`, `ColonyInventory`, `TurnReportColonyInventory` all cast `inventory_section` to `InventorySection`
+- [x] No references to `quantity_assembled` or `quantity_disassembled` remain in any of the 4 model files
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
