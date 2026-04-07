@@ -464,12 +464,12 @@ Key rules from the reconciled plan/sample data:
 9. Preserve existing factory import behavior from PR 2
 
 **Acceptance:**
-- [ ] Importing `sample-data/beta/colony-template.json` creates 1 farm group for COPN
-- [ ] That COPN farm group contains 4 unit entries of FRM-1 at stages `1`, `2`, `3`, and `4`
-- [ ] Importing creates 0 farm groups for CORB
-- [ ] Importing creates 0 farm groups for CSHP
-- [ ] Reimporting the same file does not leave duplicate or orphaned farm rows
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Importing `sample-data/beta/colony-template.json` creates 1 farm group for COPN
+- [x] That COPN farm group contains 4 unit entries of FRM-1 at stages `1`, `2`, `3`, and `4`
+- [x] Importing creates 0 farm groups for CORB
+- [x] Importing creates 0 farm groups for CSHP
+- [x] Reimporting the same file does not leave duplicate or orphaned farm rows
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

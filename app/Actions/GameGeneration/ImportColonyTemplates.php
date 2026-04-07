@@ -47,6 +47,10 @@ class ImportColonyTemplates
                 if (! empty($production['factories'])) {
                     $this->createFactoryGroups($template, $production['factories']);
                 }
+
+                if (! empty($production['farms'])) {
+                    $this->createFarmGroups($template, $production['farms']);
+                }
             }
         });
     }
@@ -141,6 +145,50 @@ class ImportColonyTemplates
                     'unit' => $wipUnit,
                     'tech_level' => $wipTechLevel,
                     'quantity' => $wipData['quantity'],
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $farmsData
+     */
+    private function createFarmGroups(mixed $template, array $farmsData): void
+    {
+        foreach ($farmsData as $groupData) {
+            $group = $template->farmGroups()->create([
+                'group_number' => $groupData['group'],
+            ]);
+
+            $presentStages = [];
+            $firstUnit = null;
+            $firstTechLevel = null;
+
+            foreach ($groupData['units'] as $unitData) {
+                [$unitCode, $techLevel] = self::parseUnitString($unitData['unit']);
+
+                $firstUnit ??= $unitCode;
+                $firstTechLevel ??= $techLevel;
+
+                $stage = $unitData['stage'];
+                $presentStages[] = $stage;
+
+                $group->units()->create([
+                    'unit' => $unitCode,
+                    'tech_level' => $techLevel,
+                    'quantity' => $unitData['quantity'] ?? 0,
+                    'stage' => $stage,
+                ]);
+            }
+
+            $missingStages = array_diff([1, 2, 3, 4], $presentStages);
+
+            foreach ($missingStages as $stage) {
+                $group->units()->create([
+                    'unit' => $firstUnit,
+                    'tech_level' => $firstTechLevel,
+                    'quantity' => 0,
+                    'stage' => $stage,
                 ]);
             }
         }
