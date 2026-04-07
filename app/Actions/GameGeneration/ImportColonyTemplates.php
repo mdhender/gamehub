@@ -2,12 +2,21 @@
 
 namespace App\Actions\GameGeneration;
 
+use App\Enums\InventorySection;
 use App\Enums\PopulationClass;
 use App\Models\Game;
 use Illuminate\Support\Facades\DB;
 
 class ImportColonyTemplates
 {
+    /** @var array<string, InventorySection> */
+    private const SECTION_MAP = [
+        'super-structure' => InventorySection::SuperStructure,
+        'structure' => InventorySection::Structure,
+        'operational' => InventorySection::Operational,
+        'cargo' => InventorySection::Cargo,
+    ];
+
     /**
      * Import colony templates from the parsed JSON data.
      *
@@ -22,9 +31,15 @@ class ImportColonyTemplates
                 $template = $game->colonyTemplates()->create([
                     'kind' => $templateData['kind'],
                     'tech_level' => $templateData['tech-level'],
+                    'sol' => $templateData['sol'],
+                    'birth_rate' => $templateData['birth-rate-pct'],
+                    'death_rate' => $templateData['death-rate-pct'],
                 ]);
 
-                $this->createPopulation($template, $templateData['population']);
+                if (! empty($templateData['population'])) {
+                    $this->createPopulation($template, $templateData['population']);
+                }
+
                 $this->createInventory($template, $templateData['inventory']);
             }
         });
@@ -69,27 +84,24 @@ class ImportColonyTemplates
      */
     private function createInventory(mixed $template, array $inventoryData): void
     {
-        $allItems = array_merge(
-            $inventoryData['operational'] ?? [],
-            $inventoryData['stored'] ?? [],
-        );
+        foreach (self::SECTION_MAP as $jsonKey => $section) {
+            foreach ($inventoryData[$jsonKey] ?? [] as $itemData) {
+                $unit = $itemData['unit'];
+                if (str_contains($unit, '-')) {
+                    [$unitCode, $techLevel] = explode('-', $unit, 2);
+                    $techLevel = (int) $techLevel;
+                } else {
+                    $unitCode = $unit;
+                    $techLevel = 0;
+                }
 
-        foreach ($allItems as $itemData) {
-            $unit = $itemData['unit'];
-            if (str_contains($unit, '-')) {
-                [$unitCode, $techLevel] = explode('-', $unit, 2);
-                $techLevel = (int) $techLevel;
-            } else {
-                $unitCode = $unit;
-                $techLevel = 0;
+                $template->items()->create([
+                    'unit' => $unitCode,
+                    'tech_level' => $techLevel,
+                    'quantity' => $itemData['quantity'],
+                    'inventory_section' => $section,
+                ]);
             }
-
-            $template->items()->create([
-                'unit' => $unitCode,
-                'tech_level' => $techLevel,
-                'quantity_assembled' => $itemData['quantity'],
-                'quantity_disassembled' => 0,
-            ]);
         }
     }
 }

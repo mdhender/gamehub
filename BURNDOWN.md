@@ -143,13 +143,13 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 - `cargo` → `InventorySection::Cargo`
 
 **Acceptance:**
-- [ ] Importing `sample-data/beta/colony-template.json` creates 3 `ColonyTemplate` records (COPN, CORB, CSHP)
-- [ ] COPN template has `sol=1.0`, `birth_rate=0.0625`, `death_rate=0.0625`
-- [ ] CSHP template has 0 population records
-- [ ] COPN template items span all 4 inventory sections
-- [ ] All template items use `quantity` (no `quantity_assembled`/`quantity_disassembled`)
-- [ ] No references to `stored`, `quantity_assembled`, or `quantity_disassembled` remain in the file
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Importing `sample-data/beta/colony-template.json` creates 3 `ColonyTemplate` records (COPN, CORB, CSHP)
+- [x] COPN template has `sol=1.0`, `birth_rate=0.0625`, `death_rate=0.0625`
+- [x] CSHP template has 0 population records
+- [x] COPN template items span all 4 inventory sections
+- [x] All template items use `quantity` (no `quantity_assembled`/`quantity_disassembled`)
+- [x] No references to `stored`, `quantity_assembled`, or `quantity_disassembled` remain in the file
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
