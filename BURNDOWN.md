@@ -382,10 +382,10 @@ Key rules from the reconciled plan/sample data:
   - `unit`, `tech_level`, `quantity`, `stage` (1–4)
 
 **Acceptance:**
-- [ ] All 4 farm tables exist with the required columns, defaults, and unique constraints
-- [ ] Deleting a template or colony cascades to its farm groups and farm units
-- [ ] `php artisan migrate:fresh` succeeds
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 4 farm tables exist with the required columns, defaults, and unique constraints
+- [x] Deleting a template or colony cascades to its farm groups and farm units
+- [x] `php artisan migrate:fresh` succeeds
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
