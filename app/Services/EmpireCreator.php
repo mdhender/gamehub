@@ -6,6 +6,8 @@ use App\Models\Colony;
 use App\Models\ColonyFactoryGroup;
 use App\Models\ColonyFactoryUnit;
 use App\Models\ColonyFactoryWip;
+use App\Models\ColonyFarmGroup;
+use App\Models\ColonyFarmUnit;
 use App\Models\ColonyInventory;
 use App\Models\ColonyPopulation;
 use App\Models\Empire;
@@ -112,7 +114,7 @@ class EmpireCreator
 
     private function createColonies(Empire $empire, HomeSystem $homeSystem, Game $game): void
     {
-        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population', 'factoryGroups.units', 'factoryGroups.wip'])->orderBy('id')->get();
+        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population', 'factoryGroups.units', 'factoryGroups.wip', 'farmGroups.units'])->orderBy('id')->get();
 
         if ($colonyTemplates->isEmpty()) {
             throw new \RuntimeException('This game does not have a colony template.');
@@ -187,6 +189,25 @@ class EmpireCreator
                             'unit' => $wip->unit->value,
                             'tech_level' => $wip->tech_level,
                             'quantity' => $wip->quantity,
+                        ])->all()
+                    );
+                }
+            }
+
+            foreach ($colonyTemplate->farmGroups as $templateFarmGroup) {
+                $liveFarmGroup = ColonyFarmGroup::create([
+                    'colony_id' => $colony->id,
+                    'group_number' => $templateFarmGroup->group_number,
+                ]);
+
+                if ($templateFarmGroup->units->isNotEmpty()) {
+                    ColonyFarmUnit::insert(
+                        $templateFarmGroup->units->map(fn ($unit) => [
+                            'colony_farm_group_id' => $liveFarmGroup->id,
+                            'unit' => $unit->unit->value,
+                            'tech_level' => $unit->tech_level,
+                            'quantity' => $unit->quantity,
+                            'stage' => $unit->stage,
                         ])->all()
                     );
                 }

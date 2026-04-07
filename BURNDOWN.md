@@ -523,10 +523,10 @@ Key rules from the reconciled plan/sample data:
 4. Preserve PR 2 factory copy behavior
 
 **Acceptance:**
-- [ ] Live colonies receive farm groups copied from their template
-- [ ] Live farm units preserve the template `stage` values
-- [ ] Templates with empty production produce colonies with 0 live farm groups
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Live colonies receive farm groups copied from their template
+- [x] Live farm units preserve the template `stage` values
+- [x] Templates with empty production produce colonies with 0 live farm groups
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
