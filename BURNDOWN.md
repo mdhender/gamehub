@@ -413,11 +413,11 @@ Key rules from the reconciled plan/sample data:
 - Farm unit models cast `unit` to `UnitCode`
 
 **Acceptance:**
-- [ ] All 4 farm models exist and follow the repo's model conventions
-- [ ] Farm unit models cast `unit` to `UnitCode`
-- [ ] `ColonyTemplate` exposes `farmGroups()`
-- [ ] `Colony` exposes `farmGroups()`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 4 farm models exist and follow the repo's model conventions
+- [x] Farm unit models cast `unit` to `UnitCode`
+- [x] `ColonyTemplate` exposes `farmGroups()`
+- [x] `Colony` exposes `farmGroups()`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

@@ -52,4 +52,10 @@ class ColonyTemplate extends Model
     {
         return $this->hasMany(ColonyTemplateFactoryGroup::class);
     }
+
+    /** @return HasMany<ColonyTemplateFarmGroup, $this> */
+    public function farmGroups(): HasMany
+    {
+        return $this->hasMany(ColonyTemplateFarmGroup::class);
+    }
 }
