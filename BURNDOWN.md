@@ -277,11 +277,11 @@ Key rules from the reconciled plan/sample data:
 7. Preserve behavior for templates with empty production: no production groups are created
 
 **Acceptance:**
-- [ ] Live colonies receive factory groups copied from their template
-- [ ] Live factory units and WIP rows match the template values
-- [ ] `input_remainder_mets` and `input_remainder_nmts` are initialized to `0`
-- [ ] Templates with empty production produce colonies with 0 live factory groups
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Live colonies receive factory groups copied from their template
+- [x] Live factory units and WIP rows match the template values
+- [x] `input_remainder_mets` and `input_remainder_nmts` are initialized to `0`
+- [x] Templates with empty production produce colonies with 0 live factory groups
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

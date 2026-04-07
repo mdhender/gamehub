@@ -322,6 +322,92 @@ class EmpireCreatorTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // factory groups
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function create_copies_factory_groups_from_template_to_live_colony(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $group = $template->factoryGroups()->create([
+            'group_number' => 1,
+            'orders_unit' => UnitCode::Automation,
+            'orders_tech_level' => 1,
+            'pending_orders_unit' => null,
+            'pending_orders_tech_level' => null,
+        ]);
+        $group->units()->create([
+            'unit' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity' => 10,
+        ]);
+        $group->wip()->createMany([
+            ['quarter' => 1, 'unit' => UnitCode::Automation, 'tech_level' => 1, 'quantity' => 5],
+            ['quarter' => 2, 'unit' => UnitCode::Automation, 'tech_level' => 1, 'quantity' => 3],
+            ['quarter' => 3, 'unit' => UnitCode::Automation, 'tech_level' => 1, 'quantity' => 1],
+        ]);
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $liveGroups = $colony->factoryGroups()->get();
+        $this->assertCount(1, $liveGroups);
+
+        $liveGroup = $liveGroups->first();
+        $this->assertSame(1, $liveGroup->group_number);
+        $this->assertSame(UnitCode::Automation, $liveGroup->orders_unit);
+        $this->assertSame(1, $liveGroup->orders_tech_level);
+        $this->assertNull($liveGroup->pending_orders_unit);
+        $this->assertNull($liveGroup->pending_orders_tech_level);
+
+        $liveUnits = $liveGroup->units()->get();
+        $this->assertCount(1, $liveUnits);
+        $this->assertSame(UnitCode::Factories, $liveUnits->first()->unit);
+        $this->assertSame(1, $liveUnits->first()->tech_level);
+        $this->assertSame(10, $liveUnits->first()->quantity);
+
+        $liveWip = $liveGroup->wip()->orderBy('quarter')->get();
+        $this->assertCount(3, $liveWip);
+        $this->assertSame(5, $liveWip->firstWhere('quarter', 1)->quantity);
+        $this->assertSame(3, $liveWip->firstWhere('quarter', 2)->quantity);
+        $this->assertSame(1, $liveWip->firstWhere('quarter', 3)->quantity);
+    }
+
+    #[Test]
+    public function create_initializes_factory_group_remainders_to_zero(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $template->factoryGroups()->create([
+            'group_number' => 1,
+            'orders_unit' => UnitCode::Automation,
+            'orders_tech_level' => 1,
+        ]);
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $liveGroup = $empire->colonies()->first()->factoryGroups()->first();
+        $this->assertSame(0.0, $liveGroup->input_remainder_mets);
+        $this->assertSame(0.0, $liveGroup->input_remainder_nmts);
+    }
+
+    #[Test]
+    public function create_produces_no_factory_groups_when_template_has_none(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $this->assertCount(0, $colony->factoryGroups()->get());
+    }
+
+    // -------------------------------------------------------------------------
     // reassign
     // -------------------------------------------------------------------------
 

@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\Colony;
+use App\Models\ColonyFactoryGroup;
+use App\Models\ColonyFactoryUnit;
+use App\Models\ColonyFactoryWip;
 use App\Models\ColonyInventory;
 use App\Models\ColonyPopulation;
 use App\Models\Empire;
@@ -109,7 +112,7 @@ class EmpireCreator
 
     private function createColonies(Empire $empire, HomeSystem $homeSystem, Game $game): void
     {
-        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population'])->orderBy('id')->get();
+        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population', 'factoryGroups.units', 'factoryGroups.wip'])->orderBy('id')->get();
 
         if ($colonyTemplates->isEmpty()) {
             throw new \RuntimeException('This game does not have a colony template.');
@@ -151,6 +154,42 @@ class EmpireCreator
                         'rebel_quantity' => 0,
                     ])->all()
                 );
+            }
+
+            foreach ($colonyTemplate->factoryGroups as $templateGroup) {
+                $liveGroup = ColonyFactoryGroup::create([
+                    'colony_id' => $colony->id,
+                    'group_number' => $templateGroup->group_number,
+                    'orders_unit' => $templateGroup->orders_unit->value,
+                    'orders_tech_level' => $templateGroup->orders_tech_level,
+                    'pending_orders_unit' => $templateGroup->pending_orders_unit?->value,
+                    'pending_orders_tech_level' => $templateGroup->pending_orders_tech_level,
+                    'input_remainder_mets' => 0,
+                    'input_remainder_nmts' => 0,
+                ]);
+
+                if ($templateGroup->units->isNotEmpty()) {
+                    ColonyFactoryUnit::insert(
+                        $templateGroup->units->map(fn ($unit) => [
+                            'colony_factory_group_id' => $liveGroup->id,
+                            'unit' => $unit->unit->value,
+                            'tech_level' => $unit->tech_level,
+                            'quantity' => $unit->quantity,
+                        ])->all()
+                    );
+                }
+
+                if ($templateGroup->wip->isNotEmpty()) {
+                    ColonyFactoryWip::insert(
+                        $templateGroup->wip->map(fn ($wip) => [
+                            'colony_factory_group_id' => $liveGroup->id,
+                            'quarter' => $wip->quarter,
+                            'unit' => $wip->unit->value,
+                            'tech_level' => $wip->tech_level,
+                            'quantity' => $wip->quantity,
+                        ])->all()
+                    );
+                }
             }
         }
     }
