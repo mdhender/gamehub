@@ -262,9 +262,9 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
   - Remove `stored` references
 
 **Acceptance:**
-- [ ] `php artisan test --compact --filter=ImportColonyTemplate`
-- [ ] `php artisan test --compact --filter=UploadColonyTemplate`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] `php artisan test --compact --filter=ImportColonyTemplate`
+- [x] `php artisan test --compact --filter=UploadColonyTemplate`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
