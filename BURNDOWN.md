@@ -99,11 +99,11 @@ Key rules from the reconciled plan/sample data:
   - unique: `(colony_factory_group_id, quarter)`
 
 **Acceptance:**
-- [ ] All 6 tables exist with the required columns, defaults, and unique constraints
-- [ ] Deleting a `colony_templates` row cascades to template factory groups, units, and WIP rows
-- [ ] Deleting a `colonies` row cascades to live factory groups, units, and WIP rows
-- [ ] `php artisan migrate:fresh` succeeds
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 6 tables exist with the required columns, defaults, and unique constraints
+- [x] Deleting a `colony_templates` row cascades to template factory groups, units, and WIP rows
+- [x] Deleting a `colonies` row cascades to live factory groups, units, and WIP rows
+- [x] `php artisan migrate:fresh` succeeds
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
