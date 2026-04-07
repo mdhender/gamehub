@@ -71,10 +71,10 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 **Important:** The test suite uses SQLite with transactions. `Schema::disableForeignKeyConstraints()` is a no-op inside a transaction — if needed, use `DB::statement('PRAGMA defer_foreign_keys = ON')` instead. However, since we're only adding/dropping columns (no FK changes), this shouldn't be an issue.
 
 **Acceptance:**
-- [ ] All 3 tables have `inventory_section` and `quantity` columns
-- [ ] All 3 tables no longer have `quantity_assembled` or `quantity_disassembled` columns
-- [ ] `php artisan migrate:fresh` succeeds
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 3 tables have `inventory_section` and `quantity` columns
+- [x] All 3 tables no longer have `quantity_assembled` or `quantity_disassembled` columns
+- [x] `php artisan migrate:fresh` succeeds
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
