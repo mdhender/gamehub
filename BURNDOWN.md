@@ -170,10 +170,10 @@ Key rules from the reconciled plan/sample data:
 - Factory WIP factories default to a valid quarter (`1`, `2`, or `3`) and a manufacturable unit
 
 **Acceptance:**
-- [ ] Each new factory can `make()` a valid attribute set
-- [ ] Each new factory can `create()` valid related records
-- [ ] Live factory group factories default both remainder columns to `0`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Each new factory can `make()` a valid attribute set
+- [x] Each new factory can `create()` valid related records
+- [x] Live factory group factories default both remainder columns to `0`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
