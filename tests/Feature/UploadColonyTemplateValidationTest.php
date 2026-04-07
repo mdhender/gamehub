@@ -716,6 +716,178 @@ class UploadColonyTemplateValidationTest extends TestCase
     }
 
     #[Test]
+    public function valid_farm_group_passes_validation(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 1],
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 2],
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 3],
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 4],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
+    public function farm_unit_not_frm_format_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FCT-1', 'quantity' => 100, 'stage' => 1],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function farm_unit_without_tech_level_suffix_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FRM', 'quantity' => 100, 'stage' => 1],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function farm_unit_with_stage_zero_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FRM-1', 'quantity' => 100, 'stage' => 0],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function farm_unit_with_stage_five_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FRM-1', 'quantity' => 100, 'stage' => 5],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function farm_unit_with_missing_stage_fails(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FRM-1', 'quantity' => 100],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionHasErrors('template');
+    }
+
+    #[Test]
+    public function template_with_both_factories_and_farms_passes(): void
+    {
+        $game = Game::factory()->create();
+        $user = $this->gmUser($game);
+
+        $template = $this->validTemplate();
+        $template['production'] = [
+            'factories' => [
+                [
+                    'group' => 1,
+                    'orders' => 'CNGD',
+                    'units' => [['unit' => 'FCT-1', 'quantity' => 100]],
+                    'work-in-progress' => [
+                        'q1' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q2' => ['unit' => 'CNGD', 'quantity' => 500],
+                        'q3' => ['unit' => 'CNGD', 'quantity' => 500],
+                    ],
+                ],
+            ],
+            'farms' => [
+                [
+                    'group' => 1,
+                    'units' => [
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 1],
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 2],
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 3],
+                        ['unit' => 'FRM-1', 'quantity' => 32500, 'stage' => 4],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->upload($game, $user, json_encode([$template]))
+            ->assertSessionDoesntHaveErrors('template');
+    }
+
+    #[Test]
     public function copn_and_corb_templates_from_sample_data_pass(): void
     {
         $game = Game::factory()->create();

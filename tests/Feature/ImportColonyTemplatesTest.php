@@ -244,6 +244,77 @@ class ImportColonyTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function copn_template_has_one_farm_group(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        $this->assertCount(1, $copn->farmGroups);
+    }
+
+    #[Test]
+    public function corb_template_has_zero_farm_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $corb = $game->colonyTemplates()->where('kind', ColonyKind::Orbital)->first();
+
+        $this->assertCount(0, $corb->farmGroups);
+    }
+
+    #[Test]
+    public function cshp_template_has_zero_farm_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $cshp = $game->colonyTemplates()->where('kind', ColonyKind::Ship)->first();
+
+        $this->assertCount(0, $cshp->farmGroups);
+    }
+
+    #[Test]
+    public function copn_farm_group_has_four_unit_entries_with_stages_one_through_four(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+        $group = $copn->farmGroups->first();
+
+        $this->assertCount(4, $group->units);
+
+        foreach ([1, 2, 3, 4] as $stage) {
+            $unit = $group->units->where('stage', $stage)->first();
+            $this->assertNotNull($unit, "Missing farm unit at stage {$stage}");
+            $this->assertEquals(UnitCode::Farms, $unit->unit);
+            $this->assertSame(1, $unit->tech_level);
+            $this->assertSame(32500, $unit->quantity);
+        }
+    }
+
+    #[Test]
+    public function reimporting_does_not_leave_duplicate_farm_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+        $this->importer->execute($game, $this->sampleData());
+
+        $copn = $game->fresh()->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        $this->assertCount(1, $copn->farmGroups);
+        $this->assertCount(4, $copn->farmGroups->first()->units);
+    }
+
+    #[Test]
     public function items_have_correct_unit_and_tech_level_parsing(): void
     {
         $game = Game::factory()->create();

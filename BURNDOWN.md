@@ -566,12 +566,12 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/UploadColonyTemplateValidationTest.php`
 
 **Acceptance:**
-- [ ] Import tests assert the sample file creates COPN=1, CORB=0, CSHP=0 farm groups
-- [ ] Import tests assert the 4 COPN farm entries preserve stages `1..4`
-- [ ] Import tests assert reimport replaces farm rows cleanly
-- [ ] Validation tests cover: valid farm groups, invalid unit format, invalid stage values, empty production, and sample file pass-through
-- [ ] `php artisan test --compact tests/Feature/ImportColonyTemplatesTest.php tests/Feature/UploadColonyTemplateValidationTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Import tests assert the sample file creates COPN=1, CORB=0, CSHP=0 farm groups
+- [x] Import tests assert the 4 COPN farm entries preserve stages `1..4`
+- [x] Import tests assert reimport replaces farm rows cleanly
+- [x] Validation tests cover: valid farm groups, invalid unit format, invalid stage values, empty production, and sample file pass-through
+- [x] `php artisan test --compact tests/Feature/ImportColonyTemplatesTest.php tests/Feature/UploadColonyTemplateValidationTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
