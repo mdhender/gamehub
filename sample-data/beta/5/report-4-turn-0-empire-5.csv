@@ -8,25 +8,25 @@ colony_id,source_colony_id,name,kind,tech_level,planet_id,orbit,star_x,star_y,st
 2,6,Not Named,CORB,1,1687,5,25,1,17,1,1,0,0,0
 
 ## Colony Inventory
-colony_id,unit_code,tech_level,quantity_assembled,quantity_disassembled
-1,FCT,1,300000,0
-1,FRM,1,100000,0
-1,MIN,1,200000,0
-1,MSL,1,32000,0
-1,STU,0,35000000,0
-1,TPT,1,10000,0
-1,ASC,1,160000,0
-1,ASW,1,400000,0
-1,MSS,1,100000,0
-1,CNGD,0,500000,0
-1,FOOD,0,3000000,0
-1,FUEL,0,2000000,0
-1,GOLD,0,50000,0
-1,METS,0,4000000,0
-1,MTSP,0,5000000,0
-1,NMTS,0,4000000,0
-1,STU,0,600000,0
-2,STU,0,5000000,0
+colony_id,unit_code,tech_level,inventory_section,quantity
+1,FCT,1,operational,300000
+1,FRM,1,operational,100000
+1,MIN,1,operational,200000
+1,MSL,1,operational,32000
+1,STU,0,super_structure,35000000
+1,TPT,1,operational,10000
+1,ASC,1,operational,160000
+1,ASW,1,operational,400000
+1,MSS,1,operational,100000
+1,CNGD,0,cargo,500000
+1,FOOD,0,cargo,3000000
+1,FUEL,0,cargo,2000000
+1,GOLD,0,cargo,50000
+1,METS,0,cargo,4000000
+1,MTSP,0,cargo,5000000
+1,NMTS,0,cargo,4000000
+1,STU,0,cargo,600000
+2,STU,0,super_structure,5000000
 
 ## Colony Population
 colony_id,population_code,quantity,population,employed,pay_rate,cngd_paid,ration_pct,food_consumed,rebel_quantity

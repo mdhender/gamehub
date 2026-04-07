@@ -28,15 +28,13 @@ Use these terms when distinguishing what an SC is doing with the units it holds:
 
 These are separate from assembly state. A unit can be cargo and unassembled, or installed and assembled.
 
-## Quantity Field Terminology
+## Inventory Section Terminology
 
-In the current quantity-based inventory model:
+Inventory is grouped into four sections that determine storage semantics:
 
-- `quantity_assembled` means usable assembled units
-- `quantity_disassembled` means stored, unassembled units that require assembly before use
+- `super_structure` — structural hull units (e.g., STU, SLS)
+- `structure` — installed systems that define the SC's capabilities (e.g., sensors, life support, drives)
+- `operational` — units actively producing or functioning (e.g., factories, farms, mines)
+- `cargo` — items being stored, stockpiled, or transported (cargo items use half volume)
 
-This mapping follows the manual's distinction between:
-
-- `Assembled Items`
-- `Storage/Unassembled Items`
-- `Storage/Non-Assembly Items`
+Each inventory record carries an `inventory_section` field and a single `quantity` field.

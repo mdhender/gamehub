@@ -35,104 +35,104 @@
                 {
                     "unit_code": "FCT",
                     "tech_level": 1,
-                    "quantity_assembled": 300000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 300000
                 },
                 {
                     "unit_code": "FRM",
                     "tech_level": 1,
-                    "quantity_assembled": 100000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 100000
                 },
                 {
                     "unit_code": "MIN",
                     "tech_level": 1,
-                    "quantity_assembled": 200000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 200000
                 },
                 {
                     "unit_code": "MSL",
                     "tech_level": 1,
-                    "quantity_assembled": 32000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 32000
                 },
                 {
                     "unit_code": "STU",
                     "tech_level": 0,
-                    "quantity_assembled": 35000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "super_structure",
+                    "quantity": 35000000
                 },
                 {
                     "unit_code": "TPT",
                     "tech_level": 1,
-                    "quantity_assembled": 10000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 10000
                 },
                 {
                     "unit_code": "ASC",
                     "tech_level": 1,
-                    "quantity_assembled": 160000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 160000
                 },
                 {
                     "unit_code": "ASW",
                     "tech_level": 1,
-                    "quantity_assembled": 400000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 400000
                 },
                 {
                     "unit_code": "MSS",
                     "tech_level": 1,
-                    "quantity_assembled": 100000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "operational",
+                    "quantity": 100000
                 },
                 {
                     "unit_code": "CNGD",
                     "tech_level": 0,
-                    "quantity_assembled": 500000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 500000
                 },
                 {
                     "unit_code": "FOOD",
                     "tech_level": 0,
-                    "quantity_assembled": 3000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 3000000
                 },
                 {
                     "unit_code": "FUEL",
                     "tech_level": 0,
-                    "quantity_assembled": 2000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 2000000
                 },
                 {
                     "unit_code": "GOLD",
                     "tech_level": 0,
-                    "quantity_assembled": 50000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 50000
                 },
                 {
                     "unit_code": "METS",
                     "tech_level": 0,
-                    "quantity_assembled": 4000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 4000000
                 },
                 {
                     "unit_code": "MTSP",
                     "tech_level": 0,
-                    "quantity_assembled": 5000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 5000000
                 },
                 {
                     "unit_code": "NMTS",
                     "tech_level": 0,
-                    "quantity_assembled": 4000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 4000000
                 },
                 {
                     "unit_code": "STU",
                     "tech_level": 0,
-                    "quantity_assembled": 600000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "cargo",
+                    "quantity": 600000
                 }
             ],
             "population": [
@@ -202,8 +202,8 @@
                 {
                     "unit_code": "STU",
                     "tech_level": 0,
-                    "quantity_assembled": 5000000,
-                    "quantity_disassembled": 0
+                    "inventory_section": "super_structure",
+                    "quantity": 5000000
                 }
             ],
             "population": [

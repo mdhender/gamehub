@@ -345,12 +345,22 @@ The colony template defines the starting colony and inventory for each empire. A
 
 ```json
 {
-  "kind": 1,
+  "kind": "COPN",
   "tech_level": 1,
-  "inventory": [
-    { "unit": 1, "tech_level": 1, "quantity_assembled": 1000000, "quantity_disassembled": 0 },
-    { "unit": 2, "tech_level": 1, "quantity_assembled": 1000000, "quantity_disassembled": 0 }
-  ]
+  "sol": 1.0,
+  "birth-rate-pct": 0.0625,
+  "death-rate-pct": 0.0625,
+  "inventory": {
+    "super-structure": [
+      { "unit": "STU", "quantity": 50357496 }
+    ],
+    "operational": [
+      { "unit": "FCT-1", "quantity": 850000 }
+    ],
+    "cargo": [
+      { "unit": "METS", "quantity": 5354167 }
+    ]
+  }
 }
 ```
 

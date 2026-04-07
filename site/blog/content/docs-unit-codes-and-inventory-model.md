@@ -41,7 +41,7 @@ Three inventory-state invariants for implementation:
 
 ### Terminology
 
-A canonical term list mapping EC's developer vocabulary to the 1978 manual's phrasing. Covers assembly terms (`assembled`, `unassembled`, `stored non-assembly`), inventory roles (`installed inventory`, `cargo inventory`), and quantity fields (`quantity_assembled`, `quantity_disassembled`).
+A canonical term list mapping EC's developer vocabulary to the 1978 manual's phrasing. Covers assembly terms (`assembled`, `unassembled`, `stored non-assembly`), inventory roles (`installed inventory`, `cargo inventory`), and the four inventory sections (`super_structure`, `structure`, `operational`, `cargo`).
 
 ---
 

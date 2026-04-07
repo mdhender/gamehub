@@ -311,8 +311,8 @@ The `CSHP` (ship) kind already exists in `ColonyKind` but has never been used in
 - `sample-data/beta/5/report-4-turn-0-empire-5.csv` — update header and data rows
 
 **Acceptance:**
-- [ ] `grep -r 'quantity_assembled\|quantity_disassembled' docs/ site/ sample-data/` returns no matches
-- [ ] Documentation accurately describes the new 4-section inventory model
+- [x] `grep -r 'quantity_assembled\|quantity_disassembled' docs/ site/ sample-data/` returns no matches
+- [x] Documentation accurately describes the new 4-section inventory model
 
 ---
 

@@ -161,8 +161,8 @@ Snapshot of inventory for a colony. Mirrors the live `colony_inventory` schema f
 | `turn_report_colony_id` | integer FK → turn_report_colonies | cascadeOnDelete |
 | `unit_code` | string | Unit type code (FCT, FRM, MIN, FUEL, METS, etc.) |
 | `tech_level` | integer | 0 for resources, 1+ for manufactured |
-| `quantity_assembled` | integer | Assembled (operational) quantity |
-| `quantity_disassembled` | integer | Disassembled (stored) quantity |
+| `inventory_section` | string | One of `super_structure`, `structure`, `operational`, `cargo` |
+| `quantity` | integer | Item quantity |
 
 **Note:** In Layer 2, a separate `turn_report_ship_inventory` table will be added for ships, following the same schema but with `turn_report_ship_id` FK. This avoids the nullable polymorphic FK pattern and gives each entity type clean Eloquent relations and proper cascading.
 
