@@ -118,6 +118,8 @@ class TurnReportController extends Controller
                 'colonies.inventory' => fn ($q) => $q->orderBy('id'),
                 'colonies.population' => fn ($q) => $q->orderBy('id'),
                 'colonies.farmGroups' => fn ($q) => $q->orderBy('group_number'),
+                'colonies.factoryGroups' => fn ($q) => $q->orderBy('group_number'),
+                'colonies.factoryGroups.wip' => fn ($q) => $q->orderBy('quarter'),
                 'colonies.mineGroups' => fn ($q) => $q->orderBy('deposit_id'),
                 'surveys' => fn ($q) => $q->orderBy('id'),
                 'surveys.deposits' => fn ($q) => $q->orderBy('deposit_no'),

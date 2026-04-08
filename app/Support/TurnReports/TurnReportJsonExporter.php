@@ -55,6 +55,20 @@ class TurnReportJsonExporter
                     'inventory_section' => $item->inventory_section->value,
                     'quantity' => $item->quantity,
                 ])->values(),
+                'factory_groups' => $colony->factoryGroups->map(fn ($fg) => [
+                    'group_number' => $fg->group_number,
+                    'unit_code' => $fg->unit_code->value,
+                    'tech_level' => $fg->tech_level,
+                    'quantity' => $fg->quantity,
+                    'orders_unit' => $fg->orders_unit->value,
+                    'orders_tech_level' => $fg->orders_tech_level,
+                    'wip' => $fg->wip->map(fn ($w) => [
+                        'quarter' => $w->quarter,
+                        'unit_code' => $w->unit_code->value,
+                        'tech_level' => $w->tech_level,
+                        'quantity' => $w->quantity,
+                    ])->values(),
+                ])->values(),
                 'farm_groups' => $colony->farmGroups->map(fn ($fg) => [
                     'group_number' => $fg->group_number,
                     'unit_code' => $fg->unit_code->value,

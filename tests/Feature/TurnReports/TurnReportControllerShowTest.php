@@ -14,6 +14,8 @@ use App\Models\Empire;
 use App\Models\Game;
 use App\Models\TurnReport;
 use App\Models\TurnReportColony;
+use App\Models\TurnReportColonyFactoryGroup;
+use App\Models\TurnReportColonyFactoryWip;
 use App\Models\TurnReportColonyFarmGroup;
 use App\Models\TurnReportColonyInventory;
 use App\Models\TurnReportColonyMineGroup;
@@ -340,7 +342,7 @@ class TurnReportControllerShowTest extends TestCase
     }
 
     #[Test]
-    public function test_show_renders_deferred_operational_sections(): void
+    public function test_show_renders_empty_production_sections(): void
     {
         $game = $this->activeGameWithTurnZero();
         $turn = $game->turns()->first();
@@ -355,13 +357,24 @@ class TurnReportControllerShowTest extends TestCase
             'empire_id' => $empire->id,
         ]);
 
-        TurnReportColony::factory()->create(['turn_report_id' => $report->id]);
+        $colony = TurnReportColony::factory()->create(['turn_report_id' => $report->id]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
 
         $response = $this->actingAs($gm)
             ->get($this->showUrl($game, $turn, $empire))
             ->assertOk();
 
-        $response->assertSee('To Be Implemented Soon');
+        $response->assertSee('No farm groups.');
+        $response->assertSee('No mining groups.');
+        $response->assertSee('No factory groups.');
     }
 
     #[Test]
@@ -1245,5 +1258,170 @@ class TurnReportControllerShowTest extends TestCase
         $response->assertSee('75,000');
         // Total FOOD = 150,000 * 25 = 3,750,000
         $response->assertSee('3,750,000');
+    }
+
+    #[Test]
+    public function test_show_renders_factories_section_with_no_groups(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Ship,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Factories');
+        $response->assertSee('No factory groups.');
+    }
+
+    #[Test]
+    public function test_show_renders_factories_section_with_labor_and_fuel(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // 250,000 FCT-1: 50,000+ bracket → 1 PRO, 3 USK per unit
+        TurnReportColonyFactoryGroup::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'group_number' => 1,
+            'unit_code' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity' => 250_000,
+            'orders_unit' => UnitCode::ConsumerGoods,
+            'orders_tech_level' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('FCT-1');
+        $response->assertSee('250,000');
+        // PRO = 250,000 * 1 = 250,000
+        // USK = 250,000 * 3 = 750,000
+        $response->assertSee('750,000');
+        // FUEL = 250,000 * 0.5 = 125,000
+        $response->assertSee('125,000');
+    }
+
+    #[Test]
+    public function test_show_renders_manufacturing_section_with_wip(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $fg = TurnReportColonyFactoryGroup::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'group_number' => 1,
+            'unit_code' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity' => 250_000,
+            'orders_unit' => UnitCode::ConsumerGoods,
+            'orders_tech_level' => 0,
+        ]);
+
+        TurnReportColonyFactoryWip::factory()->create([
+            'turn_report_colony_factory_group_id' => $fg->id,
+            'quarter' => 1,
+            'unit_code' => UnitCode::ConsumerGoods,
+            'tech_level' => 0,
+            'quantity' => 2_083_333,
+        ]);
+
+        TurnReportColonyFactoryWip::factory()->create([
+            'turn_report_colony_factory_group_id' => $fg->id,
+            'quarter' => 2,
+            'unit_code' => UnitCode::ConsumerGoods,
+            'tech_level' => 0,
+            'quantity' => 2_083_333,
+        ]);
+
+        TurnReportColonyFactoryWip::factory()->create([
+            'turn_report_colony_factory_group_id' => $fg->id,
+            'quarter' => 3,
+            'unit_code' => UnitCode::ConsumerGoods,
+            'tech_level' => 0,
+            'quantity' => 2_083_333,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Manufacturing');
+        $response->assertSee('CNGD');
+        $response->assertSee('2,083,333');
     }
 }

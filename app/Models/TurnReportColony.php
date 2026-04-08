@@ -63,4 +63,10 @@ class TurnReportColony extends Model
     {
         return $this->hasMany(TurnReportColonyFarmGroup::class);
     }
+
+    /** @return HasMany<TurnReportColonyFactoryGroup, $this> */
+    public function factoryGroups(): HasMany
+    {
+        return $this->hasMany(TurnReportColonyFactoryGroup::class);
+    }
 }

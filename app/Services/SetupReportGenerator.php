@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TurnStatus;
+use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Turn;
 use App\Models\TurnReport;
@@ -40,6 +41,8 @@ class SetupReportGenerator
                     'colonies.mineGroups.deposit',
                     'colonies.mineGroups.units',
                     'colonies.farmGroups.units',
+                    'colonies.factoryGroups.units',
+                    'colonies.factoryGroups.wip',
                     'homeSystem.homeworldPlanet.star',
                     'homeSystem.homeworldPlanet.deposits' => fn ($q) => $q->orderBy('id'),
                 ])
@@ -130,6 +133,29 @@ class SetupReportGenerator
                                 'unit_code' => $agg['unit'],
                                 'tech_level' => $agg['tech_level'],
                                 'quantity' => $agg['quantity'],
+                            ]);
+                        }
+                    }
+
+                    foreach ($colony->factoryGroups as $factoryGroup) {
+                        $totalQty = $factoryGroup->units->sum('quantity');
+                        $firstUnit = $factoryGroup->units->first();
+
+                        $reportFactoryGroup = $reportColony->factoryGroups()->create([
+                            'group_number' => $factoryGroup->group_number,
+                            'unit_code' => $firstUnit?->unit ?? UnitCode::Factories,
+                            'tech_level' => $firstUnit?->tech_level ?? 1,
+                            'quantity' => $totalQty,
+                            'orders_unit' => $factoryGroup->orders_unit,
+                            'orders_tech_level' => $factoryGroup->orders_tech_level,
+                        ]);
+
+                        foreach ($factoryGroup->wip as $wip) {
+                            $reportFactoryGroup->wip()->create([
+                                'quarter' => $wip->quarter,
+                                'unit_code' => $wip->unit,
+                                'tech_level' => $wip->tech_level,
+                                'quantity' => $wip->quantity,
                             ]);
                         }
                     }

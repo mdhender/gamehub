@@ -9,6 +9,9 @@ use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Enums\UnitCode;
 use App\Models\Colony;
+use App\Models\ColonyFactoryGroup;
+use App\Models\ColonyFactoryUnit;
+use App\Models\ColonyFactoryWip;
 use App\Models\ColonyFarmGroup;
 use App\Models\ColonyFarmUnit;
 use App\Models\ColonyMineGroup;
@@ -597,5 +600,61 @@ class SetupReportGeneratorTest extends TestCase
         $this->assertSame(UnitCode::Farms, $fg->unit_code);
         $this->assertSame(1, $fg->tech_level);
         $this->assertSame(450, $fg->quantity); // 100 + 200 + 150
+    }
+
+    #[Test]
+    public function generate_snapshots_colony_factory_groups_with_wip(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $colony = $empire->colonies()->first();
+
+        $factoryGroup = ColonyFactoryGroup::create([
+            'colony_id' => $colony->id,
+            'group_number' => 1,
+            'orders_unit' => UnitCode::ConsumerGoods->value,
+            'orders_tech_level' => 0,
+            'input_remainder_mets' => 0,
+            'input_remainder_nmts' => 0,
+        ]);
+
+        ColonyFactoryUnit::create([
+            'colony_factory_group_id' => $factoryGroup->id,
+            'unit' => UnitCode::Factories->value,
+            'tech_level' => 1,
+            'quantity' => 250,
+        ]);
+
+        ColonyFactoryWip::create([
+            'colony_factory_group_id' => $factoryGroup->id,
+            'quarter' => 1,
+            'unit' => UnitCode::ConsumerGoods->value,
+            'tech_level' => 0,
+            'quantity' => 500,
+        ]);
+
+        $this->generator->generate($turn);
+
+        $reportColony = TurnReport::where('turn_id', $turn->id)->first()
+            ->colonies()->where('source_colony_id', $colony->id)->first();
+
+        $reportFactoryGroups = $reportColony->factoryGroups()->get();
+        $this->assertCount(1, $reportFactoryGroups);
+
+        $rfg = $reportFactoryGroups->first();
+        $this->assertSame(1, $rfg->group_number);
+        $this->assertSame(UnitCode::Factories, $rfg->unit_code);
+        $this->assertSame(1, $rfg->tech_level);
+        $this->assertSame(250, $rfg->quantity);
+        $this->assertSame(UnitCode::ConsumerGoods, $rfg->orders_unit);
+        $this->assertSame(0, $rfg->orders_tech_level);
+
+        $reportWip = $rfg->wip()->get();
+        $this->assertCount(1, $reportWip);
+        $this->assertSame(1, $reportWip->first()->quarter);
+        $this->assertSame(UnitCode::ConsumerGoods, $reportWip->first()->unit_code);
+        $this->assertSame(500, $reportWip->first()->quantity);
     }
 }

@@ -689,8 +689,125 @@
 </table>
 @endif
 
+<h3>Factories</h3>
+@if ($colony->factoryGroups->isEmpty())
+<p>No factory groups.</p>
+@else
+@php
+    $fctRows = [];
+    $fctTotalQty = 0;
+    $fctTotalPro = 0;
+    $fctTotalUsk = 0;
+    $fctTotalAut = 0;
+    $fctTotalFuel = 0;
+
+    foreach ($colony->factoryGroups->sortBy('group_number') as $fg) {
+        $pro = $fg->quantity * \App\Support\FactoryProperties::proPerUnit($fg->quantity);
+        $usk = $fg->quantity * \App\Support\FactoryProperties::uskPerUnit($fg->quantity);
+        $aut = 0;
+        $fuelConsumed = (int) ($fg->quantity * \App\Support\FactoryProperties::fuelPerTurn($fg->tech_level));
+
+        $fctTotalQty += $fg->quantity;
+        $fctTotalPro += $pro;
+        $fctTotalUsk += $usk;
+        $fctTotalAut += $aut;
+        $fctTotalFuel += $fuelConsumed;
+
+        $fctRows[] = (object) [
+            'group_number' => $fg->group_number,
+            'unit_display' => $fg->unit_code->value . '-' . $fg->tech_level,
+            'quantity' => $fg->quantity,
+            'pro' => $pro,
+            'usk' => $usk,
+            'aut' => $aut,
+            'fuel_consumed' => $fuelConsumed,
+        ];
+    }
+@endphp
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th class="num">Group</th>
+            <th>Units</th>
+            <th class="num">Qty</th>
+            <th class="num">PRO</th>
+            <th class="num">USK</th>
+            <th class="num">AUT</th>
+            <th class="num">FUEL Consumed</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($fctRows as $row)
+        <tr>
+            <td class="num">{{ $row->group_number }}</td>
+            <td>{{ $row->unit_display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->pro) }}</td>
+            <td class="num">{{ number_format($row->usk) }}</td>
+            <td class="num">{{ number_format($row->aut) }}</td>
+            <td class="num">{{ number_format($row->fuel_consumed) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td class="num">{{ number_format($fctTotalQty) }}</td>
+            <td class="num">{{ number_format($fctTotalPro) }}</td>
+            <td class="num">{{ number_format($fctTotalUsk) }}</td>
+            <td class="num">{{ number_format($fctTotalAut) }}</td>
+            <td class="num">{{ number_format($fctTotalFuel) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
 <h3>Manufacturing</h3>
-<p>To Be Implemented Soon</p>
+@php
+    $consumableCodes ??= ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH'];
+    $formatUnitCode ??= function ($unitCode, $techLevel) use ($consumableCodes) {
+        $code = $unitCode instanceof \App\Enums\UnitCode ? $unitCode->value : $unitCode;
+        return in_array($code, $consumableCodes) ? $code : $code . '-' . $techLevel;
+    };
+@endphp
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th class="num">Group</th>
+            <th>Units</th>
+            <th class="num">Qty</th>
+            <th>Orders</th>
+            <th class="num">WIP 25%</th>
+            <th class="num">WIP 50%</th>
+            <th class="num">WIP 75%</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($colony->factoryGroups->sortBy('group_number') as $fg)
+        @php
+            $wipByQuarter = $fg->wip->keyBy('quarter');
+            $ordersDisplay = $formatUnitCode($fg->orders_unit, $fg->orders_tech_level);
+        @endphp
+        <tr>
+            <td class="num">{{ $fg->group_number }}</td>
+            <td>{{ $fg->unit_code->value }}-{{ $fg->tech_level }}</td>
+            <td class="num">{{ number_format($fg->quantity) }}</td>
+            <td>{{ $ordersDisplay }}</td>
+            @foreach ([1, 2, 3] as $q)
+            @php $wip = $wipByQuarter->get($q); @endphp
+            <td class="num">
+                @if ($wip)
+                    {{ number_format($wip->quantity) }} {{ $formatUnitCode($wip->unit_code, $wip->tech_level) }}
+                @else
+                    0
+                @endif
+            </td>
+            @endforeach
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+@endif
 
 <hr>
 @empty
