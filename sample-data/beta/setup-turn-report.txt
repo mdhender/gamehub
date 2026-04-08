@@ -1,9 +1,9 @@
+
 Game: EC-6                            Player: 12       Turn: 0    Date: 2026/04/08
 
 Notes:
  This is your initial report for your home colony/nation.
 
-------------------------------------------------------------------------------
 
 Colony: 21  "Not Named"                        System: 25-20-00/1   Orbit:  5
   Kind: COPN                    Tech Level:  1
@@ -12,14 +12,24 @@ Census Report
   Standard of Living: 1.0000    Birth Rate: 6.2500%
                                 Death Rate: 6.2500%
 
-  Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
-    CNW       10,000        20,000                0    0.5000        5,000   100.00%           5,000
-    PRO    1,500,000     1,500,000                0    0.3750      562,500   100.00%         375,000
-    SLD    2,500,000     2,500,000                0    0.2500      625,000   100.00%         625,000
-    SPY           20            40                0    0.6250           13   100.00%              10
-    UEM    5,900,000     5,900,000                0    0.0000            0   100.00%       1,475,000
-    USK    6,000,000     6,000,000                0    0.1250      750,000   100.00%       1,500,000
-  Total                 15,920,040                0              1,942,513                 3,980,010
+  Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
+    UEM    5,900,000     5,900,000    0.0000            0   100.00%       1,475,000
+    USK    6,000,000     6,000,000    0.1250      750,000   100.00%       1,500,000
+    PRO    1,500,000     1,500,000    0.3750      562,500   100.00%         375,000
+    SLD    2,500,000     2,500,000    0.2500      625,000   100.00%         625,000
+    CNW       10,000        20,000    0.5000        5,000   100.00%           5,000
+    SPY           20            40    0.6250           13   100.00%              10
+  Total                 15,920,040              1,942,513                 3,980,010
+
+  Employed Labor
+    Area______________   USK_______  PRO_______  SLD_______  Total________
+    Farming                       0           0           0              0
+    Mining                        0           0           0              0
+    Manufacturing                 0           0           0              0
+    Military                      0           0   2,499,980      2,499,980
+    Construction (CNW)       10,000      10,000           0         20,000
+    Espionage    (SPY)            0          20          20             40
+    Total                    10,000      10,020   2,500,000      2,520,020
 
 
 Farming
@@ -40,9 +50,9 @@ Census Report
                                 Death Rate: 6.2500%
 
   Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
-    CNW          100           200                0    0.3750           38   100.00%              50
     PRO        3,000         3,000                0    0.3750        1,125   100.00%             750
     SLD          500           500                0    0.2500          125   100.00%             125
+    CNW          100           200                0    0.3750           38   100.00%              50
     SPY           10            20                0    0.6250            7   100.00%               5
   Total                      3,720                0                  1,295                       930
 
@@ -84,3 +94,7 @@ Survey Report for Planet # 2520  in System 25 / 20 / 00
        2  FUEL    9%    99,999,999
        3  METS   29%    99,999,999
        4  NMTS   29%    99,999,999
+
+
+
+

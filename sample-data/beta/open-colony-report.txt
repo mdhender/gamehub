@@ -23,13 +23,13 @@ Census Report
 
   Employed Labor
     Area______________   USK_______  PRO_______  SLD_______  Total________
-    Farming                390,000     130,000           0        520,000
-    Mining                 900,000     300,000           0      1,200,000
-    Manufacturing        2,550,000     850,000           0      3,400,000
-    Military                     0           0   2,499,980      2,499,980
-    Construction (CNW)      10,000      10,000           0         20,000
-    Espionage    (SPY)           0          20          20             40
-    Total                3,850,000   1,290,020   2,500,000      7,640,020
+    Farming                 390,000     130,000           0        520,000
+    Mining                  900,000     300,000           0      1,200,000
+    Manufacturing         2,550,000     850,000           0      3,400,000
+    Military                      0           0   2,499,980      2,499,980
+    Construction (CNW)       10,000      10,000           0         20,000
+    Espionage    (SPY)            0          20          20             40
+    Total                 3,850,000   1,290,020   2,500,000      7,640,020
 
 
 Inventory

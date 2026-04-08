@@ -410,4 +410,149 @@ class TurnReportControllerShowTest extends TestCase
         $this->assertLessThan($cnwPos, $sldPos, 'SLD should appear before CNW');
         $this->assertLessThan($spyPos, $cnwPos, 'CNW should appear before SPY');
     }
+
+    #[Test]
+    public function test_show_renders_employed_labor_table(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 6000000,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Professional,
+            'quantity' => 1500000,
+            'employed' => 0,
+            'pay_rate' => 0.375,
+            'rebel_quantity' => 0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Soldier,
+            'quantity' => 2500000,
+            'employed' => 0,
+            'pay_rate' => 0.25,
+            'rebel_quantity' => 0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::ConstructionWorker,
+            'quantity' => 10000,
+            'employed' => 0,
+            'pay_rate' => 0.5,
+            'rebel_quantity' => 0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Spy,
+            'quantity' => 20,
+            'employed' => 0,
+            'pay_rate' => 0.625,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Employed Labor');
+        $response->assertSee('Farming');
+        $response->assertSee('Mining');
+        $response->assertSee('Manufacturing');
+        $response->assertSee('Military');
+        $response->assertSee('Construction (CNW)');
+        $response->assertSee('Espionage    (SPY)');
+
+        // Verify the Employed Labor table does not contain "Employed_______" column header
+        $response->assertDontSee('Employed_______');
+
+        // Verify Quantity header replaced Units
+        $response->assertSee('Quantity___');
+        $response->assertDontSee('Units______');
+
+        // Military SLD = 2,500,000 - 20 (SPY) = 2,499,980
+        $response->assertSee('2,499,980');
+
+        // Construction USK=10,000, PRO=10,000 => Total=20,000
+        // (20,000 also appears in the census table as CNW population, so just check it exists)
+        $response->assertSee('20,000');
+
+        // Total row: USK=10,000, PRO=10,020, SLD=2,500,000, Total=2,520,020
+        $response->assertSee('2,520,020');
+    }
+
+    #[Test]
+    public function test_show_renders_employed_labor_rows_in_fixed_order(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 1000,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $content = $response->getContent();
+        $farmingPos = strpos($content, 'Farming');
+        $miningPos = strpos($content, 'Mining');
+        $manufacturingPos = strpos($content, 'Manufacturing');
+        $militaryPos = strpos($content, 'Military');
+        $constructionPos = strpos($content, 'Construction (CNW)');
+        $espionagePos = strpos($content, 'Espionage    (SPY)');
+
+        $this->assertLessThan($miningPos, $farmingPos, 'Farming should appear before Mining');
+        $this->assertLessThan($manufacturingPos, $miningPos, 'Mining should appear before Manufacturing');
+        $this->assertLessThan($militaryPos, $manufacturingPos, 'Manufacturing should appear before Military');
+        $this->assertLessThan($constructionPos, $militaryPos, 'Military should appear before Construction');
+        $this->assertLessThan($espionagePos, $constructionPos, 'Construction should appear before Espionage');
+    }
 }

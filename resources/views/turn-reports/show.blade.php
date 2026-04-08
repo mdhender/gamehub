@@ -40,7 +40,6 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
 @if ($colony->population->isNotEmpty())
 @php
     $totalPopulation = 0;
-    $totalEmployed = 0;
     $totalCngd = 0;
     $totalFood = 0;
 
@@ -53,7 +52,6 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
         $foodConsumed = (int) ceil($population * $colony->rations * $standardRation);
 
         $totalPopulation += $population;
-        $totalEmployed += $pop->employed;
         $totalCngd += $cngdPaid;
         $totalFood += $foodConsumed;
 
@@ -71,12 +69,48 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
 
     $populationOrder = ['UEM', 'USK', 'PRO', 'SLD', 'CNW', 'SPY', 'PLC', 'SAG', 'TRN'];
     usort($rows, fn ($a, $b) => array_search($a->code, $populationOrder) <=> array_search($b->code, $populationOrder));
+
+    $quantityByCode = [];
+    foreach ($rows as $row) {
+        $quantityByCode[$row->code] = $row->quantity;
+    }
+    $cnwQty = $quantityByCode['CNW'] ?? 0;
+    $spyQty = $quantityByCode['SPY'] ?? 0;
+    $sldQty = $quantityByCode['SLD'] ?? 0;
+
+    $militarySld = $sldQty - $spyQty;
+
+    $employedLabor = [
+        ['area' => 'Farming           ', 'usk' => 0, 'pro' => 0, 'sld' => 0],
+        ['area' => 'Mining            ', 'usk' => 0, 'pro' => 0, 'sld' => 0],
+        ['area' => 'Manufacturing     ', 'usk' => 0, 'pro' => 0, 'sld' => 0],
+        ['area' => 'Military          ', 'usk' => 0, 'pro' => 0, 'sld' => $militarySld],
+        ['area' => 'Construction (CNW)', 'usk' => $cnwQty, 'pro' => $cnwQty, 'sld' => 0],
+        ['area' => 'Espionage    (SPY)', 'usk' => 0, 'pro' => $spyQty, 'sld' => $spyQty],
+    ];
+
+    $laborTotalUsk = 0;
+    $laborTotalPro = 0;
+    $laborTotalSld = 0;
+    foreach ($employedLabor as $labor) {
+        $laborTotalUsk += $labor['usk'];
+        $laborTotalPro += $labor['pro'];
+        $laborTotalSld += $labor['sld'];
+    }
+    $laborTotalAll = $laborTotalUsk + $laborTotalPro + $laborTotalSld;
 @endphp
-  Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
+  Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
 @foreach ($rows as $row)
-    {{ str_pad($row->code, 3) }}  {{ str_pad(number_format($row->quantity), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->population), 12, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->employed), 15, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.4f', $row->pay_rate), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->cngd_paid), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.2f%%', $row->ration_pct), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->food_consumed), 14, ' ', STR_PAD_LEFT) }}
+    {{ str_pad($row->code, 3) }}  {{ str_pad(number_format($row->quantity), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->population), 12, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.4f', $row->pay_rate), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->cngd_paid), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.2f%%', $row->ration_pct), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->food_consumed), 14, ' ', STR_PAD_LEFT) }}
 @endforeach
-  Total  {{ str_repeat(' ', 11) }}  {{ str_pad(number_format($totalPopulation), 12, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($totalEmployed), 15, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalCngd), 11, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalFood), 14, ' ', STR_PAD_LEFT) }}
+  Total  {{ str_repeat(' ', 11) }}  {{ str_pad(number_format($totalPopulation), 12, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalCngd), 11, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalFood), 14, ' ', STR_PAD_LEFT) }}
+
+  Employed Labor
+    Area______________   USK_______  PRO_______  SLD_______  Total________
+@foreach ($employedLabor as $labor)
+    {{ $labor['area'] }}  {{ str_pad(number_format($labor['usk']), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($labor['pro']), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($labor['sld']), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($labor['usk'] + $labor['pro'] + $labor['sld']), 13, ' ', STR_PAD_LEFT) }}
+@endforeach
+    Total              {{ str_pad(number_format($laborTotalUsk), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($laborTotalPro), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($laborTotalSld), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($laborTotalAll), 13, ' ', STR_PAD_LEFT) }}
 @endif
 
 
