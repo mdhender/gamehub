@@ -55,6 +55,12 @@ class TurnReportJsonExporter
                     'inventory_section' => $item->inventory_section->value,
                     'quantity' => $item->quantity,
                 ])->values(),
+                'farm_groups' => $colony->farmGroups->map(fn ($fg) => [
+                    'group_number' => $fg->group_number,
+                    'unit_code' => $fg->unit_code->value,
+                    'tech_level' => $fg->tech_level,
+                    'quantity' => $fg->quantity,
+                ])->values(),
                 'mine_groups' => $colony->mineGroups->map(fn ($mg) => [
                     'deposit_id' => $mg->deposit_id,
                     'resource' => $mg->resource->value,

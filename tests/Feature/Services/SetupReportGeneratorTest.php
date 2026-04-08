@@ -9,6 +9,8 @@ use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Enums\UnitCode;
 use App\Models\Colony;
+use App\Models\ColonyFarmGroup;
+use App\Models\ColonyFarmUnit;
 use App\Models\ColonyMineGroup;
 use App\Models\ColonyMineUnit;
 use App\Models\ColonyTemplate;
@@ -542,5 +544,58 @@ class SetupReportGeneratorTest extends TestCase
         $this->assertSame(UnitCode::Mines, $mg->unit_code);
         $this->assertSame(1, $mg->tech_level);
         $this->assertSame(500, $mg->quantity);
+    }
+
+    #[Test]
+    public function generate_snapshots_colony_farm_groups_with_aggregated_stages(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $colony = $empire->colonies()->first();
+
+        $farmGroup = ColonyFarmGroup::create([
+            'colony_id' => $colony->id,
+            'group_number' => 1,
+        ]);
+
+        // Create units at different stages — should be summed in the snapshot
+        ColonyFarmUnit::create([
+            'colony_farm_group_id' => $farmGroup->id,
+            'unit' => UnitCode::Farms->value,
+            'tech_level' => 1,
+            'quantity' => 100,
+            'stage' => 1,
+        ]);
+        ColonyFarmUnit::create([
+            'colony_farm_group_id' => $farmGroup->id,
+            'unit' => UnitCode::Farms->value,
+            'tech_level' => 1,
+            'quantity' => 200,
+            'stage' => 2,
+        ]);
+        ColonyFarmUnit::create([
+            'colony_farm_group_id' => $farmGroup->id,
+            'unit' => UnitCode::Farms->value,
+            'tech_level' => 1,
+            'quantity' => 150,
+            'stage' => 3,
+        ]);
+
+        $this->generator->generate($turn);
+
+        $reportColony = TurnReport::where('turn_id', $turn->id)->first()
+            ->colonies()->where('source_colony_id', $colony->id)->first();
+
+        $reportFarmGroups = $reportColony->farmGroups()->get();
+
+        $this->assertCount(1, $reportFarmGroups);
+
+        $fg = $reportFarmGroups->first();
+        $this->assertSame(1, $fg->group_number);
+        $this->assertSame(UnitCode::Farms, $fg->unit_code);
+        $this->assertSame(1, $fg->tech_level);
+        $this->assertSame(450, $fg->quantity); // 100 + 200 + 150
     }
 }

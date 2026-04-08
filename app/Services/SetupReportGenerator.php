@@ -39,6 +39,7 @@ class SetupReportGenerator
                     'colonies.population',
                     'colonies.mineGroups.deposit',
                     'colonies.mineGroups.units',
+                    'colonies.farmGroups.units',
                     'homeSystem.homeworldPlanet.star',
                     'homeSystem.homeworldPlanet.deposits' => fn ($q) => $q->orderBy('id'),
                 ])
@@ -110,6 +111,25 @@ class SetupReportGenerator
                                 'unit_code' => $unit->unit,
                                 'tech_level' => $unit->tech_level,
                                 'quantity' => $unit->quantity,
+                            ]);
+                        }
+                    }
+
+                    foreach ($colony->farmGroups as $farmGroup) {
+                        $aggregated = $farmGroup->units
+                            ->groupBy(fn ($u) => $u->unit->value.'|'.$u->tech_level)
+                            ->map(fn ($units) => [
+                                'unit' => $units->first()->unit,
+                                'tech_level' => $units->first()->tech_level,
+                                'quantity' => $units->sum('quantity'),
+                            ]);
+
+                        foreach ($aggregated as $agg) {
+                            $reportColony->farmGroups()->create([
+                                'group_number' => $farmGroup->group_number,
+                                'unit_code' => $agg['unit'],
+                                'tech_level' => $agg['tech_level'],
+                                'quantity' => $agg['quantity'],
                             ]);
                         }
                     }

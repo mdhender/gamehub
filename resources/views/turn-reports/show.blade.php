@@ -520,7 +520,83 @@
 </table>
 
 <h3>Farming</h3>
-<p>To Be Implemented Soon</p>
+@if ($colony->farmGroups->isEmpty())
+<p>No farm groups.</p>
+@else
+@php
+    $farmRows = [];
+    $farmTotalPro = 0;
+    $farmTotalUsk = 0;
+    $farmTotalAut = 0;
+    $farmTotalFuel = 0;
+    $farmTotalFood = 0;
+
+    foreach ($colony->farmGroups->sortBy('group_number') as $fg) {
+        $pro = $fg->quantity;
+        $usk = $fg->quantity * 3;
+        $aut = 0;
+        $fuelConsumed = (int) ($fg->quantity * \App\Support\FarmProperties::fuelPerTurn($fg->tech_level));
+        $foodProduced = (int) ($fg->quantity * \App\Support\FarmProperties::foodPerTurn($fg->tech_level));
+
+        $farmTotalPro += $pro;
+        $farmTotalUsk += $usk;
+        $farmTotalAut += $aut;
+        $farmTotalFuel += $fuelConsumed;
+        $farmTotalFood += $foodProduced;
+
+        $farmRows[] = (object) [
+            'group_number' => $fg->group_number,
+            'unit_display' => $fg->unit_code->value . '-' . $fg->tech_level,
+            'quantity' => $fg->quantity,
+            'pro' => $pro,
+            'usk' => $usk,
+            'aut' => $aut,
+            'fuel_consumed' => $fuelConsumed,
+            'food_produced' => $foodProduced,
+        ];
+    }
+@endphp
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th class="num">Group</th>
+            <th>Units</th>
+            <th class="num">Qty</th>
+            <th class="num">PRO</th>
+            <th class="num">USK</th>
+            <th class="num">AUT</th>
+            <th class="num">FUEL Consumed</th>
+            <th class="num">Qty Produced</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($farmRows as $row)
+        <tr>
+            <td class="num">{{ $row->group_number }}</td>
+            <td>{{ $row->unit_display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->pro) }}</td>
+            <td class="num">{{ number_format($row->usk) }}</td>
+            <td class="num">{{ number_format($row->aut) }}</td>
+            <td class="num">{{ number_format($row->fuel_consumed) }}</td>
+            <td class="num">{{ number_format($row->food_produced) }} FOOD</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td></td>
+            <td class="num">{{ number_format($farmTotalPro) }}</td>
+            <td class="num">{{ number_format($farmTotalUsk) }}</td>
+            <td class="num">{{ number_format($farmTotalAut) }}</td>
+            <td class="num">{{ number_format($farmTotalFuel) }}</td>
+            <td class="num">{{ number_format($farmTotalFood) }} FOOD</td>
+        </tr>
+    </tfoot>
+</table>
+@endif
 
 <h3>Mining</h3>
 @if ($colony->mineGroups->isEmpty())
