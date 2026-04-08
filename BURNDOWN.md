@@ -868,11 +868,11 @@ Key rules from the reconciled plan/sample data:
 - Unit code format examples: `FCT-1`, `FRM-1`, `MIN-1`, `AUT-1`, `CNGD`
 
 **Acceptance:**
-- [ ] `docs/reference/colony-template.md` exists and is non-empty
-- [ ] The reference doc matches the reconciled sample JSON and plan decisions
-- [ ] Factory `orders` / `work-in-progress` documented as group-level fields
-- [ ] Farm `stage` documented as a per-unit field
-- [ ] `production.mines` documented as optional/may be absent
+- [x] `docs/reference/colony-template.md` exists and is non-empty
+- [x] The reference doc matches the reconciled sample JSON and plan decisions
+- [x] Factory `orders` / `work-in-progress` documented as group-level fields
+- [x] Farm `stage` documented as a per-unit field
+- [x] `production.mines` documented as optional/may be absent
 
 ---
 
