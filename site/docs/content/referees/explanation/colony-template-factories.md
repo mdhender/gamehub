@@ -1,3 +1,7 @@
+---
+title: Factory Production Pipeline
+---
+
 # Factory Production Pipeline
 
 Factories produce manufactured goods through a 3-quarter work-in-progress (WIP) pipeline. All factories in a group share the same production order and contribute to the same pipeline.

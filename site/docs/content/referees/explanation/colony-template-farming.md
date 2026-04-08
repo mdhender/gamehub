@@ -1,3 +1,7 @@
+---
+title: Farm Stages and Staggering
+---
+
 # Farm Stages and Staggering
 
 Farms produce FOOD through a stage-based harvest cycle. Unlike factories, farms have no orders or work-in-progress pipeline. Each farm unit tracks its own growth stage independently.

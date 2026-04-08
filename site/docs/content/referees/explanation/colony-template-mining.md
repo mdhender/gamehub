@@ -1,3 +1,7 @@
+---
+title: Mine Production and Deposit Assignment
+---
+
 # Mine Production and Deposit Assignment
 
 Mines extract raw materials from planetary deposits. Unlike factories and farms, mines have no pipeline stages and no growth cycle. Each mine group produces one quarter of its annual output every turn.

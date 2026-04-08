@@ -941,10 +941,10 @@ Key rules from the reconciled plan/sample data:
 
 **Test requirements:**
 - Assert all 4 new documentation files exist and are non-empty:
-  - `docs/reference/colony-template.md`
-  - `docs/referees/explanation/colony-template-farming.md`
-  - `docs/referees/explanation/colony-template-factories.md`
-  - `docs/referees/explanation/colony-template-mining.md`
+  - `site/docs/content/reference/colony-template.md`
+  - `site/docs/content/referees/explanation/colony-template-farming.md`
+  - `site/docs/content/referees/explanation/colony-template-factories.md`
+  - `site/docs/content/referees/explanation/colony-template-mining.md`
 
 **Acceptance:**
 - [x] Smoke test passes: `php artisan test --compact --filter=ColonyTemplateDocumentation`

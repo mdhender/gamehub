@@ -1,3 +1,7 @@
+---
+title: Colony Template JSON
+---
+
 # Colony Template JSON Reference
 
 This document describes every field in the colony template JSON file used by the game importer.
