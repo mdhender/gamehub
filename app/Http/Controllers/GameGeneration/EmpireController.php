@@ -4,13 +4,13 @@ namespace App\Http\Controllers\GameGeneration;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateEmpireRequest;
-use App\Http\Requests\ReassignEmpireRequest;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\HomeSystem;
 use App\Models\Player;
 use App\Services\EmpireCreator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class EmpireController extends Controller
@@ -42,30 +42,18 @@ class EmpireController extends Controller
         return back()->with('success', 'Empire assigned.');
     }
 
-    public function reassign(ReassignEmpireRequest $request, Game $game, Empire $empire): RedirectResponse
+    public function destroy(Game $game, Empire $empire): RedirectResponse
     {
+        Gate::authorize('update', $game);
+
         if (! $game->canAssignEmpires()) {
             throw ValidationException::withMessages([
-                'empire' => 'Empires can only be reassigned when the game is active.',
+                'empire' => 'Empires can only be deleted when the game is active.',
             ]);
         }
 
-        $validated = $request->validated();
+        $empire->delete();
 
-        $homeSystem = HomeSystem::findOrFail($validated['home_system_id']);
-
-        if ($homeSystem->game_id !== $game->id) {
-            abort(404);
-        }
-
-        try {
-            app(EmpireCreator::class)->reassign($empire, $homeSystem);
-        } catch (\RuntimeException $e) {
-            throw ValidationException::withMessages([
-                'home_system_id' => $e->getMessage(),
-            ]);
-        }
-
-        return back()->with('success', 'Empire reassigned.');
+        return back()->with('success', 'Empire deleted.');
     }
 }

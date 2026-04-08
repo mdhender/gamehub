@@ -51,7 +51,7 @@ Route::middleware(['auth', 'verified'])->prefix('games')->name('games.')->group(
             Route::post('home-systems/random', [HomeSystemController::class, 'createRandom'])->name('home-systems.random');
             Route::post('home-systems/manual', [HomeSystemController::class, 'createManual'])->name('home-systems.manual');
             Route::post('empires', [EmpireController::class, 'store'])->name('empires.store');
-            Route::put('empires/{empire}', [EmpireController::class, 'reassign'])->name('empires.reassign');
+            Route::delete('empires/{empire}', [EmpireController::class, 'destroy'])->name('empires.destroy');
             Route::delete('{step}', [GenerationStepController::class, 'deleteStep'])->name('steps.destroy');
         });
     });

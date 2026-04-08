@@ -6,6 +6,7 @@ use App\Enums\ColonyKind;
 use App\Enums\GameStatus;
 use App\Enums\InventorySection;
 use App\Enums\UnitCode;
+use App\Models\Colony;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\Player;
@@ -228,32 +229,47 @@ class GameGenerationControllerEmpireTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // reassignEmpire
+    // destroyEmpire
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function reassign_empire_moves_empire_to_new_home_system(): void
+    public function destroy_empire_deletes_empire_and_redirects(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $gm = $this->gmUser($game);
         $player = $this->playerUser($game);
 
         $empire = app(EmpireCreator::class)->create($game, $player);
-
-        $star = $game->stars()->whereNotIn('id', $game->homeSystems()->pluck('star_id'))->first();
-        $newHomeSystem = (new HomeSystemCreator)->createManual($game->fresh(), $star);
+        $empireId = $empire->id;
 
         $this->actingAs($gm)
-            ->put("/games/{$game->id}/generate/empires/{$empire->id}", [
-                'home_system_id' => $newHomeSystem->id,
-            ])
-            ->assertRedirect();
+            ->delete("/games/{$game->id}/generate/empires/{$empireId}")
+            ->assertRedirect()
+            ->assertSessionHas('success');
 
-        $this->assertSame($newHomeSystem->id, $empire->fresh()->home_system_id);
+        $this->assertNull(Empire::find($empireId));
     }
 
     #[Test]
-    public function reassign_empire_is_rejected_when_game_is_not_active(): void
+    public function destroy_empire_cascades_to_colonies(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+
+        $empire = app(EmpireCreator::class)->create($game, $player);
+        $colonyIds = $empire->colonies()->pluck('id')->all();
+        $this->assertNotEmpty($colonyIds);
+
+        $this->actingAs($gm)
+            ->delete("/games/{$game->id}/generate/empires/{$empire->id}")
+            ->assertRedirect();
+
+        $this->assertSame(0, Colony::whereIn('id', $colonyIds)->count());
+    }
+
+    #[Test]
+    public function destroy_empire_is_rejected_when_game_is_not_active(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $player = $this->playerUser($game);
@@ -263,17 +279,14 @@ class GameGenerationControllerEmpireTest extends TestCase
         $game->save();
 
         $gm = $this->gmUser($game);
-        $homeSystem = $game->homeSystems()->first();
 
         $this->actingAs($gm)
-            ->put("/games/{$game->id}/generate/empires/{$empire->id}", [
-                'home_system_id' => $homeSystem->id,
-            ])
+            ->delete("/games/{$game->id}/generate/empires/{$empire->id}")
             ->assertSessionHasErrors('empire');
     }
 
     #[Test]
-    public function reassign_empire_returns_404_for_empire_from_another_game(): void
+    public function destroy_empire_returns_404_for_empire_from_another_game(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $otherGame = $this->activeGameWithHomeSystem();
@@ -282,30 +295,20 @@ class GameGenerationControllerEmpireTest extends TestCase
         $otherPlayer = $this->playerUser($otherGame);
         $foreignEmpire = app(EmpireCreator::class)->create($otherGame, $otherPlayer);
 
-        $homeSystem = $game->homeSystems()->first();
-
         $this->actingAs($gm)
-            ->put("/games/{$game->id}/generate/empires/{$foreignEmpire->id}", [
-                'home_system_id' => $homeSystem->id,
-            ])
+            ->delete("/games/{$game->id}/generate/empires/{$foreignEmpire->id}")
             ->assertNotFound();
     }
 
     #[Test]
-    public function reassign_empire_returns_404_for_home_system_from_another_game(): void
+    public function destroy_empire_is_forbidden_for_non_gm(): void
     {
         $game = $this->activeGameWithHomeSystem();
-        $otherGame = $this->activeGameWithHomeSystem();
-        $gm = $this->gmUser($game);
         $player = $this->playerUser($game);
-
         $empire = app(EmpireCreator::class)->create($game, $player);
-        $foreignHomeSystem = $otherGame->homeSystems()->first();
 
-        $this->actingAs($gm)
-            ->put("/games/{$game->id}/generate/empires/{$empire->id}", [
-                'home_system_id' => $foreignHomeSystem->id,
-            ])
-            ->assertNotFound();
+        $this->actingAs($player)
+            ->delete("/games/{$game->id}/generate/empires/{$empire->id}")
+            ->assertForbidden();
     }
 }

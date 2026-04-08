@@ -24,6 +24,38 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Game, HomeSystemItem, MemberItem } from './types';
 
+function DeleteEmpireButton({ game, empire }: { game: Game; empire: NonNullable<MemberItem['empire']> }) {
+    const deleteForm = useForm({});
+    const [confirming, setConfirming] = useState(false);
+
+    return confirming ? (
+        <span className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Delete?</span>
+            <Button
+                size="sm"
+                variant="destructive"
+                disabled={deleteForm.processing}
+                onClick={() =>
+                    deleteForm.delete(EmpireController.destroy.url({ game, empire }), {
+                        onSuccess: () => setConfirming(false),
+                    })
+                }
+            >
+                {deleteForm.processing && <Spinner />}
+                Yes
+            </Button>
+            <Button size="sm" variant="outline" disabled={deleteForm.processing} onClick={() => setConfirming(false)}>
+                No
+            </Button>
+            <InputError message={deleteForm.errors.empire} />
+        </span>
+    ) : (
+        <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
+            Delete
+        </Button>
+    );
+}
+
 function EmpiresTable({
     members,
     homeSystems,
@@ -36,8 +68,6 @@ function EmpiresTable({
     const availableHomeSystems = homeSystems.filter((hs) => hs.empire_count < hs.capacity);
     const hasCapacity = availableHomeSystems.length > 0;
     const assignForm = useForm({ player_id: '', home_system_id: '' });
-    const reassignForm = useForm({ home_system_id: '' });
-    const [reassigningEmpireId, setReassigningEmpireId] = useState<number | null>(null);
     const [assigningMember, setAssigningMember] = useState<MemberItem | null>(null);
 
     function openAssignDialog(member: MemberItem) {
@@ -59,13 +89,6 @@ function EmpiresTable({
         });
     }
 
-    function submitReassign(empire: NonNullable<MemberItem['empire']>) {
-        reassignForm.put(
-            EmpireController.reassign.url({ game, empire }),
-            { onSuccess: () => setReassigningEmpireId(null) },
-        );
-    }
-
     return (
         <>
             {!hasCapacity && (
@@ -84,86 +107,34 @@ function EmpiresTable({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-sidebar-border/70 dark:divide-sidebar-border">
-                        {members.map((member) =>
-                            member.empire && reassigningEmpireId === member.empire.id ? (
-                                <tr key={member.id} className="bg-muted/30">
-                                    <td className="px-4 py-3">{member.name}</td>
-                                    <td className="px-4 py-3 font-medium">{member.empire.name}</td>
-                                    <td className="px-4 py-3" colSpan={2}>
-                                        <div className="flex items-center gap-3">
-                                            <Select
-                                                value={reassignForm.data.home_system_id}
-                                                onValueChange={(v) => reassignForm.setData('home_system_id', v)}
-                                            >
-                                                <SelectTrigger className="w-40">
-                                                    <SelectValue placeholder="Select…" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {homeSystems.map((hs) => (
-                                                        <SelectItem key={hs.id} value={String(hs.id)}>
-                                                            {hs.star_location}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => submitReassign(member.empire!)}
-                                                disabled={reassignForm.processing || !reassignForm.data.home_system_id}
-                                            >
-                                                {reassignForm.processing && <Spinner />}
-                                                Save
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => setReassigningEmpireId(null)}
-                                                disabled={reassignForm.processing}
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <InputError message={reassignForm.errors.home_system_id} />
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                <tr key={member.id}>
-                                    <td className="px-4 py-3">{member.name}</td>
-                                    <td className="px-4 py-3">
-                                        {member.empire ? (
-                                            <span className="font-medium">{member.empire.name}</span>
-                                        ) : (
-                                            <Badge variant="secondary">No empire</Badge>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 font-mono">
-                                        {member.empire ? member.empire.home_system_location : '—'}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        {member.empire ? (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setReassigningEmpireId(member.empire!.id);
-                                                    reassignForm.setData('home_system_id', String(member.empire!.home_system_id));
-                                                }}
-                                            >
-                                                Reassign
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                size="sm"
-                                                disabled={!hasCapacity}
-                                                onClick={() => openAssignDialog(member)}
-                                            >
-                                                Assign Empire
-                                            </Button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ),
-                        )}
+                        {members.map((member) => (
+                            <tr key={member.id}>
+                                <td className="px-4 py-3">{member.name}</td>
+                                <td className="px-4 py-3">
+                                    {member.empire ? (
+                                        <span className="font-medium">{member.empire.name}</span>
+                                    ) : (
+                                        <Badge variant="secondary">No empire</Badge>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3 font-mono">
+                                    {member.empire ? member.empire.home_system_location : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                    {member.empire ? (
+                                        <DeleteEmpireButton game={game} empire={member.empire} />
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            disabled={!hasCapacity}
+                                            onClick={() => openAssignDialog(member)}
+                                        >
+                                            Assign Empire
+                                        </Button>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
