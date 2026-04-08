@@ -900,9 +900,9 @@ Key rules from the reconciled plan/sample data:
   - `pending_orders` and retooling (not used at game start but available later)
 
 **Acceptance:**
-- [ ] Both explanation docs exist and are non-empty
-- [ ] Farming doc explains staggering and includes the 32,500-per-stage example
-- [ ] Factory doc explains the 3-quarter WIP pipeline and group-level `orders`
+- [x] Both explanation docs exist and are non-empty
+- [x] Farming doc explains staggering and includes the 32,500-per-stage example
+- [x] Factory doc explains the 3-quarter WIP pipeline and group-level `orders`
 
 ---
 
