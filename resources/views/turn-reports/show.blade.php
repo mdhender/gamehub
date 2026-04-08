@@ -5,9 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turn Report — {{ $game->name }} — Turn {{ $turn->number }} — {{ $empire->name }}</title>
     <style>
-        body { font-family: monospace; white-space: pre-wrap; max-width: 120ch; margin: 2rem auto; padding: 0 1rem; line-height: 1.4; }
+        body { font-family: monospace; max-width: 960px; margin: 2rem auto; padding: 0 1rem; line-height: 1.4; color: #222; }
+        table { border-collapse: collapse; margin-bottom: 1rem; }
+        th, td { padding: 0.15rem 0.5rem; text-align: left; white-space: nowrap; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .header-table th { font-weight: bold; padding-right: 0.25rem; }
+        .colony-info th { font-weight: bold; padding-right: 0.25rem; }
+        .census-info th { font-weight: bold; padding-right: 0.25rem; }
+        .census-table th, .labor-table th, .deposits-table th { border-bottom: 2px solid #666; font-weight: bold; }
+        .census-table tfoot td, .labor-table tfoot td { border-top: 1px solid #999; font-weight: bold; }
         hr { border: none; border-top: 1px solid #999; margin: 1.5rem 0; }
-        .section-header { font-weight: bold; margin-top: 1.5rem; }
+        h3 { margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        h4 { margin-top: 1rem; margin-bottom: 0.25rem; }
     </style>
 </head>
 <body>
@@ -18,24 +27,53 @@
     ];
     $standardRation = 0.25;
 @endphp
-Game: {{ str_pad($game->name, 32) }}Player: {{ str_pad($empire->id, 9) }}Turn: {{ str_pad($turn->number, 5) }}Date: {{ $report->generated_at->format('Y/m/d') }}
 
-Notes:
-@if ($turn->number === 0)
- This is your initial report for your home colony/nation.
-@endif
+<table class="header-table">
+    <tr>
+        <th>Game</th><td>{{ $game->name }}</td>
+        <th>Player</th><td>{{ $empire->id }}</td>
+        <th>Turn</th><td>{{ $turn->number }}</td>
+        <th>Date</th><td>{{ $report->generated_at->format('Y/m/d') }}</td>
+    </tr>
+</table>
+
+<div>
+    <strong>Notes:</strong>
+    @if ($turn->number === 0)
+        <p>This is your initial report for your home colony/nation.</p>
+    @endif
+</div>
 
 <hr>
 @forelse ($report->colonies as $colony)
 @php
     $system = sprintf('%02d-%02d-%02d/%d', $colony->star_x, $colony->star_y, $colony->star_z, $colony->star_sequence);
 @endphp
-Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ', max(1, 40 - strlen($colony->source_colony_id . $colony->name) - 5)) }}System: {{ $system }}   Orbit: {{ sprintf('%2d', $colony->orbit) }}
-  Kind: {{ str_pad($colony->kind->value, 24) }}Tech Level: {{ sprintf('%2d', $colony->tech_level) }}
 
-<span class="section-header">Census Report</span>
-  Standard of Living: {{ sprintf('%.4f', $colony->sol) }}    Birth Rate: {{ sprintf('%.4f%%', $colony->birth_rate * 100) }}
-                                Death Rate: {{ sprintf('%.4f%%', $colony->death_rate * 100) }}
+<table class="colony-info">
+    <tr>
+        <th>Colony</th><td>{{ $colony->source_colony_id }}  "{{ $colony->name }}"</td>
+        <th>System</th><td>{{ $system }}</td>
+        <th>Orbit</th><td>{{ sprintf('%2d', $colony->orbit) }}</td>
+    </tr>
+    <tr>
+        <th>Kind</th><td>{{ $colony->kind->value }}</td>
+        <th>Tech Level</th><td>{{ sprintf('%2d', $colony->tech_level) }}</td>
+        <td colspan="2"></td>
+    </tr>
+</table>
+
+<h3>Census Report</h3>
+<table class="census-info">
+    <tr>
+        <th>Standard of Living</th><td>{{ sprintf('%.4f', $colony->sol) }}</td>
+        <th>Birth Rate</th><td>{{ sprintf('%.4f%%', $colony->birth_rate * 100) }}</td>
+    </tr>
+    <tr>
+        <th></th><td></td>
+        <th>Death Rate</th><td>{{ sprintf('%.4f%%', $colony->death_rate * 100) }}</td>
+    </tr>
+</table>
 
 @if ($colony->population->isNotEmpty())
 @php
@@ -81,10 +119,10 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
     $militarySld = $sldQty - $spyQty;
 
     $employedLabor = [
-        ['area' => 'Farming           ', 'usk' => 0, 'pro' => 0, 'sld' => 0],
-        ['area' => 'Mining            ', 'usk' => 0, 'pro' => 0, 'sld' => 0],
-        ['area' => 'Manufacturing     ', 'usk' => 0, 'pro' => 0, 'sld' => 0],
-        ['area' => 'Military          ', 'usk' => 0, 'pro' => 0, 'sld' => $militarySld],
+        ['area' => 'Farming', 'usk' => 0, 'pro' => 0, 'sld' => 0],
+        ['area' => 'Mining', 'usk' => 0, 'pro' => 0, 'sld' => 0],
+        ['area' => 'Manufacturing', 'usk' => 0, 'pro' => 0, 'sld' => 0],
+        ['area' => 'Military', 'usk' => 0, 'pro' => 0, 'sld' => $militarySld],
         ['area' => 'Construction (CNW)', 'usk' => $cnwQty, 'pro' => $cnwQty, 'sld' => 0],
         ['area' => 'Espionage    (SPY)', 'usk' => 0, 'pro' => $spyQty, 'sld' => $spyQty],
     ];
@@ -99,29 +137,87 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
     }
     $laborTotalAll = $laborTotalUsk + $laborTotalPro + $laborTotalSld;
 @endphp
-  Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
-@foreach ($rows as $row)
-    {{ str_pad($row->code, 3) }}  {{ str_pad(number_format($row->quantity), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->population), 12, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.4f', $row->pay_rate), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->cngd_paid), 11, ' ', STR_PAD_LEFT) }}  {{ str_pad(sprintf('%.2f%%', $row->ration_pct), 8, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($row->food_consumed), 14, ' ', STR_PAD_LEFT) }}
-@endforeach
-  Total  {{ str_repeat(' ', 11) }}  {{ str_pad(number_format($totalPopulation), 12, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalCngd), 11, ' ', STR_PAD_LEFT) }}  {{ str_repeat(' ', 8) }}  {{ str_pad(number_format($totalFood), 14, ' ', STR_PAD_LEFT) }}
 
-  Employed Labor
-    Area______________   USK_______  PRO_______  SLD_______  Total________
-@foreach ($employedLabor as $labor)
-    {{ $labor['area'] }}  {{ str_pad(number_format($labor['usk']), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($labor['pro']), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($labor['sld']), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($labor['usk'] + $labor['pro'] + $labor['sld']), 13, ' ', STR_PAD_LEFT) }}
-@endforeach
-    Total              {{ str_pad(number_format($laborTotalUsk), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($laborTotalPro), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($laborTotalSld), 10, ' ', STR_PAD_LEFT) }}  {{ str_pad(number_format($laborTotalAll), 13, ' ', STR_PAD_LEFT) }}
+<table class="census-table">
+    <thead>
+        <tr>
+            <th>Group</th>
+            <th class="num">Quantity</th>
+            <th class="num">Population</th>
+            <th class="num">Pay Rate</th>
+            <th class="num">CNGD Paid</th>
+            <th class="num">Ration %</th>
+            <th class="num">FOOD Consumed</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($rows as $row)
+        <tr>
+            <td>{{ $row->code }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->population) }}</td>
+            <td class="num">{{ sprintf('%.4f', $row->pay_rate) }}</td>
+            <td class="num">{{ number_format($row->cngd_paid) }}</td>
+            <td class="num">{{ sprintf('%.2f%%', $row->ration_pct) }}</td>
+            <td class="num">{{ number_format($row->food_consumed) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td class="num">{{ number_format($totalPopulation) }}</td>
+            <td></td>
+            <td class="num">{{ number_format($totalCngd) }}</td>
+            <td></td>
+            <td class="num">{{ number_format($totalFood) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<h4>Employed Labor</h4>
+<table class="labor-table">
+    <thead>
+        <tr>
+            <th>Area</th>
+            <th class="num">USK</th>
+            <th class="num">PRO</th>
+            <th class="num">SLD</th>
+            <th class="num">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($employedLabor as $labor)
+        <tr>
+            <td>{{ $labor['area'] }}</td>
+            <td class="num">{{ number_format($labor['usk']) }}</td>
+            <td class="num">{{ number_format($labor['pro']) }}</td>
+            <td class="num">{{ number_format($labor['sld']) }}</td>
+            <td class="num">{{ number_format($labor['usk'] + $labor['pro'] + $labor['sld']) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td class="num">{{ number_format($laborTotalUsk) }}</td>
+            <td class="num">{{ number_format($laborTotalPro) }}</td>
+            <td class="num">{{ number_format($laborTotalSld) }}</td>
+            <td class="num">{{ number_format($laborTotalAll) }}</td>
+        </tr>
+    </tfoot>
+</table>
 @endif
 
+<h3>Farming</h3>
+<p>To Be Implemented Soon</p>
 
-<span class="section-header">Farming</span>
-  To Be Implemented Soon
+<h3>Mining</h3>
+<p>To Be Implemented Soon</p>
 
-<span class="section-header">Mining</span>
-  To Be Implemented Soon
-
-<span class="section-header">Manufacturing</span>
-  To Be Implemented Soon
+<h3>Manufacturing</h3>
+<p>To Be Implemented Soon</p>
 
 <hr>
 @empty
@@ -132,13 +228,31 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
 @php
     $surveySystem = sprintf('%02d-%02d-%02d/%d', $survey->star_x, $survey->star_y, $survey->star_z, $survey->star_sequence);
 @endphp
-<span class="section-header">Survey Report for Planet # {{ $survey->planet_id }}  in System {{ str_replace('-', ' / ', sprintf('%02d-%02d-%02d', $survey->star_x, $survey->star_y, $survey->star_z)) }}</span>
-  Habitability = {{ $survey->habitability }}
-  Deposits
+
+<h3>Survey Report for Planet # {{ $survey->planet_id }}  in System {{ str_replace('-', ' / ', sprintf('%02d-%02d-%02d', $survey->star_x, $survey->star_y, $survey->star_z)) }}</h3>
+<p>Habitability = {{ $survey->habitability }}</p>
+<h4>Deposits</h4>
 @if ($survey->deposits->isNotEmpty())
-@foreach ($survey->deposits as $dep)
-     {{ str_pad($dep->deposit_no, 3, ' ', STR_PAD_LEFT) }}  {{ str_pad($dep->resource->value, 4) }}  {{ str_pad($dep->yield_pct, 3, ' ', STR_PAD_LEFT) }}%  {{ str_pad(number_format($dep->quantity_remaining), 12, ' ', STR_PAD_LEFT) }}
-@endforeach
+<table class="deposits-table">
+    <thead>
+        <tr>
+            <th class="num">#</th>
+            <th>Resource</th>
+            <th class="num">Yield %</th>
+            <th class="num">Quantity Remaining</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($survey->deposits as $dep)
+        <tr>
+            <td class="num">{{ $dep->deposit_no }}</td>
+            <td>{{ $dep->resource->value }}</td>
+            <td class="num">{{ $dep->yield_pct }}%</td>
+            <td class="num">{{ number_format($dep->quantity_remaining) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
 @endif
 
 <hr>

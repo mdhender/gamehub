@@ -493,8 +493,8 @@ class TurnReportControllerShowTest extends TestCase
         $response->assertDontSee('Employed_______');
 
         // Verify Quantity header replaced Units
-        $response->assertSee('Quantity___');
-        $response->assertDontSee('Units______');
+        $response->assertSee('Quantity');
+        $response->assertDontSee('Units');
 
         // Military SLD = 2,500,000 - 20 (SPY) = 2,499,980
         $response->assertSee('2,499,980');
