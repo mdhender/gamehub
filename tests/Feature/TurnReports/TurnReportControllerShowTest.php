@@ -385,6 +385,43 @@ class TurnReportControllerShowTest extends TestCase
     }
 
     #[Test]
+    public function test_show_renders_census_tables_when_colony_has_no_population(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        // Colony with no population records at all
+        TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Ship,
+            'rations' => 1.0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Census Report');
+        $response->assertSee('Employed Labor');
+        $response->assertSee('UEM');
+        $response->assertSee('USK');
+        $response->assertSee('PRO');
+        $response->assertSee('SLD');
+        $response->assertSee('CNW');
+        $response->assertSee('SPY');
+    }
+
+    #[Test]
     public function test_show_renders_empty_production_sections(): void
     {
         $game = $this->activeGameWithTurnZero();

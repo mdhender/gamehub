@@ -75,7 +75,6 @@
     </tr>
 </table>
 
-@if ($colony->population->isNotEmpty())
 @php
     $totalPopulation = 0;
     $totalCngd = 0;
@@ -225,7 +224,6 @@
         </tr>
     </tfoot>
 </table>
-@endif
 
 @php
     $consumableCodes = ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH'];
