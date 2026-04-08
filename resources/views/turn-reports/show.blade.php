@@ -105,6 +105,23 @@
         ];
     }
 
+    $requiredCodes = ['UEM', 'USK', 'PRO', 'SLD', 'CNW', 'SPY'];
+    $presentCodes = array_map(fn ($r) => $r->code, $rows);
+    foreach ($requiredCodes as $reqCode) {
+        if (! in_array($reqCode, $presentCodes)) {
+            $rows[] = (object) [
+                'code' => $reqCode,
+                'quantity' => 0,
+                'population' => 0,
+                'employed' => 0,
+                'pay_rate' => 0,
+                'cngd_paid' => 0,
+                'ration_pct' => $colony->rations * 100,
+                'food_consumed' => 0,
+            ];
+        }
+    }
+
     $populationOrder = ['UEM', 'USK', 'PRO', 'SLD', 'CNW', 'SPY', 'PLC', 'SAG', 'TRN'];
     usort($rows, fn ($a, $b) => array_search($a->code, $populationOrder) <=> array_search($b->code, $populationOrder));
 

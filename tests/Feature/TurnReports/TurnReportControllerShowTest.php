@@ -301,6 +301,49 @@ class TurnReportControllerShowTest extends TestCase
     }
 
     #[Test]
+    public function test_show_census_always_includes_required_population_codes(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        // Only create PRO population — UEM, USK, SLD, CNW, SPY should still appear
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Professional,
+            'quantity' => 500,
+            'employed' => 0,
+            'pay_rate' => 0.375,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('UEM');
+        $response->assertSee('USK');
+        $response->assertSee('PRO');
+        $response->assertSee('SLD');
+        $response->assertSee('CNW');
+        $response->assertSee('SPY');
+    }
+
+    #[Test]
     public function test_show_renders_cadre_population_as_double_quantity(): void
     {
         $game = $this->activeGameWithTurnZero();
