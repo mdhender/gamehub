@@ -3,7 +3,6 @@ Game: EC-6                            Player: 12       Turn: 0    Date: 2026/04/
 Notes:
  This is your initial report for your home colony/nation.
 
-------------------------------------------------------------------------------
 
 Colony: 21  "Not Named"                        System: 25-20-00/1   Orbit:  5
   Kind: COPN                    Tech Level:  1
