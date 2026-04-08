@@ -32,8 +32,8 @@ class ImportColonyTemplates
                     'kind' => $templateData['kind'],
                     'tech_level' => $templateData['tech-level'],
                     'sol' => $templateData['sol'],
-                    'birth_rate' => $templateData['birth-rate-pct'],
-                    'death_rate' => $templateData['death-rate-pct'],
+                    'birth_rate' => $templateData['birth-rate-pct'] / 100,
+                    'death_rate' => $templateData['death-rate-pct'] / 100,
                 ]);
 
                 if (! empty($templateData['population'])) {

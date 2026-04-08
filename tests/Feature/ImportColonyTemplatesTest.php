@@ -55,8 +55,8 @@ class ImportColonyTemplatesTest extends TestCase
         $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
 
         $this->assertSame(1.0, $copn->sol);
-        $this->assertSame(0.0625, $copn->birth_rate);
-        $this->assertSame(0.0625, $copn->death_rate);
+        $this->assertSame(0.000625, $copn->birth_rate);
+        $this->assertSame(0.000625, $copn->death_rate);
     }
 
     #[Test]
