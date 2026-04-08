@@ -773,12 +773,12 @@ Key rules from the reconciled plan/sample data:
 7. Templates without mine groups produce colonies with no mine groups
 
 **Acceptance:**
-- [ ] Live colonies receive mine groups with unit configuration from the template and deposits from the homeworld planet
-- [ ] Each live mine group gets a non-null `deposit_id`
-- [ ] Mine units are copied correctly to live colonies
-- [ ] If template mine groups exceed available deposits, empire creation fails with a clear exception
-- [ ] Templates without mine groups produce colonies with 0 mine groups
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Live colonies receive mine groups with unit configuration from the template and deposits from the homeworld planet
+- [x] Each live mine group gets a non-null `deposit_id`
+- [x] Mine units are copied correctly to live colonies
+- [x] If template mine groups exceed available deposits, empire creation fails with a clear exception
+- [x] Templates without mine groups produce colonies with 0 mine groups
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 

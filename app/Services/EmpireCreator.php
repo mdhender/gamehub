@@ -9,7 +9,10 @@ use App\Models\ColonyFactoryWip;
 use App\Models\ColonyFarmGroup;
 use App\Models\ColonyFarmUnit;
 use App\Models\ColonyInventory;
+use App\Models\ColonyMineGroup;
+use App\Models\ColonyMineUnit;
 use App\Models\ColonyPopulation;
+use App\Models\Deposit;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\HomeSystem;
@@ -114,7 +117,7 @@ class EmpireCreator
 
     private function createColonies(Empire $empire, HomeSystem $homeSystem, Game $game): void
     {
-        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population', 'factoryGroups.units', 'factoryGroups.wip', 'farmGroups.units'])->orderBy('id')->get();
+        $colonyTemplates = $game->colonyTemplates()->with(['items', 'population', 'factoryGroups.units', 'factoryGroups.wip', 'farmGroups.units', 'mineGroups.units'])->orderBy('id')->get();
 
         if ($colonyTemplates->isEmpty()) {
             throw new \RuntimeException('This game does not have a colony template.');
@@ -210,6 +213,37 @@ class EmpireCreator
                             'stage' => $unit->stage,
                         ])->all()
                     );
+                }
+            }
+
+            if ($colonyTemplate->mineGroups->isNotEmpty()) {
+                $deposits = Deposit::where('planet_id', $homeworldPlanet->id)
+                    ->orderBy('id')
+                    ->get();
+
+                if ($deposits->count() < $colonyTemplate->mineGroups->count()) {
+                    throw new \RuntimeException(
+                        "Homeworld planet has {$deposits->count()} deposit(s) but template requires {$colonyTemplate->mineGroups->count()} mine group(s)."
+                    );
+                }
+
+                foreach ($colonyTemplate->mineGroups->values() as $index => $templateMineGroup) {
+                    $liveMineGroup = ColonyMineGroup::create([
+                        'colony_id' => $colony->id,
+                        'group_number' => $templateMineGroup->group_number,
+                        'deposit_id' => $deposits[$index]->id,
+                    ]);
+
+                    if ($templateMineGroup->units->isNotEmpty()) {
+                        ColonyMineUnit::insert(
+                            $templateMineGroup->units->map(fn ($unit) => [
+                                'colony_mine_group_id' => $liveMineGroup->id,
+                                'unit' => $unit->unit->value,
+                                'tech_level' => $unit->tech_level,
+                                'quantity' => $unit->quantity,
+                            ])->all()
+                        );
+                    }
                 }
             }
         }
