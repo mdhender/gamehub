@@ -9,6 +9,7 @@ use App\Models\ColonyTemplate;
 use App\Models\ColonyTemplateFactoryGroup;
 use App\Models\ColonyTemplateFarmGroup;
 use App\Models\ColonyTemplateItem;
+use App\Models\ColonyTemplateMineGroup;
 use App\Models\Game;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -128,5 +129,18 @@ class ColonyTemplateModelTest extends TestCase
         ]);
 
         $this->assertTrue($template->farmGroups->contains($group));
+    }
+
+    #[Test]
+    public function has_many_mine_groups(): void
+    {
+        $template = $this->makeTemplate();
+
+        $group = ColonyTemplateMineGroup::query()->create([
+            'colony_template_id' => $template->id,
+            'group_number' => 1,
+        ]);
+
+        $this->assertTrue($template->mineGroups->contains($group));
     }
 }

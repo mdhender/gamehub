@@ -7,6 +7,8 @@ use App\Enums\UnitCode;
 use App\Models\Colony;
 use App\Models\ColonyFactoryGroup;
 use App\Models\ColonyFarmGroup;
+use App\Models\ColonyMineGroup;
+use App\Models\Deposit;
 use App\Models\Empire;
 use App\Models\Planet;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -133,5 +135,20 @@ class ColonyModelTest extends TestCase
         ]);
 
         $this->assertTrue($colony->farmGroups->contains($group));
+    }
+
+    #[Test]
+    public function has_many_mine_groups(): void
+    {
+        $colony = $this->makeColony();
+        $deposit = Deposit::factory()->create();
+
+        $group = ColonyMineGroup::query()->create([
+            'colony_id' => $colony->id,
+            'group_number' => 1,
+            'deposit_id' => $deposit->id,
+        ]);
+
+        $this->assertTrue($colony->mineGroups->contains($group));
     }
 }

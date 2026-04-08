@@ -798,11 +798,11 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/Models/ColonyModelTest.php` — assert `mineGroups()` relation
 
 **Acceptance:**
-- [ ] Migration tests verify columns, nullability, unique constraints, and cascade deletes for all 4 mine tables
-- [ ] Model tests verify casts, relationships, deposit linkage, and factory validity for all 4 new mine models
-- [ ] Parent model tests cover `mineGroups()` on both `ColonyTemplate` and `Colony`
-- [ ] `php artisan test --compact tests/Feature/Models/ tests/Feature/Database/Migrations/`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Migration tests verify columns, nullability, unique constraints, and cascade deletes for all 4 mine tables
+- [x] Model tests verify casts, relationships, deposit linkage, and factory validity for all 4 new mine models
+- [x] Parent model tests cover `mineGroups()` on both `ColonyTemplate` and `Colony`
+- [x] `php artisan test --compact tests/Feature/Models/ tests/Feature/Database/Migrations/`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
