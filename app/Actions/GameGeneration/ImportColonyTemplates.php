@@ -51,6 +51,10 @@ class ImportColonyTemplates
                 if (! empty($production['farms'])) {
                     $this->createFarmGroups($template, $production['farms']);
                 }
+
+                if (! empty($production['mines'])) {
+                    $this->createMineGroups($template, $production['mines']);
+                }
             }
         });
     }
@@ -189,6 +193,29 @@ class ImportColonyTemplates
                     'tech_level' => $firstTechLevel,
                     'quantity' => 0,
                     'stage' => $stage,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $minesData
+     */
+    private function createMineGroups(mixed $template, array $minesData): void
+    {
+        foreach ($minesData as $groupData) {
+            $group = $template->mineGroups()->create([
+                'group_number' => $groupData['group'],
+                'deposit_id' => null,
+            ]);
+
+            foreach ($groupData['units'] as $unitData) {
+                [$unitCode, $techLevel] = self::parseUnitString($unitData['unit']);
+
+                $group->units()->create([
+                    'unit' => $unitCode,
+                    'tech_level' => $techLevel,
+                    'quantity' => $unitData['quantity'],
                 ]);
             }
         }

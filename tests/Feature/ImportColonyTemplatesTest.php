@@ -315,6 +315,105 @@ class ImportColonyTemplatesTest extends TestCase
     }
 
     #[Test]
+    public function sample_data_creates_zero_mine_groups(): void
+    {
+        $game = Game::factory()->create();
+
+        $this->importer->execute($game, $this->sampleData());
+
+        foreach ($game->colonyTemplates()->with('mineGroups')->get() as $template) {
+            $this->assertCount(0, $template->mineGroups, "Template {$template->kind->value} should have 0 mine groups");
+        }
+    }
+
+    #[Test]
+    public function custom_fixture_imports_mine_groups_and_units(): void
+    {
+        $game = Game::factory()->create();
+        $data = $this->sampleData();
+
+        $data[0]['production']['mines'] = [
+            [
+                'group' => 1,
+                'units' => [
+                    ['unit' => 'MIN-1', 'quantity' => 5000],
+                    ['unit' => 'MIN-2', 'quantity' => 3000],
+                ],
+            ],
+            [
+                'group' => 2,
+                'units' => [
+                    ['unit' => 'MIN-1', 'quantity' => 2000],
+                ],
+            ],
+        ];
+
+        $this->importer->execute($game, $data);
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        $this->assertCount(2, $copn->mineGroups);
+
+        $group1 = $copn->mineGroups()->where('group_number', 1)->first();
+        $this->assertCount(2, $group1->units);
+
+        $unit = $group1->units->where('unit', UnitCode::Mines)->where('tech_level', 1)->first();
+        $this->assertNotNull($unit);
+        $this->assertSame(5000, $unit->quantity);
+
+        $unit2 = $group1->units->where('tech_level', 2)->first();
+        $this->assertNotNull($unit2);
+        $this->assertSame(3000, $unit2->quantity);
+
+        $group2 = $copn->mineGroups()->where('group_number', 2)->first();
+        $this->assertCount(1, $group2->units);
+    }
+
+    #[Test]
+    public function imported_template_mine_groups_default_deposit_id_to_null(): void
+    {
+        $game = Game::factory()->create();
+        $data = $this->sampleData();
+
+        $data[0]['production']['mines'] = [
+            [
+                'group' => 1,
+                'units' => [['unit' => 'MIN-1', 'quantity' => 100]],
+            ],
+        ];
+
+        $this->importer->execute($game, $data);
+
+        $copn = $game->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        foreach ($copn->mineGroups as $group) {
+            $this->assertNull($group->deposit_id);
+        }
+    }
+
+    #[Test]
+    public function reimporting_replaces_mine_groups_cleanly(): void
+    {
+        $game = Game::factory()->create();
+        $data = $this->sampleData();
+
+        $data[0]['production']['mines'] = [
+            [
+                'group' => 1,
+                'units' => [['unit' => 'MIN-1', 'quantity' => 100]],
+            ],
+        ];
+
+        $this->importer->execute($game, $data);
+        $this->importer->execute($game, $data);
+
+        $copn = $game->fresh()->colonyTemplates()->where('kind', ColonyKind::OpenSurface)->first();
+
+        $this->assertCount(1, $copn->mineGroups);
+        $this->assertCount(1, $copn->mineGroups->first()->units);
+    }
+
+    #[Test]
     public function items_have_correct_unit_and_tech_level_parsing(): void
     {
         $game = Game::factory()->create();

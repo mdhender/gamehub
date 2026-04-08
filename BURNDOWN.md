@@ -714,11 +714,11 @@ Key rules from the reconciled plan/sample data:
 6. Preserve existing factory/farm import behavior
 
 **Acceptance:**
-- [ ] A custom test fixture with `production.mines` imports the correct template mine groups and mine units
-- [ ] Importing `sample-data/beta/colony-template.json` creates 0 mine groups without error
-- [ ] Imported template mine groups default `deposit_id` to `null`
-- [ ] Reimporting mine-enabled fixtures replaces mine rows cleanly
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] A custom test fixture with `production.mines` imports the correct template mine groups and mine units
+- [x] Importing `sample-data/beta/colony-template.json` creates 0 mine groups without error
+- [x] Imported template mine groups default `deposit_id` to `null`
+- [x] Reimporting mine-enabled fixtures replaces mine rows cleanly
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
