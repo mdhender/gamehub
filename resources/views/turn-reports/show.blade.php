@@ -230,7 +230,7 @@
 
     $formatUnitCode = function ($unitCode, $techLevel) use ($consumableCodes) {
         $code = $unitCode instanceof \App\Enums\UnitCode ? $unitCode->value : $unitCode;
-        return in_array($code, $consumableCodes) ? $code : $code . '-' . $techLevel;
+        return in_array($code, $consumableCodes) || empty($techLevel) ? $code : $code . '-' . $techLevel;
     };
 
     $vuFactor = $colony->kind->vuFactor();
@@ -782,7 +782,7 @@
     $consumableCodes ??= ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH'];
     $formatUnitCode ??= function ($unitCode, $techLevel) use ($consumableCodes) {
         $code = $unitCode instanceof \App\Enums\UnitCode ? $unitCode->value : $unitCode;
-        return in_array($code, $consumableCodes) ? $code : $code . '-' . $techLevel;
+        return in_array($code, $consumableCodes) || empty($techLevel) ? $code : $code . '-' . $techLevel;
     };
 @endphp
 <table class="inventory-table">

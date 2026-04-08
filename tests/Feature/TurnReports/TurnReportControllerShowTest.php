@@ -649,6 +649,53 @@ class TurnReportControllerShowTest extends TestCase
     }
 
     #[Test]
+    public function test_show_renders_unit_without_tech_level_suffix_when_tech_level_is_zero(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // SLS with tech_level 0 should display as "SLS", not "SLS-0"
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::LightStructure,
+            'tech_level' => 0,
+            'quantity' => 10,
+            'inventory_section' => InventorySection::Structure,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('SLS');
+        $response->assertDontSee('SLS-0');
+    }
+
+    #[Test]
     public function test_show_renders_inventory_volume_and_mass_for_operational_items(): void
     {
         $game = $this->activeGameWithTurnZero();
