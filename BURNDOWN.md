@@ -923,9 +923,9 @@ Key rules from the reconciled plan/sample data:
 - Input shortages reduce output proportionally — no reset penalty (unlike farms)
 
 **Acceptance:**
-- [ ] `docs/referees/explanation/colony-template-mining.md` exists and is non-empty
-- [ ] Doc explains why mines are absent from the current sample JSON
-- [ ] Doc explains live `deposit_id` assignment during empire creation
+- [x] `docs/referees/explanation/colony-template-mining.md` exists and is non-empty
+- [x] Doc explains why mines are absent from the current sample JSON
+- [x] Doc explains live `deposit_id` assignment during empire creation
 
 ---
 
@@ -947,8 +947,8 @@ Key rules from the reconciled plan/sample data:
   - `docs/referees/explanation/colony-template-mining.md`
 
 **Acceptance:**
-- [ ] Smoke test passes: `php artisan test --compact --filter=ColonyTemplateDocumentation`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Smoke test passes: `php artisan test --compact --filter=ColonyTemplateDocumentation`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
