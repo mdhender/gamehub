@@ -838,12 +838,12 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/EmpireCreatorTest.php`
 
 **Acceptance:**
-- [ ] Tests create template mine groups and assert live mine groups are created with units and deposits
-- [ ] Tests assert live mine groups receive non-null `deposit_id` values from the homeworld planet
-- [ ] Tests assert insufficient deposits fail with a clear exception
-- [ ] Tests assert templates without mine groups produce colonies with no mine groups
-- [ ] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Tests create template mine groups and assert live mine groups are created with units and deposits
+- [x] Tests assert live mine groups receive non-null `deposit_id` values from the homeworld planet
+- [x] Tests assert insufficient deposits fail with a clear exception
+- [x] Tests assert templates without mine groups produce colonies with no mine groups
+- [x] `php artisan test --compact tests/Feature/EmpireCreatorTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
