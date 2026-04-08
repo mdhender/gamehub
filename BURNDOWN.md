@@ -818,12 +818,12 @@ Key rules from the reconciled plan/sample data:
 - `tests/Feature/UploadColonyTemplateValidationTest.php`
 
 **Acceptance:**
-- [ ] Import tests add a custom mine-enabled fixture and assert template mine groups/units import correctly
-- [ ] Import tests assert the sample file imports 0 mine groups without error
-- [ ] Import tests assert reimport replaces mine rows cleanly
-- [ ] Validation tests cover: valid mine groups, invalid mine unit format, empty production, and sample-file compatibility when mines are absent
-- [ ] `php artisan test --compact tests/Feature/ImportColonyTemplatesTest.php tests/Feature/UploadColonyTemplateValidationTest.php`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Import tests add a custom mine-enabled fixture and assert template mine groups/units import correctly
+- [x] Import tests assert the sample file imports 0 mine groups without error
+- [x] Import tests assert reimport replaces mine rows cleanly
+- [x] Validation tests cover: valid mine groups, invalid mine unit format, empty production, and sample-file compatibility when mines are absent
+- [x] `php artisan test --compact tests/Feature/ImportColonyTemplatesTest.php tests/Feature/UploadColonyTemplateValidationTest.php`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
