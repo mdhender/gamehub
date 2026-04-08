@@ -270,7 +270,7 @@
 
     // Crew and Passengers — decompose cadres into base population
     $crewQuantityByCode = [];
-    if (isset($quantityByCode)) {
+    if ($colony->population->isNotEmpty() && isset($quantityByCode)) {
         $uem = $quantityByCode['UEM'] ?? 0;
         $usk = ($quantityByCode['USK'] ?? 0) + ($quantityByCode['CNW'] ?? 0);
         $pro = ($quantityByCode['PRO'] ?? 0) + ($quantityByCode['CNW'] ?? 0) + ($quantityByCode['SPY'] ?? 0);

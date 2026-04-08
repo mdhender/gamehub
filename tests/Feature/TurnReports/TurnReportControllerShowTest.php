@@ -780,6 +780,66 @@ class TurnReportControllerShowTest extends TestCase
     }
 
     #[Test]
+    public function test_show_does_not_carry_over_population_to_colony_without_population(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        // First colony has population
+        $colony1 = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Orbital,
+            'rations' => 1.0,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony1->id,
+            'population_code' => PopulationClass::Professional,
+            'quantity' => 3000,
+            'employed' => 0,
+            'pay_rate' => 0.375,
+            'rebel_quantity' => 0,
+        ]);
+
+        // Second colony (ship) has NO population
+        TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Ship,
+            'rations' => 1.0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // The Crew and Passengers total should appear twice:
+        // once for colony1 (3,000) and once for the ship (0).
+        // Before the fix, the ship would incorrectly show 3,000 from the prior colony.
+        $content = $response->getContent();
+
+        // Count occurrences of "Crew and Passengers" — should be 2 (one per colony)
+        $this->assertSame(2, substr_count($content, 'Crew and Passengers'));
+
+        // Find the second Crew and Passengers section and verify its total is 0
+        $firstPos = strpos($content, 'Crew and Passengers');
+        $secondPos = strpos($content, 'Crew and Passengers', $firstPos + 1);
+        $secondSection = substr($content, $secondPos, 500);
+
+        // The total row in the second section should show 0
+        $this->assertStringContainsString('>0<', $secondSection);
+    }
+
+    #[Test]
     public function test_show_renders_inventory_summary_totals(): void
     {
         $game = $this->activeGameWithTurnZero();
