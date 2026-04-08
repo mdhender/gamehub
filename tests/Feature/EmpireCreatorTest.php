@@ -496,11 +496,11 @@ class EmpireCreatorTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // mine groups
+    // mine groups (assigned from operational MIN inventory, not template mine groups)
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function create_generates_mine_groups_with_units_and_deposits(): void
+    public function create_assigns_operational_mines_round_robin_to_deposits(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $template = $game->colonyTemplates()->first();
@@ -508,66 +508,18 @@ class EmpireCreatorTest extends TestCase
         $homeSystem = $game->homeSystems()->first();
         $homeworldPlanet = $homeSystem->homeworldPlanet;
 
-        // Ensure the homeworld planet has at least one deposit
-        Deposit::factory()->create([
-            'game_id' => $game->id,
-            'planet_id' => $homeworldPlanet->id,
+        // Add operational MIN-1 units to the template inventory
+        $template->items()->create([
+            'unit' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 300000,
+            'inventory_section' => InventorySection::Operational,
         ]);
 
-        $group = $template->mineGroups()->create([
-            'group_number' => 1,
-            'deposit_id' => null,
-        ]);
-        $group->units()->createMany([
-            ['unit' => UnitCode::Mines, 'tech_level' => 1, 'quantity' => 5],
-            ['unit' => UnitCode::Mines, 'tech_level' => 2, 'quantity' => 3],
-        ]);
-
-        $player = $this->addPlayer($game);
-        $empire = $this->creator->create($game, $player);
-
-        $colony = $empire->colonies()->first();
-        $liveGroups = $colony->mineGroups()->get();
-        $this->assertCount(1, $liveGroups);
-
-        $liveGroup = $liveGroups->first();
-        $this->assertSame(1, $liveGroup->group_number);
-        $this->assertNotNull($liveGroup->deposit_id);
-
-        $liveUnits = $liveGroup->units()->orderBy('tech_level')->get();
-        $this->assertCount(2, $liveUnits);
-        $this->assertSame(UnitCode::Mines, $liveUnits[0]->unit);
-        $this->assertSame(1, $liveUnits[0]->tech_level);
-        $this->assertSame(5, $liveUnits[0]->quantity);
-        $this->assertSame(UnitCode::Mines, $liveUnits[1]->unit);
-        $this->assertSame(2, $liveUnits[1]->tech_level);
-        $this->assertSame(3, $liveUnits[1]->quantity);
-    }
-
-    #[Test]
-    public function create_assigns_non_null_deposit_ids_to_live_mine_groups(): void
-    {
-        $game = $this->activeGameWithHomeSystem();
-        $template = $game->colonyTemplates()->first();
-
-        $homeSystem = $game->homeSystems()->first();
-        $homeworldPlanet = $homeSystem->homeworldPlanet;
-
-        // Clear any existing deposits and create exactly 2 on the homeworld
+        // Ensure exactly 4 deposits on the homeworld
         Deposit::where('planet_id', $homeworldPlanet->id)->delete();
-        $deposit1 = Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
-        $deposit2 = Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
-
-        for ($i = 1; $i <= 2; $i++) {
-            $group = $template->mineGroups()->create([
-                'group_number' => $i,
-                'deposit_id' => null,
-            ]);
-            $group->units()->create([
-                'unit' => UnitCode::Mines,
-                'tech_level' => 1,
-                'quantity' => 1,
-            ]);
+        for ($i = 0; $i < 4; $i++) {
+            Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
         }
 
         $player = $this->addPlayer($game);
@@ -575,17 +527,21 @@ class EmpireCreatorTest extends TestCase
 
         $colony = $empire->colonies()->first();
         $liveGroups = $colony->mineGroups()->orderBy('group_number')->get();
-        $this->assertCount(2, $liveGroups);
+        $this->assertCount(4, $liveGroups);
 
-        $deposits = Deposit::where('planet_id', $homeworldPlanet->id)->orderBy('id')->get();
-        foreach ($liveGroups as $index => $liveGroup) {
-            $this->assertNotNull($liveGroup->deposit_id);
-            $this->assertSame($deposits[$index]->id, $liveGroup->deposit_id);
+        // 300,000 / 4 = 75,000 each
+        foreach ($liveGroups as $group) {
+            $this->assertNotNull($group->deposit_id);
+            $units = $group->units()->get();
+            $this->assertCount(1, $units);
+            $this->assertSame(UnitCode::Mines, $units[0]->unit);
+            $this->assertSame(1, $units[0]->tech_level);
+            $this->assertSame(75000, $units[0]->quantity);
         }
     }
 
     #[Test]
-    public function create_throws_when_insufficient_deposits_for_mine_groups(): void
+    public function create_distributes_mine_remainder_to_earliest_deposits(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $template = $game->colonyTemplates()->first();
@@ -593,28 +549,59 @@ class EmpireCreatorTest extends TestCase
         $homeSystem = $game->homeSystems()->first();
         $homeworldPlanet = $homeSystem->homeworldPlanet;
 
-        // Clear all deposits on the homeworld and create exactly 1
-        Deposit::where('planet_id', $homeworldPlanet->id)->delete();
-        Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
+        // 10 units across 3 deposits: 4, 3, 3
+        $template->items()->create([
+            'unit' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 10,
+            'inventory_section' => InventorySection::Operational,
+        ]);
 
-        // Create 2 mine groups — more than the 1 available deposit
-        for ($i = 1; $i <= 2; $i++) {
-            $template->mineGroups()->create([
-                'group_number' => $i,
-                'deposit_id' => null,
-            ]);
+        Deposit::where('planet_id', $homeworldPlanet->id)->delete();
+        for ($i = 0; $i < 3; $i++) {
+            Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
         }
 
         $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Homeworld planet has 1 deposit(s) but template requires 2 mine group(s).');
+        $colony = $empire->colonies()->first();
+        $groups = $colony->mineGroups()->orderBy('group_number')->get();
+        $this->assertCount(3, $groups);
 
-        $this->creator->create($game, $player);
+        $quantities = $groups->map(fn ($g) => $g->units()->first()->quantity)->all();
+        $this->assertSame([4, 3, 3], $quantities);
     }
 
     #[Test]
-    public function create_produces_no_mine_groups_when_template_has_none(): void
+    public function create_does_not_assign_cargo_mines_to_deposits(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $homeSystem = $game->homeSystems()->first();
+        $homeworldPlanet = $homeSystem->homeworldPlanet;
+
+        // Only cargo MIN units — no mine groups should be created
+        $template->items()->create([
+            'unit' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 31250,
+            'inventory_section' => InventorySection::Cargo,
+        ]);
+
+        Deposit::where('planet_id', $homeworldPlanet->id)->delete();
+        Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $this->assertCount(0, $colony->mineGroups()->get());
+    }
+
+    #[Test]
+    public function create_produces_no_mine_groups_when_no_operational_mines(): void
     {
         $game = $this->activeGameWithHomeSystem();
         $player = $this->addPlayer($game);
@@ -622,6 +609,63 @@ class EmpireCreatorTest extends TestCase
 
         $colony = $empire->colonies()->first();
         $this->assertCount(0, $colony->mineGroups()->get());
+    }
+
+    #[Test]
+    public function create_produces_no_mine_groups_when_no_deposits(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $homeSystem = $game->homeSystems()->first();
+        $homeworldPlanet = $homeSystem->homeworldPlanet;
+
+        $template->items()->create([
+            'unit' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 1000,
+            'inventory_section' => InventorySection::Operational,
+        ]);
+
+        Deposit::where('planet_id', $homeworldPlanet->id)->delete();
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $this->assertCount(0, $colony->mineGroups()->get());
+    }
+
+    #[Test]
+    public function create_assigns_each_mine_group_to_a_distinct_deposit(): void
+    {
+        $game = $this->activeGameWithHomeSystem();
+        $template = $game->colonyTemplates()->first();
+
+        $homeSystem = $game->homeSystems()->first();
+        $homeworldPlanet = $homeSystem->homeworldPlanet;
+
+        $template->items()->create([
+            'unit' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 100,
+            'inventory_section' => InventorySection::Operational,
+        ]);
+
+        Deposit::where('planet_id', $homeworldPlanet->id)->delete();
+        $deposits = [];
+        for ($i = 0; $i < 2; $i++) {
+            $deposits[] = Deposit::factory()->create(['game_id' => $game->id, 'planet_id' => $homeworldPlanet->id]);
+        }
+
+        $player = $this->addPlayer($game);
+        $empire = $this->creator->create($game, $player);
+
+        $colony = $empire->colonies()->first();
+        $groups = $colony->mineGroups()->orderBy('group_number')->get();
+
+        $this->assertSame($deposits[0]->id, $groups[0]->deposit_id);
+        $this->assertSame($deposits[1]->id, $groups[1]->deposit_id);
     }
 
     // -------------------------------------------------------------------------

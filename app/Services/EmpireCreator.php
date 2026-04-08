@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\InventorySection;
+use App\Enums\UnitCode;
 use App\Models\Colony;
 use App\Models\ColonyFactoryGroup;
 use App\Models\ColonyFactoryUnit;
@@ -216,35 +218,69 @@ class EmpireCreator
                 }
             }
 
-            if ($colonyTemplate->mineGroups->isNotEmpty()) {
-                $deposits = Deposit::where('planet_id', $homeworldPlanet->id)
-                    ->orderBy('id')
-                    ->get();
+            $this->assignMinesToDeposits($colony, $colonyTemplate, $homeworldPlanet);
+        }
+    }
 
-                if ($deposits->count() < $colonyTemplate->mineGroups->count()) {
-                    throw new \RuntimeException(
-                        "Homeworld planet has {$deposits->count()} deposit(s) but template requires {$colonyTemplate->mineGroups->count()} mine group(s)."
-                    );
+    /**
+     * Distribute operational MIN inventory units round-robin across the planet's deposits.
+     *
+     * Only operational MIN units are assigned. Cargo MIN units remain in cargo.
+     * Each deposit gets one mine group. Units at each tech level are distributed
+     * as evenly as possible, with remainders going to the earliest deposits.
+     */
+    private function assignMinesToDeposits(Colony $colony, mixed $colonyTemplate, Planet $homeworldPlanet): void
+    {
+        $operationalMines = $colonyTemplate->items
+            ->filter(fn ($item) => $item->unit === UnitCode::Mines
+                && $item->inventory_section === InventorySection::Operational);
+
+        if ($operationalMines->isEmpty()) {
+            return;
+        }
+
+        $deposits = Deposit::where('planet_id', $homeworldPlanet->id)
+            ->orderBy('id')
+            ->get();
+
+        if ($deposits->isEmpty()) {
+            return;
+        }
+
+        $depositCount = $deposits->count();
+
+        // Create one mine group per deposit
+        $mineGroups = [];
+        foreach ($deposits->values() as $index => $deposit) {
+            $mineGroups[$index] = ColonyMineGroup::create([
+                'colony_id' => $colony->id,
+                'group_number' => $index + 1,
+                'deposit_id' => $deposit->id,
+            ]);
+        }
+
+        // Distribute each tech level of MIN units round-robin across deposits
+        foreach ($operationalMines as $mineItem) {
+            $totalQty = $mineItem->quantity;
+            $perDeposit = intdiv($totalQty, $depositCount);
+            $remainder = $totalQty % $depositCount;
+
+            $unitRows = [];
+            foreach ($mineGroups as $index => $group) {
+                $qty = $perDeposit + ($index < $remainder ? 1 : 0);
+
+                if ($qty > 0) {
+                    $unitRows[] = [
+                        'colony_mine_group_id' => $group->id,
+                        'unit' => $mineItem->unit->value,
+                        'tech_level' => $mineItem->tech_level,
+                        'quantity' => $qty,
+                    ];
                 }
+            }
 
-                foreach ($colonyTemplate->mineGroups->values() as $index => $templateMineGroup) {
-                    $liveMineGroup = ColonyMineGroup::create([
-                        'colony_id' => $colony->id,
-                        'group_number' => $templateMineGroup->group_number,
-                        'deposit_id' => $deposits[$index]->id,
-                    ]);
-
-                    if ($templateMineGroup->units->isNotEmpty()) {
-                        ColonyMineUnit::insert(
-                            $templateMineGroup->units->map(fn ($unit) => [
-                                'colony_mine_group_id' => $liveMineGroup->id,
-                                'unit' => $unit->unit->value,
-                                'tech_level' => $unit->tech_level,
-                                'quantity' => $unit->quantity,
-                            ])->all()
-                        );
-                    }
-                }
+            if (! empty($unitRows)) {
+                ColonyMineUnit::insert($unitRows);
             }
         }
     }
