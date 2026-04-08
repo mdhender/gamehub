@@ -166,6 +166,14 @@ class UploadColonyTemplateRequest extends FormRequest
                                     $this->validateFarmGroups($validator, $prefix, $production['farms']);
                                 }
                             }
+
+                            if (isset($production['mines'])) {
+                                if (! is_array($production['mines'])) {
+                                    $validator->errors()->add('template', "{$prefix}: 'production.mines' must be an array.");
+                                } else {
+                                    $this->validateMineGroups($validator, $prefix, $production['mines']);
+                                }
+                            }
                         }
                     }
 
@@ -384,6 +392,48 @@ class UploadColonyTemplateRequest extends FormRequest
 
                     if (! isset($unit['stage']) || ! is_int($unit['stage']) || $unit['stage'] < 1 || $unit['stage'] > 4) {
                         $validator->errors()->add('template', "{$uPrefix}: 'stage' is required and must be an integer between 1 and 4.");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, mixed>  $mines
+     */
+    private function validateMineGroups(Validator $validator, string $prefix, array $mines): void
+    {
+        foreach ($mines as $j => $group) {
+            $gPrefix = "{$prefix} mine group #".($j + 1);
+
+            if (! is_array($group)) {
+                $validator->errors()->add('template', "{$gPrefix}: must be an object.");
+
+                continue;
+            }
+
+            if (! isset($group['group']) || ! is_int($group['group'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'group' is required and must be an integer.");
+            }
+
+            if (! isset($group['units']) || ! is_array($group['units'])) {
+                $validator->errors()->add('template', "{$gPrefix}: 'units' is required and must be an array.");
+            } else {
+                foreach ($group['units'] as $k => $unit) {
+                    $uPrefix = "{$gPrefix} unit #".($k + 1);
+
+                    if (! isset($unit['unit']) || ! is_string($unit['unit'])) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'unit' is required.");
+
+                        continue;
+                    }
+
+                    if (! preg_match('/^MIN-\d+$/', $unit['unit'])) {
+                        $validator->errors()->add('template', "{$uPrefix}: mine unit must be MIN-<tech_level> (e.g. MIN-1).");
+                    }
+
+                    if (! isset($unit['quantity']) || ! is_int($unit['quantity']) || $unit['quantity'] < 0) {
+                        $validator->errors()->add('template', "{$uPrefix}: 'quantity' must be an integer >= 0.");
                     }
                 }
             }

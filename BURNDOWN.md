@@ -745,11 +745,11 @@ Key rules from the reconciled plan/sample data:
 6. Allow sample file to pass when `production.mines` is absent
 
 **Acceptance:**
-- [ ] A valid mine group passes validation
-- [ ] A non-`MIN-\d+` mine unit fails validation
-- [ ] Templates with an empty `production: []` pass validation
-- [ ] The sample data file passes validation when `production.mines` is absent
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] A valid mine group passes validation
+- [x] A non-`MIN-\d+` mine unit fails validation
+- [x] Templates with an empty `production: []` pass validation
+- [x] The sample data file passes validation when `production.mines` is absent
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
