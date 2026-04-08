@@ -357,4 +357,57 @@ class TurnReportControllerShowTest extends TestCase
 
         $response->assertSee('To Be Implemented Soon');
     }
+
+    #[Test]
+    public function test_show_renders_population_groups_in_fixed_order(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'rations' => 1.0,
+        ]);
+
+        // Create population groups in alphabetical order (the wrong order)
+        foreach ([PopulationClass::ConstructionWorker, PopulationClass::Professional, PopulationClass::Soldier, PopulationClass::Spy, PopulationClass::Unemployable, PopulationClass::Unskilled] as $code) {
+            TurnReportColonyPopulation::factory()->create([
+                'turn_report_colony_id' => $colony->id,
+                'population_code' => $code,
+                'quantity' => 1000,
+                'employed' => 0,
+                'pay_rate' => 0.125,
+                'rebel_quantity' => 0,
+            ]);
+        }
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // Expected order: UEM, USK, PRO, SLD, CNW, SPY
+        $content = $response->getContent();
+        $uemPos = strpos($content, 'UEM');
+        $uskPos = strpos($content, 'USK');
+        $proPos = strpos($content, 'PRO');
+        $sldPos = strpos($content, 'SLD');
+        $cnwPos = strpos($content, 'CNW');
+        $spyPos = strpos($content, 'SPY');
+
+        $this->assertLessThan($uskPos, $uemPos, 'UEM should appear before USK');
+        $this->assertLessThan($proPos, $uskPos, 'USK should appear before PRO');
+        $this->assertLessThan($sldPos, $proPos, 'PRO should appear before SLD');
+        $this->assertLessThan($cnwPos, $sldPos, 'SLD should appear before CNW');
+        $this->assertLessThan($spyPos, $cnwPos, 'CNW should appear before SPY');
+    }
 }

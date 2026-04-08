@@ -68,6 +68,9 @@ Colony: {{ $colony->source_colony_id }}  "{{ $colony->name }}"{{ str_repeat(' ',
             'food_consumed' => $foodConsumed,
         ];
     }
+
+    $populationOrder = ['UEM', 'USK', 'PRO', 'SLD', 'CNW', 'SPY', 'PLC', 'SAG', 'TRN'];
+    usort($rows, fn ($a, $b) => array_search($a->code, $populationOrder) <=> array_search($b->code, $populationOrder));
 @endphp
   Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
 @foreach ($rows as $row)
