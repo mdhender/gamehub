@@ -64,6 +64,14 @@ class LayerOneEnumsTest extends TestCase
         $this->assertContains('TRN', $values);
     }
 
+    public function test_colony_kind_vu_factor(): void
+    {
+        $this->assertSame(1, ColonyKind::OpenSurface->vuFactor());
+        $this->assertSame(5, ColonyKind::Enclosed->vuFactor());
+        $this->assertSame(10, ColonyKind::Orbital->vuFactor());
+        $this->assertSame(10, ColonyKind::Ship->vuFactor());
+    }
+
     public function test_unit_code_has_exactly_thirty_cases(): void
     {
         $values = array_column(UnitCode::cases(), 'value');

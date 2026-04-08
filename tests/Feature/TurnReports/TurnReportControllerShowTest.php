@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\TurnReports;
 
+use App\Enums\ColonyKind;
 use App\Enums\GameRole;
 use App\Enums\GameStatus;
+use App\Enums\InventorySection;
 use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
+use App\Enums\UnitCode;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\TurnReport;
@@ -492,9 +495,8 @@ class TurnReportControllerShowTest extends TestCase
         // Verify the Employed Labor table does not contain "Employed_______" column header
         $response->assertDontSee('Employed_______');
 
-        // Verify Quantity header replaced Units
+        // Verify Quantity header exists in the census table
         $response->assertSee('Quantity');
-        $response->assertDontSee('Units');
 
         // Military SLD = 2,500,000 - 20 (SPY) = 2,499,980
         $response->assertSee('2,499,980');
@@ -505,6 +507,377 @@ class TurnReportControllerShowTest extends TestCase
 
         // Total row: USK=10,000, PRO=10,020, SLD=2,500,000, Total=2,520,020
         $response->assertSee('2,520,020');
+    }
+
+    #[Test]
+    public function test_show_renders_inventory_section_headings(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 1000,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Inventory');
+        $response->assertSee('Super-structure (VU Factor: 1)');
+        $response->assertSee('Structure');
+        $response->assertSee('Crew and Passengers');
+        $response->assertSee('Operational');
+        $response->assertSee('Cargo');
+        $response->assertSee('Summary');
+    }
+
+    #[Test]
+    public function test_show_renders_inventory_volume_and_mass_for_operational_items(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // FCT-1: volume = 12 + (2*1) = 14 per unit, 1000 units = 14,000
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity' => 1000,
+            'inventory_section' => InventorySection::Operational,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('FCT-1');
+        $response->assertSee('14,000');
+    }
+
+    #[Test]
+    public function test_show_renders_inventory_cargo_half_volume(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // FUEL: 1 VU per unit, 1000 units = 1000 VU, cargo = 500 VU used
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Fuel,
+            'tech_level' => 0,
+            'quantity' => 1000,
+            'inventory_section' => InventorySection::Cargo,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // Volume = 1000, Volume Used (half) = 500
+        $content = $response->getContent();
+        $this->assertStringContainsString('FUEL', $content);
+        $this->assertStringContainsString('500', $content);
+    }
+
+    #[Test]
+    public function test_show_renders_inventory_super_structure_enclosed_capacity(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        // CORB has VU Factor = 10
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Orbital,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // 1,080,000 STU at VU Factor 10: enclosed = 1,080,000 / 10 = 108,000
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Structure,
+            'tech_level' => 1,
+            'quantity' => 1080000,
+            'inventory_section' => InventorySection::SuperStructure,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('VU Factor: 10');
+        $response->assertSee('108,000');
+    }
+
+    #[Test]
+    public function test_show_renders_inventory_crew_and_passengers(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Orbital,
+            'rations' => 1.0,
+        ]);
+
+        // 3000 PRO, 500 SLD, 100 CNW, 10 SPY
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Professional,
+            'quantity' => 3000,
+            'employed' => 0,
+            'pay_rate' => 0.375,
+            'rebel_quantity' => 0,
+        ]);
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Soldier,
+            'quantity' => 500,
+            'employed' => 0,
+            'pay_rate' => 0.25,
+            'rebel_quantity' => 0,
+        ]);
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::ConstructionWorker,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.5,
+            'rebel_quantity' => 0,
+        ]);
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Spy,
+            'quantity' => 10,
+            'employed' => 0,
+            'pay_rate' => 0.625,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // Crew decomposition:
+        // UEM = 0, USK = 0 + 100 = 100, PRO = 3000 + 100 + 10 = 3110, SLD = 500 + 10 = 510
+        // Total = 3720, Volume = ceil(3720/100) = 38
+        $response->assertSee('Crew and Passengers');
+        $response->assertSee('3,720');
+    }
+
+    #[Test]
+    public function test_show_renders_inventory_summary_totals(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Orbital,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // Super-structure: 10,000 STU, volume=5,000, mass=5,000, enclosed=1,000 (VU Factor 10)
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Structure,
+            'tech_level' => 1,
+            'quantity' => 10000,
+            'inventory_section' => InventorySection::SuperStructure,
+        ]);
+
+        // Operational: 100 FCT-1, volume=1,400, mass=1,400
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Factories,
+            'tech_level' => 1,
+            'quantity' => 100,
+            'inventory_section' => InventorySection::Operational,
+        ]);
+
+        // Cargo: 1000 FUEL, volume=1,000, mass=1,000, volume_used=500
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Fuel,
+            'tech_level' => 0,
+            'quantity' => 1000,
+            'inventory_section' => InventorySection::Cargo,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // Total Mass = 5,000 (SS) + 0 (str) + 1 (crew: 100 pop -> ceil(100/100)=1) + 1,400 (op) + 1,000 (cargo) = 7,401
+        // Enclosed = 1,000
+        // Volume Used = 0 (str) + 1 (crew) + 1,400 (op) + 500 (cargo) = 1,901
+        // Remaining = 1,000 - 1,901 = -901
+        $response->assertSee('7,401');
+        $response->assertSee('-901');
+    }
+
+    #[Test]
+    public function test_show_renders_consumable_codes_without_tech_level(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        TurnReportColonyInventory::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'unit_code' => UnitCode::Food,
+            'tech_level' => 0,
+            'quantity' => 5000,
+            'inventory_section' => InventorySection::Cargo,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // FOOD should appear without tech level suffix
+        $content = $response->getContent();
+        $this->assertStringContainsString('FOOD', $content);
+        $this->assertStringNotContainsString('FOOD-0', $content);
     }
 
     #[Test]

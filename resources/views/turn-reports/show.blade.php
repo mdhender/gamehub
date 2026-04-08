@@ -12,8 +12,8 @@
         .header-table th { font-weight: bold; padding-right: 0.25rem; }
         .colony-info th { font-weight: bold; padding-right: 0.25rem; }
         .census-info th { font-weight: bold; padding-right: 0.25rem; }
-        .census-table th, .labor-table th, .deposits-table th { border-bottom: 2px solid #666; font-weight: bold; }
-        .census-table tfoot td, .labor-table tfoot td { border-top: 1px solid #999; font-weight: bold; }
+        .census-table th, .labor-table th, .deposits-table th, .inventory-table th { border-bottom: 2px solid #666; font-weight: bold; }
+        .census-table tfoot td, .labor-table tfoot td, .inventory-table tfoot td { border-top: 1px solid #999; font-weight: bold; }
         hr { border: none; border-top: 1px solid #999; margin: 1.5rem 0; }
         h3 { margin-top: 1.5rem; margin-bottom: 0.5rem; }
         h4 { margin-top: 1rem; margin-bottom: 0.25rem; }
@@ -209,6 +209,315 @@
     </tfoot>
 </table>
 @endif
+
+@php
+    $consumableCodes = ['CNGD', 'FOOD', 'FUEL', 'GOLD', 'METS', 'MTSP', 'NMTS', 'RSCH'];
+
+    $formatUnitCode = function ($unitCode, $techLevel) use ($consumableCodes) {
+        $code = $unitCode instanceof \App\Enums\UnitCode ? $unitCode->value : $unitCode;
+        return in_array($code, $consumableCodes) ? $code : $code . '-' . $techLevel;
+    };
+
+    $vuFactor = $colony->kind->vuFactor();
+
+    // Group inventory by section
+    $superStructureItems = $colony->inventory->where('inventory_section', \App\Enums\InventorySection::SuperStructure)->sortBy(fn ($i) => $formatUnitCode($i->unit_code, $i->tech_level));
+    $structureItems = $colony->inventory->where('inventory_section', \App\Enums\InventorySection::Structure)->sortBy(fn ($i) => $formatUnitCode($i->unit_code, $i->tech_level));
+    $operationalItems = $colony->inventory->where('inventory_section', \App\Enums\InventorySection::Operational)->sortBy(fn ($i) => $formatUnitCode($i->unit_code, $i->tech_level));
+    $cargoItems = $colony->inventory->where('inventory_section', \App\Enums\InventorySection::Cargo)->sortBy(fn ($i) => $formatUnitCode($i->unit_code, $i->tech_level));
+
+    // Super-structure calculations
+    $ssTotalVolume = 0;
+    $ssTotalMass = 0;
+    $ssTotalEnclosed = 0;
+    $ssRows = [];
+    foreach ($superStructureItems as $item) {
+        $volPerUnit = \App\Support\UnitProperties::volumePerUnit($item->unit_code, $item->tech_level);
+        $volume = (int) ($item->quantity * $volPerUnit);
+        $mass = (int) ($item->quantity * \App\Support\UnitProperties::massPerUnit($item->unit_code, $item->tech_level));
+        $enclosed = (int) floor($item->quantity / $vuFactor);
+        $ssTotalVolume += $volume;
+        $ssTotalMass += $mass;
+        $ssTotalEnclosed += $enclosed;
+        $ssRows[] = (object) [
+            'display' => $formatUnitCode($item->unit_code, $item->tech_level),
+            'quantity' => $item->quantity,
+            'volume' => $volume,
+            'mass' => $mass,
+            'enclosed' => $enclosed,
+        ];
+    }
+
+    // Structure calculations
+    $strTotalVolume = 0;
+    $strTotalMass = 0;
+    $strTotalVolumeUsed = 0;
+    $strRows = [];
+    foreach ($structureItems as $item) {
+        $volume = (int) ($item->quantity * \App\Support\UnitProperties::volumePerUnit($item->unit_code, $item->tech_level));
+        $mass = (int) ($item->quantity * \App\Support\UnitProperties::massPerUnit($item->unit_code, $item->tech_level));
+        $strTotalVolume += $volume;
+        $strTotalMass += $mass;
+        $strTotalVolumeUsed += $volume;
+        $strRows[] = (object) [
+            'display' => $formatUnitCode($item->unit_code, $item->tech_level),
+            'quantity' => $item->quantity,
+            'volume' => $volume,
+            'mass' => $mass,
+            'volume_used' => $volume,
+        ];
+    }
+
+    // Crew and Passengers — decompose cadres into base population
+    $crewQuantityByCode = [];
+    if (isset($quantityByCode)) {
+        $uem = $quantityByCode['UEM'] ?? 0;
+        $usk = ($quantityByCode['USK'] ?? 0) + ($quantityByCode['CNW'] ?? 0);
+        $pro = ($quantityByCode['PRO'] ?? 0) + ($quantityByCode['CNW'] ?? 0) + ($quantityByCode['SPY'] ?? 0);
+        $sld = ($quantityByCode['SLD'] ?? 0) + ($quantityByCode['SPY'] ?? 0);
+        $crewQuantityByCode = ['UEM' => $uem, 'USK' => $usk, 'PRO' => $pro, 'SLD' => $sld];
+    }
+    $crewTotalPopulation = array_sum($crewQuantityByCode);
+    $crewVolume = $crewTotalPopulation > 0 ? (int) ceil($crewTotalPopulation / 100) : 0;
+    $crewMass = $crewVolume;
+    $crewVolumeUsed = $crewVolume;
+
+    // Operational calculations
+    $opTotalVolume = 0;
+    $opTotalMass = 0;
+    $opTotalVolumeUsed = 0;
+    $opRows = [];
+    foreach ($operationalItems as $item) {
+        $volume = (int) ($item->quantity * \App\Support\UnitProperties::volumePerUnit($item->unit_code, $item->tech_level));
+        $mass = (int) ($item->quantity * \App\Support\UnitProperties::massPerUnit($item->unit_code, $item->tech_level));
+        $opTotalVolume += $volume;
+        $opTotalMass += $mass;
+        $opTotalVolumeUsed += $volume;
+        $opRows[] = (object) [
+            'display' => $formatUnitCode($item->unit_code, $item->tech_level),
+            'quantity' => $item->quantity,
+            'volume' => $volume,
+            'mass' => $mass,
+            'volume_used' => $volume,
+        ];
+    }
+
+    // Cargo calculations (half volume)
+    $cgTotalVolume = 0;
+    $cgTotalMass = 0;
+    $cgTotalVolumeUsed = 0;
+    $cgRows = [];
+    foreach ($cargoItems as $item) {
+        $volume = (int) ($item->quantity * \App\Support\UnitProperties::volumePerUnit($item->unit_code, $item->tech_level));
+        $mass = (int) ($item->quantity * \App\Support\UnitProperties::massPerUnit($item->unit_code, $item->tech_level));
+        $volumeUsed = (int) ceil($volume / 2);
+        $cgTotalVolume += $volume;
+        $cgTotalMass += $mass;
+        $cgTotalVolumeUsed += $volumeUsed;
+        $cgRows[] = (object) [
+            'display' => $formatUnitCode($item->unit_code, $item->tech_level),
+            'quantity' => $item->quantity,
+            'volume' => $volume,
+            'mass' => $mass,
+            'volume_used' => $volumeUsed,
+        ];
+    }
+
+    // Summary
+    $summaryTotalMass = $ssTotalMass + $strTotalMass + $crewMass + $opTotalMass + $cgTotalMass;
+    $summaryEnclosedCapacity = $ssTotalEnclosed;
+    $summaryVolumeUsed = $strTotalVolumeUsed + $crewVolumeUsed + $opTotalVolumeUsed + $cgTotalVolumeUsed;
+    $summaryRemainingVolume = $summaryEnclosedCapacity - $summaryVolumeUsed;
+@endphp
+
+<h3>Inventory</h3>
+
+<h4>Super-structure (VU Factor: {{ $vuFactor }})</h4>
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th>Units</th>
+            <th class="num">Quantity</th>
+            <th class="num">Volume</th>
+            <th class="num">Mass</th>
+            <th class="num">Enclosed Capacity</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($ssRows as $row)
+        <tr>
+            <td>{{ $row->display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->volume) }}</td>
+            <td class="num">{{ number_format($row->mass) }}</td>
+            <td class="num">{{ number_format($row->enclosed) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td class="num">{{ number_format($ssTotalVolume) }}</td>
+            <td class="num">{{ number_format($ssTotalMass) }}</td>
+            <td class="num">{{ number_format($ssTotalEnclosed) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<h4>Structure</h4>
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th>Units</th>
+            <th class="num">Quantity</th>
+            <th class="num">Volume</th>
+            <th class="num">Mass</th>
+            <th class="num">Volume Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($strRows as $row)
+        <tr>
+            <td>{{ $row->display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->volume) }}</td>
+            <td class="num">{{ number_format($row->mass) }}</td>
+            <td class="num">{{ number_format($row->volume_used) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td class="num">{{ number_format($strTotalVolume) }}</td>
+            <td class="num">{{ number_format($strTotalMass) }}</td>
+            <td class="num">{{ number_format($strTotalVolumeUsed) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<h4>Crew and Passengers</h4>
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th>Units</th>
+            <th class="num">Quantity</th>
+            <th class="num">Volume</th>
+            <th class="num">Mass</th>
+            <th class="num">Volume Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($crewQuantityByCode as $code => $qty)
+        <tr>
+            <td>{{ $code }}</td>
+            <td class="num">{{ number_format($qty) }}</td>
+            @if ($loop->last)
+            <td></td><td></td><td></td>
+            @else
+            <td></td><td></td><td></td>
+            @endif
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td class="num">{{ number_format($crewTotalPopulation) }}</td>
+            <td class="num">{{ number_format($crewVolume) }}</td>
+            <td class="num">{{ number_format($crewMass) }}</td>
+            <td class="num">{{ number_format($crewVolumeUsed) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<h4>Operational</h4>
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th>Units</th>
+            <th class="num">Quantity</th>
+            <th class="num">Volume</th>
+            <th class="num">Mass</th>
+            <th class="num">Volume Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($opRows as $row)
+        <tr>
+            <td>{{ $row->display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->volume) }}</td>
+            <td class="num">{{ number_format($row->mass) }}</td>
+            <td class="num">{{ number_format($row->volume_used) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td class="num">{{ number_format($opTotalVolume) }}</td>
+            <td class="num">{{ number_format($opTotalMass) }}</td>
+            <td class="num">{{ number_format($opTotalVolumeUsed) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<h4>Cargo</h4>
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th>Units</th>
+            <th class="num">Quantity</th>
+            <th class="num">Volume</th>
+            <th class="num">Mass</th>
+            <th class="num">Volume Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($cgRows as $row)
+        <tr>
+            <td>{{ $row->display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->volume) }}</td>
+            <td class="num">{{ number_format($row->mass) }}</td>
+            <td class="num">{{ number_format($row->volume_used) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td class="num">{{ number_format($cgTotalVolume) }}</td>
+            <td class="num">{{ number_format($cgTotalMass) }}</td>
+            <td class="num">{{ number_format($cgTotalVolumeUsed) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<h4>Summary</h4>
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th class="num">Total Mass</th>
+            <th class="num">Enclosed Capacity</th>
+            <th class="num">Volume Used</th>
+            <th class="num">Remaining Volume</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="num">{{ number_format($summaryTotalMass) }}</td>
+            <td class="num">{{ number_format($summaryEnclosedCapacity) }}</td>
+            <td class="num">{{ number_format($summaryVolumeUsed) }}</td>
+            <td class="num">{{ number_format($summaryRemainingVolume) }}</td>
+        </tr>
+    </tbody>
+</table>
 
 <h3>Farming</h3>
 <p>To Be Implemented Soon</p>
