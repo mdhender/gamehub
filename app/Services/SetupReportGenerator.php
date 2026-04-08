@@ -37,6 +37,8 @@ class SetupReportGenerator
                     'colonies.planet',
                     'colonies.inventory',
                     'colonies.population',
+                    'colonies.mineGroups.deposit',
+                    'colonies.mineGroups.units',
                     'homeSystem.homeworldPlanet.star',
                     'homeSystem.homeworldPlanet.deposits' => fn ($q) => $q->orderBy('id'),
                 ])
@@ -94,6 +96,22 @@ class SetupReportGenerator
                             'pay_rate' => $pop->pay_rate,
                             'rebel_quantity' => $pop->rebel_quantity,
                         ]);
+                    }
+
+                    foreach ($colony->mineGroups as $mineGroup) {
+                        $deposit = $mineGroup->deposit;
+
+                        foreach ($mineGroup->units as $unit) {
+                            $reportColony->mineGroups()->create([
+                                'deposit_id' => $deposit->id,
+                                'resource' => $deposit->resource,
+                                'quantity_remaining' => $deposit->quantity_remaining,
+                                'yield_pct' => $deposit->yield_pct,
+                                'unit_code' => $unit->unit,
+                                'tech_level' => $unit->tech_level,
+                                'quantity' => $unit->quantity,
+                            ]);
+                        }
                     }
                 }
 

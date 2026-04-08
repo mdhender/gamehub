@@ -523,7 +523,95 @@
 <p>To Be Implemented Soon</p>
 
 <h3>Mining</h3>
-<p>To Be Implemented Soon</p>
+@if ($colony->mineGroups->isEmpty())
+<p>No mining groups.</p>
+@else
+@php
+    // Group mine rows by deposit_id and compute per-row values
+    $mineRows = [];
+    $mineTotalPro = 0;
+    $mineTotalUsk = 0;
+    $mineTotalAut = 0;
+    $mineTotalFuel = 0;
+
+    foreach ($colony->mineGroups->sortBy('deposit_id') as $mg) {
+        $pro = $mg->quantity;
+        $usk = $mg->quantity * 3;
+        $aut = 0;
+        $fuelConsumed = (int) ($mg->quantity * $mg->tech_level * 0.5);
+        $outputPerTurn = $mg->quantity * $mg->tech_level * 25;
+        $qtyProduced = (int) floor($outputPerTurn * $mg->yield_pct / 100);
+
+        $mineTotalPro += $pro;
+        $mineTotalUsk += $usk;
+        $mineTotalAut += $aut;
+        $mineTotalFuel += $fuelConsumed;
+
+        $mineRows[] = (object) [
+            'deposit_id' => $mg->deposit_id,
+            'resource' => $mg->resource->value,
+            'quantity_remaining' => $mg->quantity_remaining,
+            'yield_pct' => $mg->yield_pct,
+            'unit_display' => $mg->unit_code->value . '-' . $mg->tech_level,
+            'quantity' => $mg->quantity,
+            'pro' => $pro,
+            'usk' => $usk,
+            'aut' => $aut,
+            'fuel_consumed' => $fuelConsumed,
+            'qty_produced' => $qtyProduced,
+        ];
+    }
+@endphp
+<table class="inventory-table">
+    <thead>
+        <tr>
+            <th class="num">Deposit</th>
+            <th>Type</th>
+            <th class="num">Qty Remaining</th>
+            <th class="num">Yield</th>
+            <th>Units</th>
+            <th class="num">Qty</th>
+            <th class="num">PRO</th>
+            <th class="num">USK</th>
+            <th class="num">AUT</th>
+            <th class="num">FUEL Consumed</th>
+            <th class="num">Qty Produced</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($mineRows as $row)
+        <tr>
+            <td class="num">{{ $row->deposit_id }}</td>
+            <td>{{ $row->resource }}</td>
+            <td class="num">{{ number_format($row->quantity_remaining) }}</td>
+            <td class="num">{{ $row->yield_pct }} %</td>
+            <td>{{ $row->unit_display }}</td>
+            <td class="num">{{ number_format($row->quantity) }}</td>
+            <td class="num">{{ number_format($row->pro) }}</td>
+            <td class="num">{{ number_format($row->usk) }}</td>
+            <td class="num">{{ number_format($row->aut) }}</td>
+            <td class="num">{{ number_format($row->fuel_consumed) }}</td>
+            <td class="num">{{ number_format($row->qty_produced) }} {{ $row->resource }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="num">{{ number_format($mineTotalPro) }}</td>
+            <td class="num">{{ number_format($mineTotalUsk) }}</td>
+            <td class="num">{{ number_format($mineTotalAut) }}</td>
+            <td class="num">{{ number_format($mineTotalFuel) }}</td>
+            <td></td>
+        </tr>
+    </tfoot>
+</table>
+@endif
 
 <h3>Manufacturing</h3>
 <p>To Be Implemented Soon</p>

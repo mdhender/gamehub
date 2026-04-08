@@ -9,7 +9,10 @@ use App\Enums\PopulationClass;
 use App\Enums\TurnStatus;
 use App\Enums\UnitCode;
 use App\Models\Colony;
+use App\Models\ColonyMineGroup;
+use App\Models\ColonyMineUnit;
 use App\Models\ColonyTemplate;
+use App\Models\Deposit;
 use App\Models\Empire;
 use App\Models\Game;
 use App\Models\TurnReport;
@@ -491,5 +494,53 @@ class SetupReportGeneratorTest extends TestCase
             $this->assertGreaterThan(0, $rc->inventory()->count());
             $this->assertGreaterThan(0, $rc->population()->count());
         }
+    }
+
+    #[Test]
+    public function generate_snapshots_colony_mine_groups(): void
+    {
+        $game = $this->activeGameWithEmpire();
+        $turn = $game->turns()->first();
+
+        $empire = Empire::where('game_id', $game->id)->whereHas('colonies')->first();
+        $colony = $empire->colonies()->first();
+
+        // Create a deposit on the colony's planet
+        $deposit = Deposit::factory()->create([
+            'game_id' => $game->id,
+            'planet_id' => $colony->planet_id,
+        ]);
+
+        // Create a mine group with units
+        $mineGroup = ColonyMineGroup::create([
+            'colony_id' => $colony->id,
+            'group_number' => 1,
+            'deposit_id' => $deposit->id,
+        ]);
+
+        ColonyMineUnit::create([
+            'colony_mine_group_id' => $mineGroup->id,
+            'unit' => UnitCode::Mines->value,
+            'tech_level' => 1,
+            'quantity' => 500,
+        ]);
+
+        $this->generator->generate($turn);
+
+        $reportColony = TurnReport::where('turn_id', $turn->id)->first()
+            ->colonies()->where('source_colony_id', $colony->id)->first();
+
+        $reportMineGroups = $reportColony->mineGroups()->get();
+
+        $this->assertCount(1, $reportMineGroups);
+
+        $mg = $reportMineGroups->first();
+        $this->assertSame($deposit->id, $mg->deposit_id);
+        $this->assertSame($deposit->resource, $mg->resource);
+        $this->assertSame($deposit->quantity_remaining, $mg->quantity_remaining);
+        $this->assertSame($deposit->yield_pct, $mg->yield_pct);
+        $this->assertSame(UnitCode::Mines, $mg->unit_code);
+        $this->assertSame(1, $mg->tech_level);
+        $this->assertSame(500, $mg->quantity);
     }
 }

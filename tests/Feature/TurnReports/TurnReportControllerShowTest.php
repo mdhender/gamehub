@@ -3,6 +3,7 @@
 namespace Tests\Feature\TurnReports;
 
 use App\Enums\ColonyKind;
+use App\Enums\DepositResource;
 use App\Enums\GameRole;
 use App\Enums\GameStatus;
 use App\Enums\InventorySection;
@@ -14,6 +15,7 @@ use App\Models\Game;
 use App\Models\TurnReport;
 use App\Models\TurnReportColony;
 use App\Models\TurnReportColonyInventory;
+use App\Models\TurnReportColonyMineGroup;
 use App\Models\TurnReportColonyPopulation;
 use App\Models\TurnReportSurvey;
 use App\Models\TurnReportSurveyDeposit;
@@ -927,5 +929,166 @@ class TurnReportControllerShowTest extends TestCase
         $this->assertLessThan($militaryPos, $manufacturingPos, 'Manufacturing should appear before Military');
         $this->assertLessThan($constructionPos, $militaryPos, 'Military should appear before Construction');
         $this->assertLessThan($espionagePos, $constructionPos, 'Construction should appear before Espionage');
+    }
+
+    #[Test]
+    public function test_show_renders_mining_section_with_no_groups(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::Orbital,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertSee('Mining');
+        $response->assertSee('No mining groups.');
+    }
+
+    #[Test]
+    public function test_show_renders_mining_section_with_groups(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // Deposit 13: FUEL, 37,500,000 remaining, 20% yield, MIN-1 × 100,000
+        TurnReportColonyMineGroup::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'deposit_id' => 13,
+            'resource' => DepositResource::Fuel,
+            'quantity_remaining' => 37_500_000,
+            'yield_pct' => 20,
+            'unit_code' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 100_000,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        $response->assertDontSee('No mining groups.');
+        $response->assertSee('FUEL');
+        $response->assertSee('37,500,000');
+        $response->assertSee('20 %');
+        $response->assertSee('MIN-1');
+        $response->assertSee('100,000');
+
+        // PRO = 100,000, USK = 300,000, FUEL consumed = 50,000
+        $response->assertSee('300,000');
+        $response->assertSee('50,000');
+
+        // Qty produced = floor(100,000 × 1 × 25 × 20 / 100) = 500,000
+        $response->assertSee('500,000');
+    }
+
+    #[Test]
+    public function test_show_renders_mining_total_row(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $gm = $this->gmUser($game);
+        $player = $this->playerUser($game);
+        $pivot = $game->users()->where('users.id', $player->id)->first()->pivot;
+        $empire = Empire::factory()->create(['game_id' => $game->id, 'player_id' => $pivot->id]);
+
+        $report = TurnReport::factory()->create([
+            'game_id' => $game->id,
+            'turn_id' => $turn->id,
+            'empire_id' => $empire->id,
+        ]);
+
+        $colony = TurnReportColony::factory()->create([
+            'turn_report_id' => $report->id,
+            'kind' => ColonyKind::OpenSurface,
+        ]);
+
+        TurnReportColonyPopulation::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'population_code' => PopulationClass::Unskilled,
+            'quantity' => 100,
+            'employed' => 0,
+            'pay_rate' => 0.125,
+            'rebel_quantity' => 0,
+        ]);
+
+        // Two mine groups
+        TurnReportColonyMineGroup::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'deposit_id' => 13,
+            'resource' => DepositResource::Fuel,
+            'quantity_remaining' => 37_500_000,
+            'yield_pct' => 20,
+            'unit_code' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 100_000,
+        ]);
+
+        TurnReportColonyMineGroup::factory()->create([
+            'turn_report_colony_id' => $colony->id,
+            'deposit_id' => 28,
+            'resource' => DepositResource::Metallics,
+            'quantity_remaining' => 35_000_000,
+            'yield_pct' => 55,
+            'unit_code' => UnitCode::Mines,
+            'tech_level' => 1,
+            'quantity' => 200_000,
+        ]);
+
+        $response = $this->actingAs($gm)
+            ->get($this->showUrl($game, $turn, $empire))
+            ->assertOk();
+
+        // Total PRO = 300,000, Total USK = 900,000, Total FUEL consumed = 150,000
+        $response->assertSee('900,000');
+        $response->assertSee('150,000');
     }
 }

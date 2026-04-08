@@ -55,6 +55,15 @@ class TurnReportJsonExporter
                     'inventory_section' => $item->inventory_section->value,
                     'quantity' => $item->quantity,
                 ])->values(),
+                'mine_groups' => $colony->mineGroups->map(fn ($mg) => [
+                    'deposit_id' => $mg->deposit_id,
+                    'resource' => $mg->resource->value,
+                    'quantity_remaining' => $mg->quantity_remaining,
+                    'yield_pct' => $mg->yield_pct,
+                    'unit_code' => $mg->unit_code->value,
+                    'tech_level' => $mg->tech_level,
+                    'quantity' => $mg->quantity,
+                ])->values(),
                 'population' => $colony->population->map(function ($pop) use ($colony) {
                     $cadres = [PopulationClass::ConstructionWorker->value, PopulationClass::Spy->value];
                     $isCadre = in_array($pop->population_code->value, $cadres);
