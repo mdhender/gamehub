@@ -684,12 +684,12 @@ Key rules from the reconciled plan/sample data:
 - `database/factories/ColonyMineUnitFactory.php`
 
 **Acceptance:**
-- [ ] Each new mine factory can `make()` a valid attribute set
-- [ ] Each new mine factory can `create()` valid related records
-- [ ] Template mine group factory defaults `deposit_id` to `null`
-- [ ] Live mine group factory requires a valid `deposit_id` (use `Deposit::factory()`)
-- [ ] Mine unit factories produce `MIN` units with a positive `tech_level`
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] Each new mine factory can `make()` a valid attribute set
+- [x] Each new mine factory can `create()` valid related records
+- [x] Template mine group factory defaults `deposit_id` to `null`
+- [x] Live mine group factory requires a valid `deposit_id` (use `Deposit::factory()`)
+- [x] Mine unit factories produce `MIN` units with a positive `tech_level`
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
