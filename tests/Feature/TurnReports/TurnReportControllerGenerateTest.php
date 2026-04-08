@@ -146,6 +146,44 @@ class TurnReportControllerGenerateTest extends TestCase
     }
 
     #[Test]
+    public function test_generate_allows_rerun_on_completed_turn(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $turn->update(['status' => TurnStatus::Completed]);
+        $user = $this->gmUser($game);
+
+        $this->actingAs($user)
+            ->post($this->generateUrl($game, $turn))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+    }
+
+    #[Test]
+    public function test_generate_succeeds_on_consecutive_runs(): void
+    {
+        $game = $this->activeGameWithTurnZero();
+        $turn = $game->turns()->first();
+        $user = $this->gmUser($game);
+
+        // First generation
+        $this->actingAs($user)
+            ->post($this->generateUrl($game, $turn))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(TurnStatus::Completed, $turn->fresh()->status);
+
+        // Second generation (rerun) — should succeed, not error
+        $this->actingAs($user)
+            ->post($this->generateUrl($game, $turn->fresh()))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(TurnStatus::Completed, $turn->fresh()->status);
+    }
+
+    #[Test]
     public function test_generate_surfaces_generator_runtime_errors_as_validation_errors(): void
     {
         $game = Game::factory()->create(['status' => GameStatus::Active]);

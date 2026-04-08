@@ -657,5 +657,7 @@
 <p>No survey data.</p>
 @endforelse
 
+<p style="margin-top: 2rem; color: #999; font-size: 0.85em;">Generated at {{ $report->generated_at->format('Y/m/d H:i:s') }}</p>
+
 </body>
 </html>
