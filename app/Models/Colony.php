@@ -73,4 +73,10 @@ class Colony extends Model
     {
         return $this->hasMany(ColonyFarmGroup::class);
     }
+
+    /** @return HasMany<ColonyMineGroup, $this> */
+    public function mineGroups(): HasMany
+    {
+        return $this->hasMany(ColonyMineGroup::class);
+    }
 }

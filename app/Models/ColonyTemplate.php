@@ -58,4 +58,10 @@ class ColonyTemplate extends Model
     {
         return $this->hasMany(ColonyTemplateFarmGroup::class);
     }
+
+    /** @return HasMany<ColonyTemplateMineGroup, $this> */
+    public function mineGroups(): HasMany
+    {
+        return $this->hasMany(ColonyTemplateMineGroup::class);
+    }
 }

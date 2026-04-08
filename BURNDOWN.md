@@ -662,11 +662,11 @@ Key rules from the reconciled plan/sample data:
 - `ColonyMineUnit` belongs to group, casts `unit` to `UnitCode`
 
 **Acceptance:**
-- [ ] All 4 mine models exist and follow the repo's model conventions
-- [ ] `ColonyTemplate` exposes `mineGroups()`
-- [ ] `Colony` exposes `mineGroups()`
-- [ ] `ColonyMineGroup` resolves its `deposit()` belongsTo relationship
-- [ ] `vendor/bin/pint --dirty --format agent`
+- [x] All 4 mine models exist and follow the repo's model conventions
+- [x] `ColonyTemplate` exposes `mineGroups()`
+- [x] `Colony` exposes `mineGroups()`
+- [x] `ColonyMineGroup` resolves its `deposit()` belongsTo relationship
+- [x] `vendor/bin/pint --dirty --format agent`
 
 ---
 
