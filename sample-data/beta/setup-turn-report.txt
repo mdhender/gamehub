@@ -9,8 +9,8 @@ Colony: 21  "Not Named"                        System: 25-20-00/1   Orbit:  5
   Kind: COPN                    Tech Level:  1
 
 Census Report
-  Standard of Living: 1.0000    Birth Rate: 6.2500%
-                                Death Rate: 6.2500%
+  Standard of Living: 1.0000    Birth Rate: 0.0625%
+                                Death Rate: 0.0625%
 
   Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
     UEM    5,900,000     5,900,000    0.0000            0   100.00%       1,475,000
@@ -46,15 +46,25 @@ Colony: 22  "Not Named"                        System: 25-20-00/1   Orbit:  5
   Kind: CORB                    Tech Level:  1
 
 Census Report
-  Standard of Living: 1.0000    Birth Rate: 6.2500%
-                                Death Rate: 6.2500%
+  Standard of Living: 1.0000    Birth Rate: 0.0625%
+                                Death Rate: 0.0625%
 
-  Group  Units______  Population__  Employed_______  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
-    PRO        3,000         3,000                0    0.3750        1,125   100.00%             750
-    SLD          500           500                0    0.2500          125   100.00%             125
-    CNW          100           200                0    0.3750           38   100.00%              50
-    SPY           10            20                0    0.6250            7   100.00%               5
-  Total                      3,720                0                  1,295                       930
+  Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
+    PRO        3,000         3,000    0.3750        1,125   100.00%             750
+    SLD          500           500    0.2500          125   100.00%             125
+    CNW          100           200    0.3750           38   100.00%              50
+    SPY           10            20    0.6250            7   100.00%               5
+  Total                      3,720              1,295                       930
+
+  Employed Labor
+    Area______________   USK_______  PRO_______  SLD_______  Total________
+    Farming                       0           0           0              0
+    Mining                        0           0           0              0
+    Manufacturing                 0           0           0              0
+    Military                      0           0         490            490
+    Construction (CNW)          100         100           0            200
+    Espionage    (SPY)            0          10          10             20
+    Total                       100         110         500            710
 
 
 Farming
@@ -71,8 +81,27 @@ Colony: 23  "Not Named"                        System: 25-20-00/1   Orbit:  5
   Kind: CSHP                    Tech Level:  1
 
 Census Report
-  Standard of Living: 1.0000    Birth Rate: 6.2500%
-                                Death Rate: 6.2500%
+  Standard of Living: 1.0000    Birth Rate: 0.0625%
+                                Death Rate: 0.0625%
+
+  Group  Quantity___  Population__  Pay Rate  CNGD Paid__  Ration %  FOOD Consumed_
+    UEM            0             0    0.0000            0   100.00%               0
+    USK            0             0    0.1250            0   100.00%               0
+    PRO            0             0    0.3750            0   100.00%               0
+    SLD            0             0    0.2500            0   100.00%               0
+    CNW            0             0    0.5000            0   100.00%               0
+    SPY            0             0    0.6250            3   100.00%               0
+  Total                          0                      3                         0
+
+  Employed Labor
+    Area______________   USK_______  PRO_______  SLD_______  Total________
+    Farming                       0           0           0              0
+    Mining                        0           0           0              0
+    Manufacturing                 0           0           0              0
+    Military                      0           0           0              0
+    Construction (CNW)            0           0           0              0
+    Espionage    (SPY)            0           0           0              0
+    Total                         0           0           0              0
 
 
 
